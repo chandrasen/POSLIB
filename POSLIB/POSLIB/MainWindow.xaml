@@ -18,8 +18,8 @@
         <CheckBox x:Name="chkEtp" Content="Enable Terminal Printer" IsEnabled="False"  HorizontalAlignment="Left" Margin="3,0,0,0" VerticalAlignment="Top" Grid.Column="1" Height="20"/>
         <CheckBox x:Name="chkEcrref" Click="CheckBox_Click"  Content="ECR Ref" Grid.Column="1" HorizontalAlignment="Left" Margin="339,3,0,0" VerticalAlignment="Top" Width="80" Height="20" Grid.RowSpan="2"/>
         <TextBox x:Name="txtEcrref" IsEnabled="False" SelectionChanged="ECRRefTextChanged" PreviewTextInput="ECRRefValidationTextBox" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="411,-5,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="160"/>
-        <GroupBox Foreground="#FC860D" BorderBrush="#E9E9E9" Background="#E9E9E9"  HorizontalAlignment="Left" Height="75" Margin="0,3,-137,0" Grid.Row="1" VerticalAlignment="Top" Width="880" Grid.ColumnSpan="2">
-            <Grid  >
+        <GroupBox   Visibility="Hidden"   Foreground="#FC860D" BorderBrush="#E9E9E9" Background="#E9E9E9"  HorizontalAlignment="Left" Height="75" Margin="0,3,-137,0" Grid.Row="1" VerticalAlignment="Top" Width="880" Grid.ColumnSpan="2">
+            <Grid  Visibility="Hidden" >
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="14*"/>
                     <ColumnDefinition Width="90*"/>
@@ -33,7 +33,7 @@
                 <RadioButton x:Name="rdbCom"  GroupName="conn" Content="COM" Margin="13,45,45,0" VerticalAlignment="Top"  Checked="TCPCOMOnChange" Grid.ColumnSpan="2"/>
                 <RadioButton x:Name="rdbTcp" GroupName="conn" Content="TCP/IP" HorizontalAlignment="Right" Margin="0,45,32,0" VerticalAlignment="Top" Checked="TCPCOMOnChange" Grid.ColumnSpan="2" Grid.Column="1"/>
                 <Button  x:Name="btnConnect" Content="Connect" IsEnabled="True" Grid.Column="4" HorizontalAlignment="Left" Margin="1,25,0,0" VerticalAlignment="Top" Width="92" Foreground="Black" FontWeight="Bold" FontSize="15" Background="#68d957" Height="35" Click="Connect" RenderTransformOrigin="0.489,0.143"/>
-                <Button  x:Name="btnDisConnect" Content="Disconnect" IsEnabled="False" Grid.Column="4" HorizontalAlignment="Left" Margin="104,25,0,0" VerticalAlignment="Top" Width="92" Foreground="Black" FontWeight="Bold" FontSize="15" Background="#f0a6a1" Height="35" Click="DisConnect"/>
+
                 <GroupBox x:Name="grpTcpSetting" IsEnabled="false" Visibility="Visible" Grid.Column="2" Header="TCP/IP Setting" HorizontalAlignment="Left" Height="65" Margin="55,5,0,-1" VerticalAlignment="Top" Width="460" Grid.ColumnSpan="2">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -154,7 +154,7 @@
                 <Label x:Name="AdminTransactionL" Content="Admin Trans Type" IsEnabled="false" Grid.Column="3" HorizontalAlignment="Left" Margin="50,9,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120"/>
             </Grid>
         </GroupBox>
-        <Label Content="Connection Settings" Foreground="#FC860D" Background="#E9E9E9"  FontWeight="Bold" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="4,8,0,0" Grid.Row="1" VerticalAlignment="Top" Width="150" Height="30" Grid.Column="1"/>
+        <Label Visibility="Hidden" Content="Connection Settings" Foreground="#FC860D" Background="#E9E9E9"  FontWeight="Bold" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="4,8,0,0" Grid.Row="1" VerticalAlignment="Top" Width="150" Height="30" Grid.Column="1"/>
         <Image HorizontalAlignment="Center" Source="img\chatak.png" Height="33" Margin="0,604,0,0" Grid.Row="1" VerticalAlignment="Top" Width="228" Grid.Column="1" RenderTransformOrigin="0.517,0.72"/>
         <Label Content="Buffer Send" FontWeight="Bold" HorizontalAlignment="Left" Margin="3,495,0,0" Grid.Row="1" VerticalAlignment="Top" Width="88" Height="26" Grid.ColumnSpan="2"/>
         <Label Content="FuncReturn" FontWeight="Bold" HorizontalAlignment="Left" Margin="119,551,0,0" Grid.Row="1" VerticalAlignment="Top" Width="88" Height="26" Grid.Column="1"/>
@@ -224,9 +224,8 @@
         <ListView x:Name="ComList" ItemsSource="{Binding comdata}" Visibility="Hidden" Grid.Row="1" Grid.ColumnSpan="2" Margin="4,90,1122,527">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="TID" DisplayMemberBinding="{Binding TID}" />
+                    <GridViewColumn Header="TID" DisplayMemberBinding="{Binding tid}" />
                     <GridViewColumn Header="MerchantName" DisplayMemberBinding="{Binding MerchantName}" />
-                    <GridViewColumn Header="POSController ID" DisplayMemberBinding="{Binding posControllerId}" />
                     <GridViewColumn Header="COM" DisplayMemberBinding="{Binding COM}" />
                     <GridViewColumn Header="Connect">
                         <GridViewColumn.CellTemplate>
@@ -239,12 +238,12 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <ListView x:Name="TcpIpList" Visibility="Hidden" ItemsSource="{Binding tcpipdata}" Grid.Row="1" Grid.ColumnSpan="2" Margin="4,90,1122,527">
+        <ListView x:Name="TcpIpList" Visibility="Hidden" ItemsSource="{Binding comdata}" Grid.Row="1" Grid.ColumnSpan="2" Margin="4,90,1122,527">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="POSController ID" DisplayMemberBinding="{Binding posControllerId}" />
-                    <GridViewColumn Header="POSIP" DisplayMemberBinding="{Binding posIP}" />
-                    <GridViewColumn Header="POSPORT" DisplayMemberBinding="{Binding posPort}" />
+                    <GridViewColumn Header="POSController ID" DisplayMemberBinding="{Binding tid}" />
+                    <GridViewColumn Header="POSIP" DisplayMemberBinding="{Binding deviceIp}" />
+                    <GridViewColumn Header="POSPORT" DisplayMemberBinding="{Binding devicePort}" />
                     <GridViewColumn Header="Choose">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -289,7 +288,7 @@
         <Button Grid.Column="1" Content="Scan Online Devices" HorizontalAlignment="Left" Margin="514,85,0,0" Grid.Row="1" VerticalAlignment="Top" Width="146" Height="29" Foreground="White" Background="#FF274E12" Click="Button_Click" />
         <Button Grid.Column="1" Content="Scan Com Devices" HorizontalAlignment="Left" Margin="339,83,0,0" Grid.Row="1" VerticalAlignment="Top" Width="165" Height="31" Foreground="White" Background="#FF144E35" Click="Button_Click_1" />
         <Button  x:Name="DoTrans" IsEnabled="False" Grid.Column="1" Content="Do Trans" HorizontalAlignment="Left" Margin="421,136,0,0" Grid.Row="1" VerticalAlignment="Top" Height="34" Width="83" Click="Button_Click_2"/>
-        <ComboBox Grid.Column="1" x:Name="SELECTTRANSTYPE" IsEnabled="False" SelectedIndex="0" HorizontalAlignment="Left" Margin="265,139,0,0" Grid.Row="1" VerticalAlignment="Top" Width="125" Height="31">
+        <ComboBox Grid.Column="1" x:Name="SELECTTRANSTYPE"   HorizontalAlignment="Left" Margin="265,139,0,0" Grid.Row="1" VerticalAlignment="Top" Width="125" Height="31">
             <ComboBoxItem IsSelected="True"></ComboBoxItem>
             <ComboBoxItem Content="Purchase"></ComboBoxItem>
             <ComboBoxItem Content="UPI"></ComboBoxItem>
@@ -297,5 +296,18 @@
         </ComboBox>
         <TextBox  x:Name="ResponseRecived" IsEnabled="False" HorizontalAlignment="Left" Margin="422,301,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="190" Height="220" Grid.Column="1"/>
         <Label Grid.Column="1" Content="Transaction Buffer Received" HorizontalAlignment="Left" Margin="422,272,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="5.415,1.703" Width="190" FontSize="14" Background="#FFD5EFC0"/>
+        <CheckBox x:Name="connectivityFallbackCheckBox" Content="Allowed Connectivity Fallback" Grid.Column="1"  HorizontalAlignment="Left" Margin="548,119,0,0" Grid.Row="1" VerticalAlignment="Top" Height="15" Width="198"/>
+        <Label Grid.Column="1" Content="Priority-1" HorizontalAlignment="Left" Margin="10,20,0,0" Grid.Row="1" VerticalAlignment="Top" Width="73" Height="30" FontSize="14"/>
+        <Label Grid.Column="1" Content="Priority-2" HorizontalAlignment="Left" Margin="204,24,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" FontSize="14"/>
+        <ComboBox Grid.Column="1" x:Name="Priority1"  SelectedIndex="0" HorizontalAlignment="Left" Margin="88,26,0,0" Grid.Row="1" VerticalAlignment="Top" Width="111" Height="27">
+            <ComboBoxItem Content="TCP/IP"></ComboBoxItem>
+            <ComboBoxItem Content="COM"></ComboBoxItem>
+        </ComboBox>
+        <ComboBox Grid.Column="1" x:Name="Priority2"  SelectedIndex="0" HorizontalAlignment="Left" Margin="279,26,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120" Height="27">
+            <ComboBoxItem Content="TCP/IP"></ComboBoxItem>
+            <ComboBoxItem Content="COM"></ComboBoxItem>
+        </ComboBox>
+        <Button Grid.Column="1" Content="Save Settings" HorizontalAlignment="Left" Margin="423,26,0,0" Grid.Row="1" VerticalAlignment="Top" Height="27" Width="94" FontSize="14" Background="#FF367713" Foreground="White" Click="SaveSettings"/>
+        <Button  x:Name="btnDisConnect" Content="Disconnect" IsEnabled="False" Grid.Column="1" HorizontalAlignment="Left" Margin="559,39,0,0" VerticalAlignment="Top" Width="92" Foreground="Black" FontWeight="Bold" FontSize="15" Background="#f0a6a1" Height="35" Click="DisConnect" Grid.RowSpan="2"/>
     </Grid>
 </Window>

@@ -10,6 +10,7 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,6 +23,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Xml;
+using POSLIB.Model;
 using PosLibs.ECRLibrary.Common;
 using PosLibs.ECRLibrary.Model;
 using PosLibs.ECRLibrary.Service;
@@ -95,8 +97,8 @@ namespace POSLIB
         BackgroundWorker worker;
         BackgroundWorker workerSend;
 
-        private ObservableCollection<HashSet<ComTerminalResponse>> data = new ObservableCollection<HashSet<ComTerminalResponse>>();
-        public ObservableCollection<HashSet<ComTerminalResponse>> comdata
+        private ObservableCollection<List<DeviceList>> data = new ObservableCollection<List<DeviceList>>();
+        public ObservableCollection<List<DeviceList>> comdata
         {
             get { return data; }
             set { data = value; OnPropertyChanged(); }
@@ -119,13 +121,30 @@ namespace POSLIB
             InitializeComponent();
             DataContext = this;
             GetCOMPort();
-            Autodiscover();
+           // Autodiscover();
             AutoConnect();
 
 
             // logTxt.Text= Logger.LogFilePath;
 
 
+        }
+        public static List<DeviceList> serialdevicelist = new List<DeviceList>();
+        public class ScanLisnter : ScanDeviceListener
+        {
+            public void onFailure(string errorMsg, int errorCode)
+            {
+                Console.WriteLine("Error");
+               // MessageBox.Show(errorMsg, errorCode.ToString());
+            }
+
+            public void onSuccess(List<DeviceList> list)
+            {
+                if (list != null)
+                {
+                    serialdevicelist = list;
+                }
+            }
         }
         private void DOCOMConnection()
         {
@@ -434,7 +453,7 @@ namespace POSLIB
             try
             {
 
-                obj.DoAutoTCPIPConnection();
+               // obj.DoAutoTCPIPConnection();
 
                 // result = objc.AutoTCPIPConnection(AutohostIp, 8081);
 
@@ -468,47 +487,73 @@ namespace POSLIB
 
             }
         }
-        List<TcpIpTerminalResponse> value = new List<TcpIpTerminalResponse>();
+        
         void work_onlinedevices_scan(object sender, DoWorkEventArgs e)
         {
             bool checkNullValidation = true;
-
             ConnectivityAndTransactionService obj = new ConnectivityAndTransactionService();
-            HashSet<TcpIpTerminalResponse> addedItems = new HashSet<TcpIpTerminalResponse>();
+
             (sender as BackgroundWorker).ReportProgress(0);
             try
             {
-                value = obj.AutoTCPIPLintener();
-                if (value.Count <= 0)
-                {
 
-                    (sender as BackgroundWorker).ReportProgress(2);
+                ScanLisnter deviceslisnter = new ScanLisnter();
+
+
+                obj.scanOnlineDevice(deviceslisnter);
+                Thread.Sleep(5000);
+                if (serialdevicelist.Count <= 0)
+                {
+                    (sender as BackgroundWorker).ReportProgress(40);
                 }
                 else
                 {
+                    
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                       
+                        enter.IsEnabled = false;
+                        if (!comdata.Contains(serialdevicelist))
+                        {
+                            if (comdata.Count > 0)
+                            {
+                                comdata.Clear();
+                            }
+                            comdata.Add(serialdevicelist);
+                            TcpIpList.Visibility = Visibility.Visible;
+                            ComList.Visibility = Visibility.Hidden;
+                        }
+                    });
                     (sender as BackgroundWorker).ReportProgress(10);
 
                 }
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    enter.IsEnabled = false;
-
-                    tcpipdata.Add(value);
-                    ComList.Visibility = Visibility.Hidden;
-                    TcpIpList.Visibility = Visibility.Visible;
-                });
+              
             }
             catch (SocketException se)
             {
                 (sender as BackgroundWorker).ReportProgress(1);
                 MessageBox.Show("A socket error occurred: " + se.Message);
             }
-            catch (Exception ex)
+        }
+
+        public class TransactionDrive : TransactionListener
+        {
+            public void onFailure(string errorMsg, int errorCode)
             {
-                (sender as BackgroundWorker).ReportProgress(2);
-                MessageBox.Show("An error occurred: " + ex.Message);
+                throw new NotImplementedException();
+            }
+
+            public void onNext(string action)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void onSuccess(string paymentResponse)
+            {
+                throw new NotImplementedException();
             }
         }
+
         void work_onlineTrans_scan(object sender, DoWorkEventArgs e)
         {
             bool checkNullValidation = true;
@@ -521,10 +566,18 @@ namespace POSLIB
                 {
                     transactionType = "4001";
                 }
+                TransactionDrive transactionDrive = new TransactionDrive();
                 // string res = obj.doTransaction(APIIntegration.inputReqData, int.Parse(transactionType), out string abcz);
                 if (isOnlineDevice == true)
                 {
-                    string result = obj.doTransaction(APIIntegration.inputReqData, int.Parse(transactionType), out string response);
+                    bool isFallbackAllowed=false;
+                    Dispatcher.Invoke(() =>
+                    {
+                        isFallbackAllowed = connectivityFallbackCheckBox.IsChecked == true;
+                    });
+
+                    ConnectivityAndTransactionService.isConnectivityFallbackAllowed = isFallbackAllowed;
+                    string result = obj.doTransaction(APIIntegration.inputReqData, int.Parse(transactionType), transactionDrive,out string response);
                     // result = obj.doTCPIPTransaction(ip, int.Parse(aport),APIIntegration.inputReqData,int.Parse(transactionType),out string response);
 
 
@@ -553,15 +606,24 @@ namespace POSLIB
                 MessageBox.Show("An error occurred: " + ex.Message);
             }
         }
-        void work_Comdevices_scan(object sender, DoWorkEventArgs e)
+      
+
+       void work_Comdevices_scan(object sender, DoWorkEventArgs e)
         {
             bool checkNullValidation = true;
             ConnectivityAndTransactionService obj = new ConnectivityAndTransactionService();
+            
+            
             (sender as BackgroundWorker).ReportProgress(0);
             try
             {
-                HashSet<ComTerminalResponse> value = obj.DoCOMAutoConnection();
-                if (value.Count <= 0)
+
+                ScanLisnter deviceslisnter = new ScanLisnter();
+
+                obj.scanSerialDevice(deviceslisnter);
+
+
+                if (serialdevicelist.Count <= 0)
                 {
 
                     (sender as BackgroundWorker).ReportProgress(2);
@@ -571,11 +633,12 @@ namespace POSLIB
                     (sender as BackgroundWorker).ReportProgress(10);
 
                 }
-                Application.Current.Dispatcher.Invoke(() => {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
                     enter.IsEnabled = false;
-                    if (!comdata.Contains(value))
+                    if (!comdata.Contains(serialdevicelist))
                     {
-                        comdata.Add(value);
+                        comdata.Add(serialdevicelist);
                         TcpIpList.Visibility = Visibility.Hidden;
                         ComList.Visibility = Visibility.Visible;
                     }
@@ -586,12 +649,7 @@ namespace POSLIB
                 (sender as BackgroundWorker).ReportProgress(1);
                 MessageBox.Show("A socket error occurred: " + se.Message);
             }
-            catch (Exception exe)
-            {
-                (sender as BackgroundWorker).ReportProgress(1);
-                MessageBox.Show(exe.Message);
-
-            }
+            
         }
 
         void worker_DoWork(object sender, DoWorkEventArgs e)
@@ -686,6 +744,16 @@ namespace POSLIB
                 ProgBar.Visibility = Visibility.Hidden;
                 fullScreen.IsEnabled = true;
                 MessageBox.Show(Application.Current.MainWindow, "Scann success");
+                btnConnect.IsEnabled = true;
+                ProgBar.IsIndeterminate = false;
+            }
+            if (e.ProgressPercentage.ToString() == "40")
+            {
+                ProgBarL.Content = "Connecting...";
+                ProgBarL.Visibility = Visibility.Hidden;
+                ProgBar.Visibility = Visibility.Hidden;
+                fullScreen.IsEnabled = true;
+                MessageBox.Show(Application.Current.MainWindow, "No Devices found");
                 btnConnect.IsEnabled = true;
                 ProgBar.IsIndeterminate = false;
             }
@@ -8033,10 +8101,23 @@ namespace POSLIB
             // previousValues = txtIpAddress.Text;
 
         }
-
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             ScanOnlineDevices();
+            //ScanLisnter deviceslisnter = new ScanLisnter();
+
+            //obj.scanOnlineDevice(deviceslisnter);
+
+            //Application.Current.Dispatcher.Invoke(() =>
+            //{
+            //    enter.IsEnabled = false;
+            //    if (!comdata.Contains(serialdevicelist))
+            //    {
+            //        comdata.Add(serialdevicelist);
+            //        TcpIpList.Visibility = Visibility.Visible;
+            //        ComList.Visibility = Visibility.Hidden;
+            //    }
+            //});
 
             //  DOCOMConnection();
 
@@ -8082,7 +8163,7 @@ namespace POSLIB
             var selectedItem = ((Button)sender).DataContext;
 
             // Check if the selected item is a list
-            if (selectedItem is List<TcpIpTerminalResponse> items && items.Count > 0)
+            if (selectedItem is List<DeviceList> items && items.Count > 0)
             {
                 // Get the first item in the list
                 var item = items[0];
@@ -8090,8 +8171,8 @@ namespace POSLIB
                 // Store the IP address and port number in the textboxes
                 //txtIpAddress.Text = item.posIP;
                 //txtPort.Text = item.posPort.ToString();
-                ip = item.posIP;
-                aport = item.posPort;
+                ip = item.deviceIp;
+                aport = item.devicePort;
 
                 isOnlineDevice = obj.isOnlineConnection(ip, int.Parse(aport));
                 if (isOnlineDevice == true)
@@ -8116,9 +8197,9 @@ namespace POSLIB
             var selectedItem = ((Button)sender).DataContext;
 
             // Check if the selected item is a list
-            if (selectedItem is HashSet<ComTerminalResponse> items && items.Count > 0)
+            if (selectedItem is List<DeviceList> items && items.Count > 0)
             {
-                List<ComTerminalResponse> itemList = new List<ComTerminalResponse>(items);
+                List<DeviceList> itemList = new List<DeviceList>(items);
 
                 // Get the first item in the list
                 var item = itemList[0];
@@ -8126,7 +8207,9 @@ namespace POSLIB
                 // Store the IP address and port number in the textboxes
                 //txtIpAddress.Text = item.posIP;
                 //txtPort.Text = item.posPort.ToString();i
+                selectCom = "";
                 selectCom = item.COM;
+                intvalue = "";
                 foreach (char c in selectCom)
                 {
                     if (char.IsDigit(c))
@@ -8167,11 +8250,25 @@ namespace POSLIB
             {
                 transTypeSelectedPos = SELECTTRANSTYPE.Text.ToString();
             }
+
             OnlineTrans();
             //string inputReqData = "{\"posControllerId\":\"12\",\"dateTime\":\"24042023233940\",\"transactionID\":\"122333\",\"transactionType\":\"7\",\"protocolType\":\"1\",\"requestBody\":\"4001,TX12345678,900,,,,,,,\",\"RFU1\":\"\"}";
 
 
 
+        }
+        String priority1;
+        String priority2;
+        private void SaveSettings(object sender, RoutedEventArgs e)
+        {
+            if (Priority1.Text.ToString() != "" && Priority2.Text.ToString() != "")
+            {
+                priority1 = Priority1.Text.ToString();
+                priority2 = Priority2.Text.ToString();
+                string[] connectionPriorityMode = new string[] { priority1, priority2 };
+
+                ConnectivityAndTransactionService.connectionPriorityMode = connectionPriorityMode;
+            }
         }
     }
 }

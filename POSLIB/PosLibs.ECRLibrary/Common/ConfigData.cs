@@ -12,5 +12,6 @@ namespace PosLibs.ECRLibrary.Common
         public string tcpIp { get; set; }
         public int tcpPort { get; set; }
         public string connectionMode { get; set; }
+        public string[] communicationPriorityList { get; set; }
     }
 }

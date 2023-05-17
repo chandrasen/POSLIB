@@ -6,16 +6,23 @@ using System.Threading.Tasks;
 
 namespace PosLibs.ECRLibrary.Model
 {
-    public class ComTerminalResponse
+    public class TerminalConnectivityResponse
     {
 
-        public ComTerminalResponse() { }
+        public TerminalConnectivityResponse() { }
         public string TID { get; set; }
         public Boolean isCommSupported { get; set; }
         public string MerchantName { get; set; }
         public string posControllerId { get; set; }
         public string protocolType { get; set; }
         public string transactionType { get; set; }
+        public string dateTime { get; set; }
+
+        public string isWifiSupported { get; set; }
+       
+        public string posIP { get; set; }
+        public string posPort { get; set; }
+       
 
 
         public  string COM { get; set; }

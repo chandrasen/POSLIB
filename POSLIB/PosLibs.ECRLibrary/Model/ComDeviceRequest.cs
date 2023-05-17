@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace PosLibs.ECRLibrary.Model
 {
-    public class ComJsonRequest
+    public class ComDeviceRequest
     {
-        public ComJsonRequest() { }
+        public ComDeviceRequest() { }
         public string posControllerId { get; set; }
         public string transactionType { get; set; }
         public string dateTime { get; set; }
