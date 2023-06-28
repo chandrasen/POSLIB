@@ -13,5 +13,6 @@ namespace PosLibs.ECRLibrary.Common
         public int tcpPort { get; set; }
         public string connectionMode { get; set; }
         public string[] communicationPriorityList { get; set; }
+        public bool isConnectivityFallBackAllowed { get; set; }
     }
 }

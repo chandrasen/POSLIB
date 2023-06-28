@@ -48,7 +48,7 @@ namespace PosLibs.ECRLibrary.Service
             return json;
         }
 
-       public static T JsonParser<T>(string jsonData)
+        public static T JsonParser<T>(string jsonData)
         {
             T data = JsonConvert.DeserializeObject<T>(jsonData);
             return data;

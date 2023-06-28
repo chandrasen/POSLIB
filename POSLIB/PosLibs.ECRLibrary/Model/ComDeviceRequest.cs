@@ -9,12 +9,11 @@ namespace PosLibs.ECRLibrary.Model
     public class ComDeviceRequest
     {
         public ComDeviceRequest() { }
-        public string posControllerId { get; set; }
-        public string transactionType { get; set; }
-        public string dateTime { get; set; }
-        public string RFU1 { get; set; }
+        public string cashierId { get; set; }
+        public  string msgType { get; set; }
+        public  string RFU1 { get; set; }
 
-       
+
 
 
     }

@@ -10,13 +10,17 @@ namespace PosLibs.ECRLibrary.Model
     {
 
         public TerminalConnectivityResponse() { }
-        public string TID { get; set; }
+        public string devId { get; set; }
         public Boolean isCommSupported { get; set; }
         public string MerchantName { get; set; }
-        public string posControllerId { get; set; }
+        public string cashierId { get; set; }
         public string protocolType { get; set; }
         public string transactionType { get; set; }
         public string dateTime { get; set; }
+
+        public int msgType { get; set; }
+
+        public string slNo { get; set; }
 
         public string isWifiSupported { get; set; }
        

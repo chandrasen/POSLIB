@@ -23,11 +23,12 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Xml;
-using POSLIB.Model;
 using PosLibs.ECRLibrary.Common;
+using PosLibs.ECRLibrary.Logger;
 using PosLibs.ECRLibrary.Model;
 using PosLibs.ECRLibrary.Service;
-
+using Serilog.Core;
+using Path = System.IO.Path;
 namespace POSLIB
 {
     /// <summary>
@@ -97,8 +98,8 @@ namespace POSLIB
         BackgroundWorker worker;
         BackgroundWorker workerSend;
 
-        private ObservableCollection<List<DeviceList>> data = new ObservableCollection<List<DeviceList>>();
-        public ObservableCollection<List<DeviceList>> comdata
+        private ObservableCollection<DeviceList> data = new ObservableCollection<DeviceList>();
+        public ObservableCollection<DeviceList> comdata
         {
             get { return data; }
             set { data = value; OnPropertyChanged(); }
@@ -121,28 +122,34 @@ namespace POSLIB
             InitializeComponent();
             DataContext = this;
             GetCOMPort();
-           // Autodiscover();
-            AutoConnect();
+
+            // Autodiscover();
+
 
 
             // logTxt.Text= Logger.LogFilePath;
 
 
         }
-        public static List<DeviceList> serialdevicelist = new List<DeviceList>();
+
+        static string errorMsg = "";
+        static int errorCode;
+        public static List<DeviceList> serialdevice = new List<DeviceList>();
+        public List<DeviceList> serialdevicelist = new List<DeviceList>();
         public class ScanLisnter : ScanDeviceListener
         {
             public void onFailure(string errorMsg, int errorCode)
             {
-                Console.WriteLine("Error");
-               // MessageBox.Show(errorMsg, errorCode.ToString());
+                Console.WriteLine("Error Message");
+
+                //MessageBox.Show(errorMsg, errorCode.ToString());
             }
 
             public void onSuccess(List<DeviceList> list)
             {
                 if (list != null)
                 {
-                    serialdevicelist = list;
+                    serialdevice = list;
                 }
             }
         }
@@ -300,28 +307,7 @@ namespace POSLIB
             ////worker.progresschanged += worker_progresschanged;
             //worker.runworkerasync();
         }
-        private void AutoConnect()
-        {
 
-            worker = new BackgroundWorker();
-            worker.WorkerReportsProgress = true;
-            worker.DoWork += work_autoConnect;
-
-            worker.RunWorkerAsync();
-            btnDisConnect.IsEnabled = true;
-            enter.IsEnabled = true;
-            DoTrans.IsEnabled = true;
-            SELECTTRANSTYPE.IsEnabled = true;
-            ConnectL.Content = "Connected";
-
-            // obj.doautotcpipconnection();
-            //fullscreen.isenabled = false;
-            //worker = new backgroundworker();
-            //worker.workerreportsprogress = true;
-            //worker.dowork += work_auto;
-            ////worker.progresschanged += worker_progresschanged;
-            //worker.runworkerasync();
-        }
         private void ScanOnlineDevices()
         {
 
@@ -347,7 +333,8 @@ namespace POSLIB
             worker.DoWork += work_onlineTrans_scan;
             worker.RunWorkerAsync();
         }
-        ConnectivityAndTransactionService obj = new ConnectivityAndTransactionService();
+        ConnectionService obj = new ConnectionService();
+        TransacationService trxobj = new TransacationService();
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
 
@@ -379,8 +366,8 @@ namespace POSLIB
                         OACT.Text = "";
                         //PORTCOM.Text = "";
                         TRANSTYPE.IsEnabled = false;
-                        DoTrans.IsEnabled = false;
-                        ResponseRecived.Text = "";
+                        // DoTrans.IsEnabled = false;
+                        // ResponseRecived.Text = "";
                         TRANSTYPEL.IsEnabled = false;
                         CASHBACKL.IsEnabled = false;
                         AMOUNTL.IsEnabled = false;
@@ -434,7 +421,7 @@ namespace POSLIB
             else if (!statusSerialConn)
             {
 
-                var result = obj.doCOMConnection(int.Parse(IPortCom), baudRateCom, parityCom, dataBitsCom, stopBitsCom);
+                var result = obj.isComDeviceConnected(int.Parse(IPortCom));
 
                 bool status = obj.checkComConn();
                 if (status)
@@ -448,12 +435,12 @@ namespace POSLIB
         void work_auto(object sender, DoWorkEventArgs e)
         {
             bool checkNullValidation = true;
-            ConnectivityAndTransactionService obj = new ConnectivityAndTransactionService();
+            ConnectionService obj = new ConnectionService();
             (sender as BackgroundWorker).ReportProgress(0);
             try
             {
 
-               // obj.DoAutoTCPIPConnection();
+                // obj.DoAutoTCPIPConnection();
 
                 // result = objc.AutoTCPIPConnection(AutohostIp, 8081);
 
@@ -466,68 +453,70 @@ namespace POSLIB
 
             }
         }
-        void work_autoConnect(object sender, DoWorkEventArgs e)
-        {
-            bool checkNullValidation = true;
-            ConnectivityAndTransactionService obj = new ConnectivityAndTransactionService();
-            (sender as BackgroundWorker).ReportProgress(0);
-            try
-            {
-
-                isOnlineDevice = obj.AutoConnect();
-
-                // result = objc.AutoTCPIPConnection(AutohostIp, 8081);
 
 
-            }
-            catch (Exception exe)
-            {
-                (sender as BackgroundWorker).ReportProgress(1);
-                MessageBox.Show(exe.Message);
-
-            }
-        }
-        
         void work_onlinedevices_scan(object sender, DoWorkEventArgs e)
         {
             bool checkNullValidation = true;
-            ConnectivityAndTransactionService obj = new ConnectivityAndTransactionService();
+            ConnectionService obj = new ConnectionService();
 
             (sender as BackgroundWorker).ReportProgress(0);
             try
             {
 
                 ScanLisnter deviceslisnter = new ScanLisnter();
-
-
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    comdata.Clear();
+                    serialdevice.Clear();
+                    serialdevicelist.Clear();
+                });
+                obj.scanSerialDevice(deviceslisnter);
                 obj.scanOnlineDevice(deviceslisnter);
-                Thread.Sleep(5000);
-                if (serialdevicelist.Count <= 0)
+
+                Thread.Sleep(20000);
+
+
+                if (serialdevice.Count <= 0)
                 {
                     (sender as BackgroundWorker).ReportProgress(40);
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        TcpIpList.Visibility = Visibility.Hidden;
+                        ComList.Visibility = Visibility.Hidden;
+                    });
+
                 }
                 else
                 {
-                    
+
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                       
+
                         enter.IsEnabled = false;
-                        if (!comdata.Contains(serialdevicelist))
+                        serialdevicelist = serialdevice;
+                        if (comdata.Count > 0)
                         {
-                            if (comdata.Count > 0)
-                            {
-                                comdata.Clear();
-                            }
-                            comdata.Add(serialdevicelist);
-                            TcpIpList.Visibility = Visibility.Visible;
-                            ComList.Visibility = Visibility.Hidden;
+                            comdata.Clear();
                         }
+                        for (int i = 0; i < serialdevicelist.Count; i++)
+                        {
+                            DeviceList value = new DeviceList();
+                            value = serialdevicelist[i];
+                            comdata.Add(value);
+                        }
+                        serialdevice.Clear();
+                        serialdevicelist.Clear();
+                        TcpIpList.Visibility = Visibility.Visible;
+
+
                     });
                     (sender as BackgroundWorker).ReportProgress(10);
 
                 }
-              
+
+
+
             }
             catch (SocketException se)
             {
@@ -535,12 +524,12 @@ namespace POSLIB
                 MessageBox.Show("A socket error occurred: " + se.Message);
             }
         }
-
+        static string resp = "";
         public class TransactionDrive : TransactionListener
         {
             public void onFailure(string errorMsg, int errorCode)
             {
-                throw new NotImplementedException();
+                MessageBox.Show(errorMsg, errorCode.ToString());
             }
 
             public void onNext(string action)
@@ -550,55 +539,79 @@ namespace POSLIB
 
             public void onSuccess(string paymentResponse)
             {
-                throw new NotImplementedException();
+                resp = paymentResponse;
             }
         }
-
+        static string Amount = "";
+        static string requestbody = "";
         void work_onlineTrans_scan(object sender, DoWorkEventArgs e)
         {
             bool checkNullValidation = true;
-            string resp = "";
-            ConnectivityAndTransactionService obj = new ConnectivityAndTransactionService();
+
+            ConnectionService obj = new ConnectionService();
             (sender as BackgroundWorker).ReportProgress(0);
             try
             {
-                if (transTypeSelectedPos.ToString() == "Purchase")
+                try
                 {
-                    transactionType = "4001";
+                    if (transTypeSelectedPos != null)
+                    {
+                        if (transTypeSelectedPos.ToString() == "Purchase")
+                        {
+                            transactionType = "4001";
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Please select Txn type");
+                    }
+                }
+                catch (NullReferenceException ex)
+                {
+                    MessageBox.Show("Please select Txn type");
                 }
                 TransactionDrive transactionDrive = new TransactionDrive();
-                // string res = obj.doTransaction(APIIntegration.inputReqData, int.Parse(transactionType), out string abcz);
-                if (isOnlineDevice == true)
+                if (transactionType != "")
                 {
-                    bool isFallbackAllowed=false;
-                    Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        isFallbackAllowed = connectivityFallbackCheckBox.IsChecked == true;
+                        Amount = AMOUNTT.Text;
                     });
 
-                    ConnectivityAndTransactionService.isConnectivityFallbackAllowed = isFallbackAllowed;
-                    string result = obj.doTransaction(APIIntegration.inputReqData, int.Parse(transactionType), transactionDrive,out string response);
-                    // result = obj.doTCPIPTransaction(ip, int.Parse(aport),APIIntegration.inputReqData,int.Parse(transactionType),out string response);
-
-
-                    resp = response;
-                    if (result != null)
+                    if (Amount != "")
                     {
+                        requestbody = "4001,TX12345678,10000,,,,,,,";
+                        string afterreplace = requestbody.Replace("10000", Amount);
+                        trxobj.doTransaction(afterreplace, int.Parse(transactionType), transactionDrive);
 
-
-                        Dispatcher.Invoke(() =>
+                        Application.Current.Dispatcher.Invoke(() =>
                         {
-                            ResponseRecived.Text = resp;
+                            ResponseReceive.Text = resp;
+                            Requestsend.Text = afterreplace;
                         });
 
                     }
+                    else
+                    {
+                        MessageBox.Show("Please Enter Amount");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Txn not selected");
                 }
 
+
+
+            }
+            catch (NullReferenceException nullException)
+            {
+                MessageBox.Show("Please select Txn Type");
             }
             catch (SocketException se)
             {
                 (sender as BackgroundWorker).ReportProgress(1);
-                MessageBox.Show("A socket error occurred: " + se.Message);
+                MessageBox.Show("Transaction failed due to Terminal Problem", "1003");
             }
             catch (TimeoutException ex)
             {
@@ -606,14 +619,14 @@ namespace POSLIB
                 MessageBox.Show("An error occurred: " + ex.Message);
             }
         }
-      
 
-       void work_Comdevices_scan(object sender, DoWorkEventArgs e)
+
+        void work_Comdevices_scan(object sender, DoWorkEventArgs e)
         {
             bool checkNullValidation = true;
-            ConnectivityAndTransactionService obj = new ConnectivityAndTransactionService();
-            
-            
+            ConnectionService obj = new ConnectionService();
+
+
             (sender as BackgroundWorker).ReportProgress(0);
             try
             {
@@ -623,33 +636,68 @@ namespace POSLIB
                 obj.scanSerialDevice(deviceslisnter);
 
 
-                if (serialdevicelist.Count <= 0)
+                if (serialdevice.Count <= 0)
                 {
 
                     (sender as BackgroundWorker).ReportProgress(2);
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        TcpIpList.Visibility = Visibility.Hidden;
+                        ComList.Visibility = Visibility.Hidden;
+                    });
+                }
+                else if (serialdevice.Count == 1)
+                {
+                    (sender as BackgroundWorker).ReportProgress(143);
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        TcpIpList.Visibility = Visibility.Hidden;
+                        ComList.Visibility = Visibility.Hidden;
+
+                        btnDisConnect.IsEnabled = true;
+                        enter.IsEnabled = true;
+                        AMOUNTT.IsEnabled = true;
+                        serialdevice.Clear();
+                        serialdevicelist.Clear();
+
+                        ConnectL.Content = "Connected";
+                    });
                 }
                 else
                 {
                     (sender as BackgroundWorker).ReportProgress(10);
-
-                }
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    enter.IsEnabled = false;
-                    if (!comdata.Contains(serialdevicelist))
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        comdata.Add(serialdevicelist);
+                        enter.IsEnabled = false;
+                        serialdevicelist = serialdevice;
+                        if (comdata.Count > 0)
+                        {
+                            comdata.Clear();
+                        }
+                        for (int i = 0; i < serialdevicelist.Count; i++)
+                        {
+                            DeviceList value = new DeviceList();
+                            value = serialdevicelist[i];
+                            comdata.Add(value);
+                        }
+                        serialdevice.Clear();
+                        serialdevicelist.Clear();
                         TcpIpList.Visibility = Visibility.Hidden;
                         ComList.Visibility = Visibility.Visible;
-                    }
-                });
+
+
+
+                    });
+
+                }
+
             }
             catch (SocketException se)
             {
                 (sender as BackgroundWorker).ReportProgress(1);
                 MessageBox.Show("A socket error occurred: " + se.Message);
             }
-            
+
         }
 
         void worker_DoWork(object sender, DoWorkEventArgs e)
@@ -658,7 +706,7 @@ namespace POSLIB
             (sender as BackgroundWorker).ReportProgress(0);
             try
             {
-                ConnectivityAndTransactionService obj = new ConnectivityAndTransactionService();
+                ConnectionService obj = new ConnectionService();
                 if (tcpComSelect.ToString() == "TCP/IP")
                 {
                     if (PortCom.ToString() == string.Empty || baudRateCom.ToString() == string.Empty || parityCom.ToString() == string.Empty || dataBitsCom.ToString() == string.Empty || stopBitsCom.ToString() == string.Empty)
@@ -705,7 +753,7 @@ namespace POSLIB
                     }
                     else
                     {
-                        result = obj.doTCPIPConnection(hostIp, int.Parse(port));
+                        // result = obj.doTCPIPConnection(hostIp, int.Parse(port));
                     }
 
                 }
@@ -732,7 +780,7 @@ namespace POSLIB
         {
             if (e.ProgressPercentage.ToString() == "0")
             {
-                ProgBarL.Content = "Scanning";
+                ProgBarL.Content = "Progress";
                 ProgBarL.Visibility = Visibility.Visible;
                 ProgBar.Visibility = Visibility.Visible;
                 ProgBar.IsIndeterminate = true;
@@ -743,7 +791,17 @@ namespace POSLIB
                 ProgBarL.Visibility = Visibility.Hidden;
                 ProgBar.Visibility = Visibility.Hidden;
                 fullScreen.IsEnabled = true;
-                MessageBox.Show(Application.Current.MainWindow, "Scann success");
+                MessageBox.Show(Application.Current.MainWindow, "Scan Done");
+                btnConnect.IsEnabled = true;
+                ProgBar.IsIndeterminate = false;
+            }
+            if (e.ProgressPercentage.ToString() == "143")
+            {
+                ProgBarL.Content = "Connecting...";
+                ProgBarL.Visibility = Visibility.Hidden;
+                ProgBar.Visibility = Visibility.Hidden;
+                fullScreen.IsEnabled = true;
+                MessageBox.Show(Application.Current.MainWindow, ConnectionService.fullcomportName, "Scan Done");
                 btnConnect.IsEnabled = true;
                 ProgBar.IsIndeterminate = false;
             }
@@ -752,9 +810,11 @@ namespace POSLIB
                 ProgBarL.Content = "Connecting...";
                 ProgBarL.Visibility = Visibility.Hidden;
                 ProgBar.Visibility = Visibility.Hidden;
+                MessageBox.Show("1002", "No Device Found");
+                TcpIpList.Visibility = Visibility.Hidden;
                 fullScreen.IsEnabled = true;
-                MessageBox.Show(Application.Current.MainWindow, "No Devices found");
                 btnConnect.IsEnabled = true;
+
                 ProgBar.IsIndeterminate = false;
             }
             if (e.ProgressPercentage.ToString() == "2")
@@ -763,8 +823,9 @@ namespace POSLIB
                 ProgBarL.Visibility = Visibility.Hidden;
                 ProgBar.Visibility = Visibility.Hidden;
                 fullScreen.IsEnabled = true;
-                MessageBox.Show(Application.Current.MainWindow, "No Devices found");
                 btnConnect.IsEnabled = true;
+                ComList.Visibility = Visibility.Hidden;
+                MessageBox.Show("1002", "No Device Found");
                 ProgBar.IsIndeterminate = false;
             }
             if (e.ProgressPercentage.ToString() == "3")
@@ -2286,7 +2347,7 @@ namespace POSLIB
                         BUFFERSENDtext = inputReqData;
                         (sender as BackgroundWorker).ReportProgress(3);
                     }
-                    ConnectivityAndTransactionService obj = new ConnectivityAndTransactionService();
+                    ConnectionService obj = new ConnectionService();
                     // szSignature = obj.ComputeSha256Hash(szSignature);
                     //counting ecr teferebce number-----------------
                     if (transactionType != "17" && transactionType != "18" && transactionType != "19")
@@ -4453,7 +4514,7 @@ namespace POSLIB
         {
             try
             {
-                ConnectivityAndTransactionService obj = new ConnectivityAndTransactionService();
+                ConnectionService obj = new ConnectionService();
 
 
                 resultDisconnect = obj.doCOMDisconnection();
@@ -4487,7 +4548,7 @@ namespace POSLIB
                     RRNL.IsEnabled = false;
                     RRNT.IsEnabled = false;
                     DateL.IsEnabled = false;
-                    DoTrans.IsEnabled = false;
+                    //DoTrans.IsEnabled = false;
                     DateT.IsEnabled = false;
                     OACL.IsEnabled = false;
                     OACT.IsEnabled = false;
@@ -4498,7 +4559,7 @@ namespace POSLIB
                     txtIpAddress.IsEnabled = false;
                     SetSetting.IsEnabled = false;
                     chkEcrref.IsEnabled = false;
-                    SELECTTRANSTYPE.IsEnabled = false;
+                    // SELECTTRANSTYPE.IsEnabled = false;
                     txtEcrref.IsEnabled = false;
                     CashRegisterNumberT.IsEnabled = false;
                     myBrowser.Navigate((Uri)null);
@@ -5535,35 +5596,36 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countAmount++;
                 string crtFormat = string.Empty;
-                if (countAmount == 1)
-                {
-                    AMOUNTT.Text = "0.01";
-                }
-                else if (countAmount == 2)
-                {
-                    AMOUNTT.Text = "0." + ch[2] + "1";
-                }
-                else if (countAmount == 3)
-                {
-                    AMOUNTT.Text = ch[1] + "." + ch[2] + "1";
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "1";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    AMOUNTT.Text = crtFormat;
-                }
-                //AMOUNTT.Text = AMOUNTT.Text + 1;
+                AMOUNTT.Text = AMOUNTT.Text + 1;
+                //if (countAmount == 1)
+                //{
+                //    AMOUNTT.Text = "0.01";
+                //}
+                //else if (countAmount == 2)
+                //{
+                //    AMOUNTT.Text = "0." + ch[2] + "1";
+                //}
+                //else if (countAmount == 3)
+                //{
+                //    AMOUNTT.Text = ch[1] + "." + ch[2] + "1";
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "1";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    AMOUNTT.Text = crtFormat;
+                //}
+                ////AMOUNTT.Text = AMOUNTT.Text + 1;
                 AMOUNTT.Select(AMOUNTT.Text.Length, 0);
                 AMOUNTT.Focus();
             }
@@ -5771,35 +5833,35 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countAmount++;
                 string crtFormat = string.Empty;
-                if (countAmount == 1)
-                {
-                    AMOUNTT.Text = "0.02";
-                }
-                else if (countAmount == 2)
-                {
-                    AMOUNTT.Text = "0." + ch[2] + "2";
-                }
-                else if (countAmount == 3)
-                {
-                    AMOUNTT.Text = ch[1] + "." + ch[2] + "2";
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "2";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    AMOUNTT.Text = crtFormat;
-                }
-                //AMOUNTT.Text = AMOUNTT.Text + 2;
+                //if (countAmount == 1)
+                //{
+                //    AMOUNTT.Text = "0.02";
+                //}
+                //else if (countAmount == 2)
+                //{
+                //    AMOUNTT.Text = "0." + ch[2] + "2";
+                //}
+                //else if (countAmount == 3)
+                //{
+                //    AMOUNTT.Text = ch[1] + "." + ch[2] + "2";
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "2";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    AMOUNTT.Text = crtFormat;
+                //}
+                AMOUNTT.Text = AMOUNTT.Text + 2;
                 AMOUNTT.Select(AMOUNTT.Text.Length, 0);
                 AMOUNTT.Focus();
             }
@@ -5935,35 +5997,35 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countAmount++;
                 string crtFormat = string.Empty;
-                if (countAmount == 1)
-                {
-                    AMOUNTT.Text = "0.03";
-                }
-                else if (countAmount == 2)
-                {
-                    AMOUNTT.Text = "0." + ch[2] + "3";
-                }
-                else if (countAmount == 3)
-                {
-                    AMOUNTT.Text = ch[1] + "." + ch[2] + "3";
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "3";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    AMOUNTT.Text = crtFormat;
-                }
-                //AMOUNTT.Text = AMOUNTT.Text + 3;
+                //if (countAmount == 1)
+                //{
+                //    AMOUNTT.Text = "0.03";
+                //}
+                //else if (countAmount == 2)
+                //{
+                //    AMOUNTT.Text = "0." + ch[2] + "3";
+                //}
+                //else if (countAmount == 3)
+                //{
+                //    AMOUNTT.Text = ch[1] + "." + ch[2] + "3";
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "3";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    AMOUNTT.Text = crtFormat;
+                //}
+                AMOUNTT.Text = AMOUNTT.Text + 3;
                 AMOUNTT.Select(AMOUNTT.Text.Length, 0);
                 AMOUNTT.Focus();
             }
@@ -5973,35 +6035,35 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countCB++;
                 string crtFormat = string.Empty;
-                if (countCB == 1)
-                {
-                    CASHBACKT.Text = "0.03";
-                }
-                else if (countCB == 2)
-                {
-                    CASHBACKT.Text = "0." + ch[2] + "3";
-                }
-                else if (countCB == 3)
-                {
-                    CASHBACKT.Text = ch[1] + "." + ch[2] + "3";
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "3";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    CASHBACKT.Text = crtFormat;
-                }
-                //CASHBACKT.Text = CASHBACKT.Text + 3;
+                //if (countCB == 1)
+                //{
+                //    CASHBACKT.Text = "0.03";
+                //}
+                //else if (countCB == 2)
+                //{
+                //    CASHBACKT.Text = "0." + ch[2] + "3";
+                //}
+                //else if (countCB == 3)
+                //{
+                //    CASHBACKT.Text = ch[1] + "." + ch[2] + "3";
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "3";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    CASHBACKT.Text = crtFormat;
+                //}
+                CASHBACKT.Text = CASHBACKT.Text + 3;
                 CASHBACKT.Select(CASHBACKT.Text.Length, 0);
                 CASHBACKT.Focus();
             }
@@ -6098,35 +6160,35 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countAmount++;
                 string crtFormat = string.Empty;
-                if (countAmount == 1)
-                {
-                    AMOUNTT.Text = "0.04";
-                }
-                else if (countAmount == 2)
-                {
-                    AMOUNTT.Text = "0." + ch[2] + "4";
-                }
-                else if (countAmount == 3)
-                {
-                    AMOUNTT.Text = ch[1] + "." + ch[2] + "4";
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "4";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    AMOUNTT.Text = crtFormat;
-                }
-                //AMOUNTT.Text = AMOUNTT.Text + 4;
+                //if (countAmount == 1)
+                //{
+                //    AMOUNTT.Text = "0.04";
+                //}
+                //else if (countAmount == 2)
+                //{
+                //    AMOUNTT.Text = "0." + ch[2] + "4";
+                //}
+                //else if (countAmount == 3)
+                //{
+                //    AMOUNTT.Text = ch[1] + "." + ch[2] + "4";
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "4";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    AMOUNTT.Text = crtFormat;
+                //}
+                AMOUNTT.Text = AMOUNTT.Text + 4;
                 AMOUNTT.Select(AMOUNTT.Text.Length, 0);
                 AMOUNTT.Focus();
             }
@@ -6261,35 +6323,35 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countAmount++;
                 string crtFormat = string.Empty;
-                if (countAmount == 1)
-                {
-                    AMOUNTT.Text = "0.05";
-                }
-                else if (countAmount == 2)
-                {
-                    AMOUNTT.Text = "0." + ch[2] + "5";
-                }
-                else if (countAmount == 3)
-                {
-                    AMOUNTT.Text = ch[1] + "." + ch[2] + "5";
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "5";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    AMOUNTT.Text = crtFormat;
-                }
-                //AMOUNTT.Text = AMOUNTT.Text + 5;
+                //if (countAmount == 1)
+                //{
+                //    AMOUNTT.Text = "0.05";
+                //}
+                //else if (countAmount == 2)
+                //{
+                //    AMOUNTT.Text = "0." + ch[2] + "5";
+                //}
+                //else if (countAmount == 3)
+                //{
+                //    AMOUNTT.Text = ch[1] + "." + ch[2] + "5";
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "5";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    AMOUNTT.Text = crtFormat;
+                //}
+                AMOUNTT.Text = AMOUNTT.Text + 5;
                 AMOUNTT.Select(AMOUNTT.Text.Length, 0);
                 AMOUNTT.Focus();
             }
@@ -6424,35 +6486,35 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countAmount++;
                 string crtFormat = string.Empty;
-                if (countAmount == 1)
-                {
-                    AMOUNTT.Text = "0.06";
-                }
-                else if (countAmount == 2)
-                {
-                    AMOUNTT.Text = "0." + ch[2] + "6";
-                }
-                else if (countAmount == 3)
-                {
-                    AMOUNTT.Text = ch[1] + "." + ch[2] + "6";
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "6";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    AMOUNTT.Text = crtFormat;
-                }
-                //AMOUNTT.Text = AMOUNTT.Text + 6;
+                //if (countAmount == 1)
+                //{
+                //    AMOUNTT.Text = "0.06";
+                //}
+                //else if (countAmount == 2)
+                //{
+                //    AMOUNTT.Text = "0." + ch[2] + "6";
+                //}
+                //else if (countAmount == 3)
+                //{
+                //    AMOUNTT.Text = ch[1] + "." + ch[2] + "6";
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "6";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    AMOUNTT.Text = crtFormat;
+                //}
+                AMOUNTT.Text = AMOUNTT.Text + 6;
                 AMOUNTT.Select(AMOUNTT.Text.Length, 0);
                 AMOUNTT.Focus();
             }
@@ -6587,35 +6649,35 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countAmount++;
                 string crtFormat = string.Empty;
-                if (countAmount == 1)
-                {
-                    AMOUNTT.Text = "0.07";
-                }
-                else if (countAmount == 2)
-                {
-                    AMOUNTT.Text = "0." + ch[2] + "7";
-                }
-                else if (countAmount == 3)
-                {
-                    AMOUNTT.Text = ch[1] + "." + ch[2] + "7";
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "7";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    AMOUNTT.Text = crtFormat;
-                }
-                //AMOUNTT.Text = AMOUNTT.Text + 7;
+                //if (countAmount == 1)
+                //{
+                //    AMOUNTT.Text = "0.07";
+                //}
+                //else if (countAmount == 2)
+                //{
+                //    AMOUNTT.Text = "0." + ch[2] + "7";
+                //}
+                //else if (countAmount == 3)
+                //{
+                //    AMOUNTT.Text = ch[1] + "." + ch[2] + "7";
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "7";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    AMOUNTT.Text = crtFormat;
+                //}
+                AMOUNTT.Text = AMOUNTT.Text + 7;
                 AMOUNTT.Select(AMOUNTT.Text.Length, 0);
                 AMOUNTT.Focus();
             }
@@ -6750,35 +6812,35 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countAmount++;
                 string crtFormat = string.Empty;
-                if (countAmount == 1)
-                {
-                    AMOUNTT.Text = "0.08";
-                }
-                else if (countAmount == 2)
-                {
-                    AMOUNTT.Text = "0." + ch[2] + "8";
-                }
-                else if (countAmount == 3)
-                {
-                    AMOUNTT.Text = ch[1] + "." + ch[2] + "8";
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "8";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    AMOUNTT.Text = crtFormat;
-                }
-                //AMOUNTT.Text = AMOUNTT.Text + 8;
+                //if (countAmount == 1)
+                //{
+                //    AMOUNTT.Text = "0.08";
+                //}
+                //else if (countAmount == 2)
+                //{
+                //    AMOUNTT.Text = "0." + ch[2] + "8";
+                //}
+                //else if (countAmount == 3)
+                //{
+                //    AMOUNTT.Text = ch[1] + "." + ch[2] + "8";
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "8";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    AMOUNTT.Text = crtFormat;
+                //}
+                AMOUNTT.Text = AMOUNTT.Text + 8;
                 AMOUNTT.Select(AMOUNTT.Text.Length, 0);
                 AMOUNTT.Focus();
             }
@@ -6914,38 +6976,38 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countAmount++;
                 string crtFormat = string.Empty;
-                if (countAmount == 1)
-                {
-                    AMOUNTT.Text = "0.09";
-                }
-                else if (countAmount == 2)
-                {
-                    AMOUNTT.Text = "0." + ch[2] + "9";
-                    Console.WriteLine(">>>>>>>>>>>>>>>>>>3" + "0." + ch[2] + "9");
-                }
-                else if (countAmount == 3)
-                {
+                //if (countAmount == 1)
+                //{
+                //    AMOUNTT.Text = "0.09";
+                //}
+                //else if (countAmount == 2)
+                //{
+                //    AMOUNTT.Text = "0." + ch[2] + "9";
+                //    Console.WriteLine(">>>>>>>>>>>>>>>>>>3" + "0." + ch[2] + "9");
+                //}
+                //else if (countAmount == 3)
+                //{
 
-                    AMOUNTT.Text = ch[1] + "." + ch[2] + "9";
-                    Console.WriteLine(">>>>>>>>>>>>>>>>>>3" + ch[1] + "." + ch[2] + "9");
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "9";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    AMOUNTT.Text = crtFormat;
-                }
-                //AMOUNTT.Text = AMOUNTT.Text + 9;
+                //    AMOUNTT.Text = ch[1] + "." + ch[2] + "9";
+                //    Console.WriteLine(">>>>>>>>>>>>>>>>>>3" + ch[1] + "." + ch[2] + "9");
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "9";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    AMOUNTT.Text = crtFormat;
+                //}
+                AMOUNTT.Text = AMOUNTT.Text + 9;
                 AMOUNTT.Select(AMOUNTT.Text.Length, 0);
                 AMOUNTT.Focus();
             }
@@ -7081,35 +7143,35 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countAmount++;
                 string crtFormat = string.Empty;
-                if (countAmount == 1)
-                {
-                    AMOUNTT.Text = "0.00";
-                }
-                else if (countAmount == 2)
-                {
-                    AMOUNTT.Text = "0." + ch[2] + "0";
-                }
-                else if (countAmount == 3)
-                {
-                    AMOUNTT.Text = ch[1] + "." + ch[2] + "0";
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "0";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    AMOUNTT.Text = crtFormat;
-                }
-                //AMOUNTT.Text = AMOUNTT.Text + 0;
+                //if (countAmount == 1)
+                //{
+                //    AMOUNTT.Text = "0.00";
+                //}
+                //else if (countAmount == 2)
+                //{
+                //    AMOUNTT.Text = "0." + ch[2] + "0";
+                //}
+                //else if (countAmount == 3)
+                //{
+                //    AMOUNTT.Text = ch[1] + "." + ch[2] + "0";
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "0";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    AMOUNTT.Text = crtFormat;
+                //}
+                AMOUNTT.Text = AMOUNTT.Text + 0;
                 AMOUNTT.Select(AMOUNTT.Text.Length, 0);
                 AMOUNTT.Focus();
             }
@@ -7244,34 +7306,34 @@ namespace POSLIB
                 char[] ch = cleanAmount.ToArray();//000
                 countAmount++;
                 string crtFormat = string.Empty;
-                if (countAmount == 1)
-                {
-                    AMOUNTT.Text = "0.00";
-                }
-                else if (countAmount == 2)
-                {
-                    AMOUNTT.Text = "00." + ch[2] + "0";
-                }
-                else if (countAmount == 3)
-                {
-                    AMOUNTT.Text = ch[1] + "." + ch[2] + "0";
-                }
-                else
-                {
-                    cleanAmount = cleanAmount + "00";
-                    for (int i = 0; i < cleanAmount.Length; i++)
-                    {
-                        if (cleanAmount.Length - 2 == i)
-                        {
-                            crtFormat = crtFormat + "." + cleanAmount[i];
-                        }
-                        else
-                        {
-                            crtFormat = crtFormat + cleanAmount[i];
-                        }
-                    }
-                    AMOUNTT.Text = crtFormat;
-                }
+                //if (countAmount == 1)
+                //{
+                //    AMOUNTT.Text = "0.00";
+                //}
+                //else if (countAmount == 2)
+                //{
+                //    AMOUNTT.Text = "00." + ch[2] + "0";
+                //}
+                //else if (countAmount == 3)
+                //{
+                //    AMOUNTT.Text = ch[1] + "." + ch[2] + "0";
+                //}
+                //else
+                //{
+                //    cleanAmount = cleanAmount + "00";
+                //    for (int i = 0; i < cleanAmount.Length; i++)
+                //    {
+                //        if (cleanAmount.Length - 2 == i)
+                //        {
+                //            crtFormat = crtFormat + "." + cleanAmount[i];
+                //        }
+                //        else
+                //        {
+                //            crtFormat = crtFormat + cleanAmount[i];
+                //        }
+                //    }
+                //    AMOUNTT.Text = crtFormat;
+                //}
                 //AMOUNTT.Text = AMOUNTT.Text + "00";
                 AMOUNTT.Select(AMOUNTT.Text.Length, 0);
                 AMOUNTT.Focus();
@@ -7837,62 +7899,62 @@ namespace POSLIB
                 if (checkNum)
                 {
                     string amt = AMOUNTT.Text.ToString();
-                    if (amt == "0.00")
-                    {
-                        countAmount = 0;
-                    }
-                    string cleanAmount = amt.Replace(".", string.Empty);
-                    char[] ch = cleanAmount.ToArray();//000
-                    countAmount++;
-                    string crtFormat = string.Empty;
-                    //Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>2   " + amt);
-                    //Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>3"+ countAmount);
-                    if (countAmount < 13)
-                    {
-                        Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>3   " + countAmount);
-                        if (countAmount == 1)
-                        {
-                            AMOUNTT.Text = "0." + ch[2];
-                        }
-                        else if (countAmount == 2)
-                        {
-                            AMOUNTT.Text = "0." + ch[2];
-                        }
-                        else if (countAmount == 3)
-                        {
-                            AMOUNTT.Text = ch[1] + "." + ch[2];
-                        }
-                        else
-                        {
-                            //cleanAmount = cleanAmount + "2";
-                            // if (cleanAmount.Length <= 13)
-                            // {
+                    //if (amt == "0.00")
+                    //{
+                    //    countAmount = 0;
+                    //}
+                    //string cleanAmount = amt.Replace(".", string.Empty);
+                    //char[] ch = cleanAmount.ToArray();//000
+                    //countAmount++;
+                    //string crtFormat = string.Empty;
+                    ////Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>2   " + amt);
+                    ////Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>3"+ countAmount);
+                    //if (countAmount < 13)
+                    //{
+                    //    Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>3   " + countAmount);
+                    //    if (countAmount == 1)
+                    //    {
+                    //        AMOUNTT.Text = "0." + ch[2];
+                    //    }
+                    //    else if (countAmount == 2)
+                    //    {
+                    //        AMOUNTT.Text = "0." + ch[2];
+                    //    }
+                    //    else if (countAmount == 3)
+                    //    {
+                    //        AMOUNTT.Text = ch[1] + "." + ch[2];
+                    //    }
+                    //    else
+                    //    {
+                    //        //cleanAmount = cleanAmount + "2";
+                    //        // if (cleanAmount.Length <= 13)
+                    //        // {
 
-                            for (int i = 0; i < cleanAmount.Length; i++)
-                            {
-                                if (cleanAmount.Length - 1 == i)
-                                {
-                                    crtFormat = crtFormat + "." + cleanAmount[i];
-                                }
-                                else
-                                {
-                                    crtFormat = crtFormat + cleanAmount[i];
-                                }
-                            }
-                            Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>crtFormat   " + crtFormat);
-                            AMOUNTT.Text = crtFormat;
-                        }
-                        // }
-                    }
-                    else
-                    {
-                        Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>crtFormatmoshayi   " + amt);
-                        AMOUNTT.Text = amt;
-                        countAmount--;
-                    }
+                    //        for (int i = 0; i < cleanAmount.Length; i++)
+                    //        {
+                    //            if (cleanAmount.Length - 1 == i)
+                    //            {
+                    //                crtFormat = crtFormat + "." + cleanAmount[i];
+                    //            }
+                    //            else
+                    //            {
+                    //                crtFormat = crtFormat + cleanAmount[i];
+                    //            }
+                    //        }
+                    //        Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>crtFormat   " + crtFormat);
+                    //        AMOUNTT.Text = crtFormat;
+                    //    }
+                    //    // }
+                    //}
+                    //else
+                    //{
+                    //    Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>crtFormatmoshayi   " + amt);
+                    //    AMOUNTT.Text = amt;
+                    //    countAmount--;
+                    //}
 
-                    AMOUNTT.Select(AMOUNTT.Text.Length, 0);
-                    AMOUNTT.Focus();
+                    //AMOUNTT.Select(AMOUNTT.Text.Length, 0);
+                    //AMOUNTT.Focus();
                 }
             }
             catch (Exception)
@@ -8156,59 +8218,73 @@ namespace POSLIB
         }
         string ip = "";
         string aport = "";
+        string selectCom = "";
+        string intvalue = "";
         private void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
 
 
             var selectedItem = ((Button)sender).DataContext;
 
-            // Check if the selected item is a list
-            if (selectedItem is List<DeviceList> items && items.Count > 0)
+            if (selectedItem is DeviceList items)
             {
                 // Get the first item in the list
-                var item = items[0];
+                // item = items[0];
 
                 // Store the IP address and port number in the textboxes
                 //txtIpAddress.Text = item.posIP;
                 //txtPort.Text = item.posPort.ToString();
-                ip = item.deviceIp;
-                aport = item.devicePort;
-
-                isOnlineDevice = obj.isOnlineConnection(ip, int.Parse(aport));
-                if (isOnlineDevice == true)
+                if (items.connectionMode == "TCP IP")
                 {
-                    btnDisConnect.IsEnabled = true;
-                    enter.IsEnabled = true;
-                    DoTrans.IsEnabled = true;
-                    SELECTTRANSTYPE.IsEnabled = true;
-                    ConnectL.Content = "Connected";
+                    serialNo.Text = items.SerialNo;
+                    tcpip.Text = items.deviceIp;
+                    tcpport.Text = items.devicePort;
                 }
                 else
                 {
-                    MessageBox.Show("Problem Connecting with Terminal");
+                    comserialNo.Text = items.SerialNo;
+                    comfullname.Text = items.COM;
+
                 }
+
+
+
+                //ip = items.deviceIp;
+                //aport = items.devicePort;
+
+                //isOnlineDevice = obj.isOnlineConnection(ip, int.Parse(aport));
+                //if (isOnlineDevice == true)
+                //{
+                //    btnDisConnect.IsEnabled = true;
+                //    enter.IsEnabled = true;
+                //    AMOUNTT.IsEnabled = true;
+                //    ConnectL.Content = "Connected";
+                //}
+                //else
+                //{
+                //    MessageBox.Show("Problem Connecting with Terminal");
+                //}
             }
         }
-        string selectCom = "";
-        string intvalue = "";
+
         private void ConnectComButton_Click(object sender, RoutedEventArgs e)
         {
 
             var selectedItem = ((Button)sender).DataContext;
 
             // Check if the selected item is a list
-            if (selectedItem is List<DeviceList> items && items.Count > 0)
+            if (selectedItem is DeviceList items)
             {
-                List<DeviceList> itemList = new List<DeviceList>(items);
+
 
                 // Get the first item in the list
-                var item = itemList[0];
+
 
                 // Store the IP address and port number in the textboxes
                 //txtIpAddress.Text = item.posIP;
                 //txtPort.Text = item.posPort.ToString();i
                 selectCom = "";
-                selectCom = item.COM;
+                selectCom = items.COM;
                 intvalue = "";
                 foreach (char c in selectCom)
                 {
@@ -8217,13 +8293,12 @@ namespace POSLIB
                         intvalue += c;
                     }
                 }
-                isOnlineDevice = obj.doCOMConnection(int.Parse(intvalue), ComConstants.BAUDRATECOM, ComConstants.PARITYCOM, ComConstants.DATABITSCOM, ComConstants.STOPBITSCOM);
+                isOnlineDevice = obj.isComDeviceConnected(int.Parse(intvalue));
                 if (isOnlineDevice == true)
                 {
                     btnDisConnect.IsEnabled = true;
                     enter.IsEnabled = true;
-                    DoTrans.IsEnabled = true;
-                    SELECTTRANSTYPE.IsEnabled = true;
+                    AMOUNTT.IsEnabled = true;
                     ConnectL.Content = "Connected";
 
 
@@ -8243,31 +8318,247 @@ namespace POSLIB
             DOCOMConnection();
         }
 
-        private void Button_Click_2(object sender, RoutedEventArgs e)
-        {
+        //private void Button_Click_2(object sender, RoutedEventArgs e)
+        //{
 
-            if (SELECTTRANSTYPE.Text.ToString() != "")
-            {
-                transTypeSelectedPos = SELECTTRANSTYPE.Text.ToString();
-            }
+        //    if (SELECTTRANSTYPE.Text.ToString() != "")
+        //    {
+        //        transTypeSelectedPos = SELECTTRANSTYPE.Text.ToString();
+        //    }
 
-            OnlineTrans();
-            //string inputReqData = "{\"posControllerId\":\"12\",\"dateTime\":\"24042023233940\",\"transactionID\":\"122333\",\"transactionType\":\"7\",\"protocolType\":\"1\",\"requestBody\":\"4001,TX12345678,900,,,,,,,\",\"RFU1\":\"\"}";
+        //    OnlineTrans();
+        //    //string inputReqData = "{\"posControllerId\":\"12\",\"dateTime\":\"24042023233940\",\"transactionID\":\"122333\",\"transactionType\":\"7\",\"protocolType\":\"1\",\"requestBody\":\"4001,TX12345678,900,,,,,,,\",\"RFU1\":\"\"}";
 
 
 
-        }
+        //}
         String priority1;
         String priority2;
         private void SaveSettings(object sender, RoutedEventArgs e)
         {
-            if (Priority1.Text.ToString() != "" && Priority2.Text.ToString() != "")
+            ConfigData configdata = new ConfigData();
+            bool isFallbackAllowed = false;
+            string firstPriority = "";
+            string secondPriority = "";
+            Dispatcher.Invoke(() =>
             {
-                priority1 = Priority1.Text.ToString();
-                priority2 = Priority2.Text.ToString();
-                string[] connectionPriorityMode = new string[] { priority1, priority2 };
+                isFallbackAllowed = connectivityFallbackCheckBox.IsChecked == true;
+            });
 
-                ConnectivityAndTransactionService.connectionPriorityMode = connectionPriorityMode;
+            ComboBoxItem selectedComboBoxItem = comboBox.SelectedItem as ComboBoxItem;
+
+            if (selectedComboBoxItem != null)
+            {
+                string selectedPriority = selectedComboBoxItem.Content.ToString();
+
+
+                if (selectedPriority == "TCP/IP")
+                {
+                    firstPriority = "TCP/IP";
+                    secondPriority = "COM";
+                }
+                else
+                {
+
+                    firstPriority = "COM";
+                    secondPriority = "TCP/IP";
+
+                }
+
+                string[] connectionPriorityMode = new string[] { firstPriority, secondPriority };
+                configdata = obj.getConfigData();
+                configdata.commPortNumber = configdata.commPortNumber;
+                configdata.connectionMode = configdata.connectionMode;
+                configdata.tcpIp = configdata.tcpIp;
+                configdata.tcpPort = configdata.tcpPort;
+                configdata.communicationPriorityList = configdata.communicationPriorityList;
+                configdata.isConnectivityFallBackAllowed = isFallbackAllowed;
+                configdata.communicationPriorityList = connectionPriorityMode;
+                obj.setConfiguration(configdata);
+
+                ConnectionService.connectionPriorityMode = connectionPriorityMode;
+                MessageBox.Show("Settings saved successfully.", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void Priority1_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            string ComboBoxitem = ((sender as ComboBox).SelectedItem as ComboBoxItem).Content as string;
+            if (ComboBoxitem == "TCP/IP")
+            {
+                Scan_online_device.Visibility = Visibility.Visible;
+
+
+            }
+            else if (ComboBoxitem == "COM")
+            {
+
+                Scan_online_device.Visibility = Visibility.Hidden;
+            }
+
+        }
+
+        private void Priority2_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            string ComboBoxitem = ((sender as ComboBox).SelectedItem as ComboBoxItem).Content as string;
+
+            if (ComboBoxitem == "TCP/IP")
+            {
+                Scan_online_device.Visibility = Visibility.Visible;
+
+            }
+            else if (ComboBoxitem == "COM")
+            {
+
+                Scan_online_device.Visibility = Visibility.Hidden;
+            }
+
+        }
+
+        private void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+
+
+        private void CASHBACKT_TextChanged_1(object sender, TextChangedEventArgs e)
+        {
+
+        }
+
+        private void ProcessBtn(object sender, RoutedEventArgs e)
+        {
+            if (SELECTTRANSTYPE.Text.ToString() != "")
+            {
+                transTypeSelectedPos = SELECTTRANSTYPE.Text.ToString();
+            }
+            OnlineTrans();
+        }
+
+        private void isLogEnabled_Checked(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void CheckBox_Checked_1(object sender, RoutedEventArgs e)
+        {
+            LogFile obj = new LogFile();
+            bool islogAllowed = false;
+            string filepath = "";
+            string NoOfday = NoDay.Text;
+            string loglevel = LogLevel.Text;
+
+            Dispatcher.Invoke(() =>
+            {
+                islogAllowed = isEnabledlog.IsChecked == true;
+                if (Filepath.Text != "")
+                {
+                    filepath = Filepath.Text;
+                    if (!Directory.Exists(Path.GetDirectoryName(filepath)))
+                    {
+                        MessageBox.Show("Invalid file path. Please enter a valid file path.");
+                        return;
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Please select a path.");
+                    return;
+                }
+
+            });
+
+            int noOfDayValue;
+            if (!int.TryParse(NoOfday, out noOfDayValue))
+            {
+                MessageBox.Show("Invalid value for NoOfday. Please enter a valid integer.");
+                return;
+            }
+
+            int logLevelValue;
+            if (!int.TryParse(loglevel, out logLevelValue))
+            {
+                MessageBox.Show("Invalid value for loglevel. Please enter a valid integer.");
+                return;
+            }
+
+            obj.SetLogOptions(logLevelValue, islogAllowed, filepath, noOfDayValue);
+
+        }
+
+        private void Button_Click_2(object sender, RoutedEventArgs e)
+        {
+
+            intvalue = "";
+            selectCom = comfullname.Text;
+            foreach (char c in selectCom)
+            {
+                if (char.IsDigit(c))
+                {
+                    intvalue += c;
+                }
+            }
+            isOnlineDevice = obj.isComDeviceConnected(int.Parse(intvalue));
+            if (isOnlineDevice == true)
+            {
+                ComdisConnectedBtn.IsEnabled = true;
+                COMConnetBtn.IsEnabled = false;
+                enter.IsEnabled = true;
+                AMOUNTT.IsEnabled = true;
+                ConnectL.Content = "Connected";
+
+
+            }
+            else
+            {
+                MessageBox.Show("Problem Connecting with Terminal");
+            }
+
+        }
+
+        private void Button_Click_4(object sender, RoutedEventArgs e)
+        {
+
+
+            isOnlineDevice = obj.isOnlineConnection(tcpip.Text, int.Parse(tcpport.Text));
+            if (isOnlineDevice == true)
+            {
+                TcpipDisconnectbtn.IsEnabled = true;
+                TCPIPConnectbtn.IsEnabled = false;
+                enter.IsEnabled = true;
+                AMOUNTT.IsEnabled = true;
+                ConnectL.Content = "Connected";
+            }
+            else
+            {
+                MessageBox.Show("Problem Connecting with Terminal");
+            }
+
+        }
+
+        private void Button_Click_5(object sender, RoutedEventArgs e)
+        {
+            int responseInteger = 1;
+            responseInteger = obj.doTCPIPDisconnection();
+            if (responseInteger == 0)
+            {
+                MessageBox.Show("TCP IP Disconnected Successfully");
+                TCPIPConnectbtn.IsEnabled = true;
+                TcpipDisconnectbtn.IsEnabled = false;
+
+            }
+        }
+
+        private void ComdisConnectedBtn_Click(object sender, RoutedEventArgs e)
+        {
+            int responseInteger = 1;
+            responseInteger = obj.doCOMDisconnection();
+            if (responseInteger == 0)
+            {
+                MessageBox.Show("COM Discconected Successfully");
+                COMConnetBtn.IsEnabled = true;
+                ComdisConnectedBtn.IsEnabled = false;
             }
         }
     }

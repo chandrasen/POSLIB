@@ -10,12 +10,12 @@ namespace PosLibs.ECRLibrary.Model
     {
 
         public EcrTcpipRequest() { }
-        public string posControllerId { get; set; }
-        public string dateTime { get; set; }
-        public string transactionType { get; set; }
+        public string cashierId { get; set; }
+        public string msgType { get; set; }
         public string ecrIP { get; set; }
-        public int ecrPort { get; set; }
+        public string ecrPort { get; set; }
         public string RFU1 { get; set; }
+
     }
 
    
