@@ -122,14 +122,6 @@ namespace POSLIB
             InitializeComponent();
             DataContext = this;
             GetCOMPort();
-
-            // Autodiscover();
-
-
-
-            // logTxt.Text= Logger.LogFilePath;
-
-
         }
 
         static string errorMsg = "";
@@ -168,34 +160,15 @@ namespace POSLIB
         private void GetCOMPort()
         {
             string[] ports = SerialPort.GetPortNames();
-            // foreach (string port in ports)
-            // {
-
-            //     //  PORTCOM.Text = port;
-
-            //    PORTCOM.Items.Add(port);
-
-            //}
             try
             {
-                // Create a WMI query to get information about serial ports
+               
                 string query = "SELECT * FROM Win32_SerialPort";
                 ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
-
-                // Iterate over the results of the query
                 foreach (ManagementObject device in searcher.Get())
                 {
-                    // Get the name of the device
-                    // PORTCOM.Items.Remove(deviceName);
-
                     deviceName = (string)device["Name"];
                     PORTCOM.Items.Add(deviceName);
-
-
-                    //    // Get the COM port number of the device
-                    //    //string portNumber = (string)device["DeviceID"];
-                    //    //PORTCOM.Items.Add(portNumber);
-
                 }
             }
             catch (ManagementException ex)
@@ -203,15 +176,12 @@ namespace POSLIB
                 Console.WriteLine("An error occurred: " + ex.Message);
             }
         }
-
         private void TCPCOMOnChange(object sender, RoutedEventArgs e)
         {
 
             if (rdbCom.IsChecked == true)
             {
                 tcpComSelect = "TCP/IP";
-
-                // GetCOMPort();
                 grpTcpSetting.Visibility = Visibility.Hidden;
                 grpComSetting.Visibility = Visibility.Visible;
             }
@@ -233,8 +203,6 @@ namespace POSLIB
                 PARITY.IsEnabled = true;
                 DATABITS.IsEnabled = true;
                 STOPBITS.IsEnabled = true;
-                //txtIpAddress.Text = "";
-                //txtPort.Text = "";
                 txtPort.Select(txtPort.Text.Length, 0);
                 txtPort.Focus();
             }
@@ -716,8 +684,6 @@ namespace POSLIB
                     }
                     else
                     {
-                        //GetCOMPort();
-                        // Boolean result = obj.doCOMConnection(int.Parse(IPortCom), baudRateCom, parityCom, dataBitsCom, stopBitsCom);
                         if (result.ToString() == "0")
                         {
                             statusSerialConn = true;
@@ -1215,52 +1181,7 @@ namespace POSLIB
                     (sender as BackgroundWorker).ReportProgress(2);
                 }
             }
-            // UPI-------------------------------------------------------------------
-            //if (transTypeSelected.ToString() == "UPI")
-            //{
-            //    if (TerminalId != "")
-            //    {
-            //        if (status == 1)
-            //        {
-            //            if (AMOUNT.ToString() == string.Empty)
-            //            {
-            //                checkNullValidation = false;
-            //                messageShow("Amount Should not empty");
-            //                (sender as BackgroundWorker).ReportProgress(2);
-            //            }
-            //            else if (ECRREFtext == string.Empty)
-            //            {
-            //                checkNullValidation = false;
-            //                messageShow("Ecr Ref Should not empty");
-            //                (sender as BackgroundWorker).ReportProgress(2);
-            //            }
-            //            else if (ECRREFtext.Length != 6)
-            //            {
-            //                checkNullValidation = false;
-            //                messageShow("Ecr Ref Should be 6 digits");
-            //                (sender as BackgroundWorker).ReportProgress(2);
-            //            }
-            //            else
-            //            {
-            //                transactionType = "0";
-            //                inputReqData = dateTime + ";" + AMOUNT + ";" + etpInput + ";" + ECRREferenceNumber;
-            //            }
-            //        }
-            //        else
-            //        {
-            //            checkNullValidation = false;
-            //            messageShow("Session not started");
-            //            (sender as BackgroundWorker).ReportProgress(2);
-            //        }
-            //    }
-            //    else
-            //    {
-            //        checkNullValidation = false;
-            //        messageShow("Please Register First");
-            //        (sender as BackgroundWorker).ReportProgress(2);
-            //    }
-            //}
-            //// UPI purchase cashback-----------------------------------------------------
+            
             if (transTypeSelected.ToString() == "UPI")
             {
                 if (TerminalId != "")
@@ -1273,12 +1194,7 @@ namespace POSLIB
                             messageShow("Amount Should not empty");
                             (sender as BackgroundWorker).ReportProgress(2);
                         }
-                        //else if (CASHBACK == string.Empty)
-                        //{
-                        //    checkNullValidation = false;
-                        //    messageShow("Cashback Should not empty");
-                        //    (sender as BackgroundWorker).ReportProgress(2);
-                        //}
+                       
                         else if (ECRREFtext == string.Empty)
                         {
                             checkNullValidation = false;

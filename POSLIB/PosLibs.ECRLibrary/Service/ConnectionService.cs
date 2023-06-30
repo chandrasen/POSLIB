@@ -37,7 +37,6 @@ namespace PosLibs.ECRLibrary.Service
 
 
         }
-
         // private static readonly ILogger logger = new LoggerConfiguration().CreateLogger();
         public static Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         public static SerialPort serial = new SerialPort();
@@ -81,8 +80,6 @@ namespace PosLibs.ECRLibrary.Service
             // Default port number if the file doesn't exist
             return configdata;
         }
-
-
         public void setConfiguration(ConfigData configData)
         {
             ConfigData portSettings = new ConfigData
@@ -127,11 +124,6 @@ namespace PosLibs.ECRLibrary.Service
             return value;
 
         }
-
-
-
-
-
         public Boolean isComDeviceConnected(int comPort)
         {
 
@@ -193,10 +185,6 @@ namespace PosLibs.ECRLibrary.Service
 
             return res;
         }
-       
-
-       
-
         public string checkComport(string port)
         {
             ISet<string> comallport = new HashSet<string>();
@@ -357,9 +345,6 @@ namespace PosLibs.ECRLibrary.Service
             return responseString;
 
         }
-
-
-
         public void addToDeviceList(string recivebuff)
         {
             try
@@ -610,7 +595,7 @@ namespace PosLibs.ECRLibrary.Service
             }
             return responseboolen;
         }
-        public string  receiveTcpIpTxnData()
+        public string receiveTcpIpTxnData()
         {
             string responseString = "";
             byte[] responseData = new byte[5000];
@@ -619,13 +604,12 @@ namespace PosLibs.ECRLibrary.Service
             Log.Information("Txn response receive timeout" + 80000);
             int bytesReceived = sock.Receive(responseData);
             responseString = Encoding.ASCII.GetString(responseData, 0, bytesReceived);
-            
+
             Console.WriteLine("Transaction Response:" + responseString);
 
             return responseString;
 
         }
-
         public int doTCPIPDisconnection()
         {
             int responseInteger = 1;
@@ -661,15 +645,6 @@ namespace PosLibs.ECRLibrary.Service
             }
             return responseInteger;
         }
-       
-
-        
-
-
 
     }
-
-
-
-
 }

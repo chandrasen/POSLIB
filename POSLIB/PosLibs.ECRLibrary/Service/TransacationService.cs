@@ -21,10 +21,6 @@ namespace PosLibs.ECRLibrary.Service
         public static bool isConnectivityFallbackAllowed;
         ConfigData configdata = new ConfigData();
         ConnectionService conobj = new ConnectionService();
-
-
-
-
         public string transactionRequest(string requestbody)
         {
             TransactionRequest trnrequest = new TransactionRequest();
@@ -38,14 +34,10 @@ namespace PosLibs.ECRLibrary.Service
             return jsontransrequest;
 
         }
-
-
         public string transrequestBody(string requestbody)
         {
             return requestbody;
         }
-
-
         public void doTransaction(string inputReqBody, int transactionType, TransactionListener transactionListener)
         {
             Log.Debug("Inside  doTransaction Method");
@@ -139,8 +131,6 @@ namespace PosLibs.ECRLibrary.Service
                             }
                         }
                     }
-
-
                 }
                 else
                 {
@@ -234,8 +224,6 @@ namespace PosLibs.ECRLibrary.Service
             {
                 trasnlistener.onFailure("Transaction Failed", 1001);
             }
-
-
         }
         public bool isNetworkAvailabe()
         {
@@ -256,8 +244,6 @@ namespace PosLibs.ECRLibrary.Service
             }
             return isavilabe;
         }
-
-
     }
 
 }
