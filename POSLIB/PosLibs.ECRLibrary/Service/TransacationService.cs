@@ -24,11 +24,11 @@ namespace PosLibs.ECRLibrary.Service
         public string transactionRequest(string requestbody)
         {
             TransactionRequest trnrequest = new TransactionRequest();
-            trnrequest.cashierId = "12";
-            trnrequest.ptype = "1";
-            trnrequest.msgType = "6";
+            trnrequest.cashierId = "";
+            trnrequest.pType = "1";
+            trnrequest.msgType = "0";
             trnrequest.requestBody = requestbody;
-            trnrequest.RFU1 = "";
+            trnrequest.isDemoMode = false;
             string jsontransrequest = JsonConvert.SerializeObject(trnrequest);
 
             return jsontransrequest;
@@ -53,10 +53,8 @@ namespace PosLibs.ECRLibrary.Service
             string transactionRequestbody = transactionRequest(req);
             Log.Information("Txn request:-" + transactionRequestbody);
             // byte[] requestData = Encoding.ASCII.GetBytes(transactionRequestbody);
-
             try
             {
-
                 Log.Information("isConnectionFollwedBack:" + configdata.isConnectivityFallBackAllowed);
                 
                 if (configdata.isConnectivityFallBackAllowed == true)
@@ -72,14 +70,11 @@ namespace PosLibs.ECRLibrary.Service
                             {
                                 if (configdata.communicationPriorityList[i] == "TCP/IP")
                                 {
-                                    
-                                    
                                     try
                                     {
-                                            conobj.sendTcpIpTxnData(transactionRequestbody);
+                                           conobj.sendTcpIpTxnData(transactionRequestbody);
                                             responseString = conobj.receiveTcpIpTxnData();
                                             transactionSuccessful = true;
-
                                     }
                                     catch(SocketException e)
                                     {
@@ -99,7 +94,6 @@ namespace PosLibs.ECRLibrary.Service
                                     Console.WriteLine("Selected Priorit:-" + configdata.communicationPriorityList[i]);
                                     try
                                     {
-
                                         conobj.sendData(transactionRequestbody);
                                         Array.Clear(buffer, 0, buffer.Length);
                                         responseString = conobj.receiveCOMTxnrep();
@@ -136,9 +130,6 @@ namespace PosLibs.ECRLibrary.Service
                 {
                     if (configdata.connectionMode == "TCP/IP")
                     {
-
-
-
                         bool isSend = false;
                         try
                         {
@@ -159,8 +150,6 @@ namespace PosLibs.ECRLibrary.Service
                                     transactionListener.onFailure("Please check TCP/IP connection", 1005);
                                 }
                             }
-                            
-                           
                         }
                         catch (ObjectDisposedException ex)
                         {
@@ -168,7 +157,6 @@ namespace PosLibs.ECRLibrary.Service
                             Log.Error("Please check TCP/IP connection"+ 1005);
                             transactionListener.onFailure("Please check TCP/IP connection", 1005);
                         }
-
                     }
                     else if (configdata.connectionMode == "COM")
                     {
@@ -193,13 +181,10 @@ namespace PosLibs.ECRLibrary.Service
                         Console.WriteLine("Transaction Not Found");
                     }
                 }
-
             }
             catch (IOException e)
             {
                 Console.WriteLine(e.ToString());
-                
-
             }
             catch (TimeoutException)
             {
