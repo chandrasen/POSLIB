@@ -10,15 +10,9 @@ namespace PosLibs.ECRLibrary.Model
     {
         public TransactionRequest() { }
         public string cashierId { get; set; }
-
         public string msgType { get; set; }
-        public string ptype { get; set; }
-
+        public string pType { get; set; }
         public string requestBody { get; set; }
-        public string RFU1 { get; set; }
+        public Boolean isDemoMode { get; set; }
     }
-
-
-
-    
 }

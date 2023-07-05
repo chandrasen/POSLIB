@@ -23,6 +23,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Xml;
+using Newtonsoft.Json.Linq;
 using PosLibs.ECRLibrary.Common;
 using PosLibs.ECRLibrary.Logger;
 using PosLibs.ECRLibrary.Model;
@@ -338,7 +339,7 @@ namespace POSLIB
                         // ResponseRecived.Text = "";
                         TRANSTYPEL.IsEnabled = false;
                         CASHBACKL.IsEnabled = false;
-                        AMOUNTL.IsEnabled = false;
+                    
                         AMOUNTT.IsEnabled = false;
                         RRNL.IsEnabled = false;
                         RRNT.IsEnabled = false;
@@ -427,6 +428,7 @@ namespace POSLIB
         {
             bool checkNullValidation = true;
             ConnectionService obj = new ConnectionService();
+
 
             (sender as BackgroundWorker).ReportProgress(0);
             try
@@ -548,9 +550,9 @@ namespace POSLIB
 
                     if (Amount != "")
                     {
-                        requestbody = "4001,TX12345678,10000,,,,,,,";
+                        requestbody = "10000997001A343030312C545831323334353637382C3131312C2C2C2C2C2C2CFF";
                         string afterreplace = requestbody.Replace("10000", Amount);
-                        trxobj.doTransaction(afterreplace, int.Parse(transactionType), transactionDrive);
+                        trxobj.doTransaction(requestbody, int.Parse(transactionType), transactionDrive);
 
                         Application.Current.Dispatcher.Invoke(() =>
                         {
@@ -4459,7 +4461,7 @@ namespace POSLIB
                     TRANSTYPE.IsEnabled = false;
                     TRANSTYPEL.IsEnabled = false;
                     CASHBACKL.IsEnabled = false;
-                    AMOUNTL.IsEnabled = false;
+                   
                     AMOUNTT.IsEnabled = false;
                     RRNL.IsEnabled = false;
                     RRNT.IsEnabled = false;
@@ -4705,7 +4707,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+             
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -4734,7 +4736,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+               
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -4754,7 +4756,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                AMOUNTL.Focus();
+               
             }
             if (type == "End Session")
             {
@@ -4763,7 +4765,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+                
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -4783,7 +4785,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                AMOUNTL.Focus();
+              
             }
 
             if (type == "Purchase")
@@ -4795,7 +4797,7 @@ namespace POSLIB
                 amountDefaultVal();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = true;
+              
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -4828,7 +4830,7 @@ namespace POSLIB
                 amountDefaultVal();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = true;
+                
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -4895,7 +4897,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = true;
+                
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = true;
                 RRNT.IsEnabled = true;
@@ -4927,7 +4929,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = true;
+               
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -4958,7 +4960,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+               
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = true;
                 RRNT.IsEnabled = true;
@@ -4990,7 +4992,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = true;
+               
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = true;
                 RRNT.IsEnabled = true;
@@ -5021,7 +5023,7 @@ namespace POSLIB
                 amountDefaultVal();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = true;
+                
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = true;
                 RRNT.IsEnabled = true;
@@ -5052,7 +5054,7 @@ namespace POSLIB
                 amountDefaultVal();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = true;
+               
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = true;
                 RRNT.IsEnabled = true;
@@ -5084,7 +5086,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = true;
+                
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5115,7 +5117,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+               
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5146,7 +5148,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+              
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5167,7 +5169,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                AMOUNTL.Focus();
+                
             }
             if (type == "Bill Payment")
             {
@@ -5177,7 +5179,7 @@ namespace POSLIB
                 amountDefaultVal();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = true;
+               
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5208,7 +5210,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+               
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5231,7 +5233,7 @@ namespace POSLIB
                 myBrowser.Navigate((Uri)null);
                 int refNumber = int.Parse(txtEcrref.Text) - 1;
                 prvsECRNumberT.Text = refNumber.ToString("D6");
-                AMOUNTL.Focus();
+                
             }
             if (type == "Full Download")
             {
@@ -5240,7 +5242,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+                
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5259,7 +5261,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = true;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                AMOUNTL.Focus();
+                
             }
             if (type == "Partial Download")
             {
@@ -5268,7 +5270,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+                
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5287,7 +5289,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = true;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                AMOUNTL.Focus();
+                
             }
             if (type == "Set Settings")
             {
@@ -5296,7 +5298,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+                
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5317,7 +5319,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                AMOUNTL.Focus();
+                
                 VendorIDT.Select(VendorIDT.Text.Length, 0);
                 VendorIDT.Focus();
             }
@@ -5328,7 +5330,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+             
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5349,7 +5351,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                AMOUNTL.Focus();
+                
             }
             if (type == "Running Total")
             {
@@ -5358,7 +5360,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+         
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5379,7 +5381,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                AMOUNTL.Focus();
+                
             }
             if (type == "Snapshot Total")
             {
@@ -5388,7 +5390,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+              
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5409,7 +5411,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                AMOUNTL.Focus();
+              
             }
             if (type == "Print Summary Report")
             {
@@ -5418,7 +5420,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+               
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5439,7 +5441,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                AMOUNTL.Focus();
+                
             }
             if (type == "Check Status")
             {
@@ -5448,7 +5450,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                AMOUNTL.IsEnabled = false;
+             
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5469,7 +5471,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                AMOUNTL.Focus();
+              
             }
         }
         private void Clear(object sender, RoutedEventArgs e)
@@ -8141,7 +8143,7 @@ namespace POSLIB
 
 
             var selectedItem = ((Button)sender).DataContext;
-
+            ComboBoxItem selectedComboBoxItem = comboBox.SelectedItem as ComboBoxItem;
             if (selectedItem is DeviceList items)
             {
                 // Get the first item in the list
@@ -8150,14 +8152,20 @@ namespace POSLIB
                 // Store the IP address and port number in the textboxes
                 //txtIpAddress.Text = item.posIP;
                 //txtPort.Text = item.posPort.ToString();
-                if (items.connectionMode == "TCP IP")
+               
+
+
+
+              if (items.connectionMode == "TCP IP")
                 {
+                    
                     serialNo.Text = items.SerialNo;
                     tcpip.Text = items.deviceIp;
                     tcpport.Text = items.devicePort;
                 }
                 else
                 {
+                    
                     comserialNo.Text = items.SerialNo;
                     comfullname.Text = items.COM;
 
@@ -8272,14 +8280,19 @@ namespace POSLIB
                 {
                     firstPriority = "TCP/IP";
                     secondPriority = "COM";
+                    lblText1.Text = "TCP/IP";
+                    lblText2.Text = "COM";
                 }
                 else
                 {
-
+                    lblText1.Text = "COM";
+                    lblText2.Text = "TCP/IP";
                     firstPriority = "COM";
                     secondPriority = "TCP/IP";
 
                 }
+             
+                
 
                 string[] connectionPriorityMode = new string[] { firstPriority, secondPriority };
                 configdata = obj.getConfigData();
@@ -8309,7 +8322,7 @@ namespace POSLIB
             else if (ComboBoxitem == "COM")
             {
 
-                Scan_online_device.Visibility = Visibility.Hidden;
+                Scan_online_device.Visibility = Visibility.Visible;
             }
 
         }
@@ -8326,7 +8339,7 @@ namespace POSLIB
             else if (ComboBoxitem == "COM")
             {
 
-                Scan_online_device.Visibility = Visibility.Hidden;
+                Scan_online_device.Visibility = Visibility.Visible;
             }
 
         }
@@ -8423,6 +8436,7 @@ namespace POSLIB
                 enter.IsEnabled = true;
                 AMOUNTT.IsEnabled = true;
                 ConnectL.Content = "Connected";
+                MessageBox.Show("COM Connection Successfull");
 
 
             }
@@ -8432,7 +8446,8 @@ namespace POSLIB
             }
 
         }
-
+        string savetcpIp = "";
+        string savetcpport = "";
         private void Button_Click_4(object sender, RoutedEventArgs e)
         {
 
@@ -8445,6 +8460,9 @@ namespace POSLIB
                 enter.IsEnabled = true;
                 AMOUNTT.IsEnabled = true;
                 ConnectL.Content = "Connected";
+                savetcpIp = tcpip.Text;
+                savetcpport = tcpport.Text;
+                MessageBox.Show("TCP IP Connection Successfull");
             }
             else
             {

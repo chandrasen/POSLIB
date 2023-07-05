@@ -21,6 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\PosLibs.ECRLibrary\PosLibs.ECRLibrary.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="PosLibs.ECRLibrary">
       <HintPath>..\PosLibs.ECRLibrary\bin\Debug\net6.0\PosLibs.ECRLibrary.dll</HintPath>
     </Reference>

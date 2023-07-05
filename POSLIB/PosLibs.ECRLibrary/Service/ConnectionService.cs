@@ -25,22 +25,16 @@ using System.Text.Json;
 using Serilog;
 using Serilog.Events;
 using System.Security.Cryptography.X509Certificates;
-
+using Xceed.Wpf.Toolkit;
 
 namespace PosLibs.ECRLibrary.Service
 {
     public class ConnectionService
     {
-
-        public ConnectionService()
-        {
-
-
-        }
+         public ConnectionService() { }
         // private static readonly ILogger logger = new LoggerConfiguration().CreateLogger();
         public static Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         public static SerialPort serial = new SerialPort();
-
         public string PortCom;
         public string IPortCom;
         public string bafudRateCom = string.Empty;
@@ -69,7 +63,7 @@ namespace PosLibs.ECRLibrary.Service
 
         public ConfigData getConfigData()
         {
-            
+
             if (File.Exists(PortSettingsFilePath))
             {
                 string json = File.ReadAllText(PortSettingsFilePath);
@@ -95,7 +89,6 @@ namespace PosLibs.ECRLibrary.Service
 
             File.WriteAllText(PortSettingsFilePath, json);
         }
-
         public Boolean AutoConnect()
         {
             Boolean value = false;
@@ -118,30 +111,21 @@ namespace PosLibs.ECRLibrary.Service
                     //MessageBox.Show("Please connect with Termianl");
                 }
 
-
             }
-
             return value;
-
         }
         public Boolean isComDeviceConnected(int comPort)
         {
-
             bool responseInteger = false;
             var disconnect = doCOMDisconnection();
             if (disconnect == 0)
             {
-                
                 string portNumber = "COM" + comPort.ToString();
-
-                 serial = new SerialPort(portNumber, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
-                                                    ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
+                serial = new SerialPort(portNumber, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
+                                                   ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
                 try
                 {
-                   
                     serial.Open();
-                    
-                    
                     responseInteger = true;
                     configdata = getConfigData();
                     configdata.commPortNumber = comPort;
@@ -150,7 +134,6 @@ namespace PosLibs.ECRLibrary.Service
                     configdata.connectionMode = "COM";
                     configdata.isConnectivityFallBackAllowed = false;
                     setConfiguration(configdata);
-
                 }
                 catch (IOException e)
                 {
@@ -162,11 +145,8 @@ namespace PosLibs.ECRLibrary.Service
                 {
                     Console.WriteLine("Unauthorized Access Exception");
                 }
-
-
             }
             return responseInteger;
-
         }
         public T jsonParser<T>(string json)
         {
@@ -175,14 +155,11 @@ namespace PosLibs.ECRLibrary.Service
             {
                 res = JsonConvert.DeserializeObject<T>(json);
                 return res;
-
             }
             catch (JsonReaderException e)
             {
                 Console.WriteLine("Unexcepted character");
-
             }
-
             return res;
         }
         public string checkComport(string port)
@@ -201,9 +178,7 @@ namespace PosLibs.ECRLibrary.Service
                         fullcomportName = portString;
                         Console.WriteLine(portString);
                     }
-
                 }
-
             }
             return fullcomportName;
         }
@@ -212,10 +187,7 @@ namespace PosLibs.ECRLibrary.Service
             Log.Information("Inside scanSerialDevice method");
             this.listener = scanDeviceListener;
             string responseString = "";
-          
             string comreq = getComDeviceRequest();
-
-
             ISet<string> allcomport = new HashSet<string>();
             allcomport = getDeviceManagerComPort();
             if (allcomport.Count == 0)
@@ -229,8 +201,6 @@ namespace PosLibs.ECRLibrary.Service
             {
                 serial.Close();
             }
-
-
             int i = 0;
             foreach (string portString in allcomport)
             {
@@ -242,11 +212,11 @@ namespace PosLibs.ECRLibrary.Service
             foreach (string comPort in comPorts)
             {
                 string portcom = "COM" + comPort;
-                 serial = new SerialPort(portcom, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
-                                                    ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
+                serial = new SerialPort(portcom, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
+                                                   ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
                 try
                 {
-                   
+
                     if (sendData(comreq))
                     {
                         responseString = serialrevData();
@@ -291,9 +261,9 @@ namespace PosLibs.ECRLibrary.Service
             {
                 if (deviceLists != null && deviceLists.Count > 0)
                 {
-                    
+
                     listener.onSuccess(deviceLists);
-                    
+
                 }
 
             }
@@ -307,13 +277,13 @@ namespace PosLibs.ECRLibrary.Service
             byte[] dataBytes = Encoding.UTF8.GetBytes(res);
             serial.Open();
             serial.Write(dataBytes, 0, dataBytes.Length);
-            
+
             System.Threading.Thread.Sleep(1000);
             return true;
         }
         public bool sendCOMTXNData(string res)
         {
-           
+
             byte[] dataBytes = Encoding.UTF8.GetBytes(res);
             serial.Write(dataBytes, 0, dataBytes.Length);
 
@@ -326,12 +296,12 @@ namespace PosLibs.ECRLibrary.Service
             serial.ReadTimeout = 5000;
             int bytesRead = serial.BaseStream.Read(buffer, 0, buffer.Length);
             string responseString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-          
+
             return responseString;
         }
         public string receiveCOMTxnrep()
         {
-            
+
             byte[] buffer = new byte[500];
             serial.ReadTimeout = 80000;
             int bytesRead = serial.BaseStream.Read(buffer, 0, buffer.Length);
@@ -388,7 +358,7 @@ namespace PosLibs.ECRLibrary.Service
             return jsonrequest;
         }
         private ISet<string> getDeviceManagerComPort()
-        {   
+        {
             ISet<String> allComport = new HashSet<string>();
             ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%'");
 
@@ -398,8 +368,6 @@ namespace PosLibs.ECRLibrary.Service
                 string caption = obj["Caption"].ToString();
                 allComport.Add(caption);
             }
-            
-
             return allComport;
         }
         public void scanOnlineDevice(ScanDeviceListener scanDeviceListener)
@@ -427,7 +395,7 @@ namespace PosLibs.ECRLibrary.Service
                     cashierId = "12345678",
                     msgType = "1",
                     ecrIP = myIP,
-                    ecrPort = "6000",
+                    ecrPort = "6666",
                     RFU1 = ""
                 };
                 string json = JsonConvert.SerializeObject(posData);
@@ -447,44 +415,34 @@ namespace PosLibs.ECRLibrary.Service
                 }
             }
         }
-
         private void TcpListen()
         {
             thread = new Thread(Run);
             thread.Priority = ThreadPriority.Normal;
             thread.Start();
         }
-
         public void Run()
         {
             TcpListener server = null;
             bool isServerActive;
-
-
-
             string json = null;
             try
             {
                 string strHostName = "";
                 strHostName = System.Net.Dns.GetHostName();
-
                 IPHostEntry ipEntry = System.Net.Dns.GetHostEntry(strHostName);
-
                 IPAddress[] addr = ipEntry.AddressList;
-
                 string myIP = addr[addr.Length - 1].ToString();
-                int port = 6000;
+                int port = 6666;
                 IPAddress localAddr = IPAddress.Parse(myIP);
                 server = new TcpListener(localAddr, port);
                 server.Start();
                 Timer timer = new Timer(StopServer, null, 10000, Timeout.Infinite);
                 isServerActive = server.Server?.IsBound ?? false;
-
-
-                while (isServerActive ==true)
+                while (isServerActive == true)
                 {
                     TcpClient client = server.AcceptTcpClient();
-                    
+
                     NetworkStream stream = client.GetStream();
                     while (isServerActive == true)
                     {
@@ -497,7 +455,6 @@ namespace PosLibs.ECRLibrary.Service
                     }
                     addToDeviceList(json);
                 }
-
             }
             catch (SocketException ex)
             {
@@ -520,19 +477,15 @@ namespace PosLibs.ECRLibrary.Service
                     else
                     {
                         listener.onFailure("No Device Found Please Check NetWork", 1005);
-                    }
+                   }
                 }
-
             }
-            // Stop the server and set json to null
             void StopServer(object state)
             {
                 server.Stop();
                 isServerActive = false;
                 Console.WriteLine("Server stopped.");
-
             }
-
         }
         public Boolean isOnlineConnection(string IP, int PORT)
         {
@@ -559,7 +512,6 @@ namespace PosLibs.ECRLibrary.Service
                 Log.Information("isOnline connected:" + responseboolean);
                 sock.Close();
             }
-
             configdata = getConfigData();
             configdata.tcpIp = IP;
             configdata.tcpPort = PORT;
@@ -570,15 +522,14 @@ namespace PosLibs.ECRLibrary.Service
             setConfiguration(configdata);
             return responseboolean;
         }
-
         public bool sendTcpIpTxnData(string requestdata)
-        {   
+        {
             bool responseboolen = false;
             if (requestdata != null)
             {
                 try
                 {
-                    
+
                     byte[] requestData = Encoding.ASCII.GetBytes(requestdata);
                     sock.SendTimeout = 27000;
                     int bytesSent = sock.Send(requestData);
@@ -586,7 +537,7 @@ namespace PosLibs.ECRLibrary.Service
                     responseboolen = true;
                     Log.Information("tcp/ip transaction data send successfully");
                 }
-                catch(SocketException e)
+                catch (SocketException e)
                 {
                     Console.WriteLine("Socket is closed please try agian");
                     Log.Error("send tcp/Ip txn request failed");
@@ -626,7 +577,6 @@ namespace PosLibs.ECRLibrary.Service
             }
             return responseInteger;
         }
-
         public int doCOMDisconnection()
         {
             int responseInteger = 1;
@@ -645,6 +595,5 @@ namespace PosLibs.ECRLibrary.Service
             }
             return responseInteger;
         }
-
     }
 }
