@@ -16,10 +16,9 @@ namespace PosLibs.ECRLibrary.Logger
         {
             Log.Information("Inside SetLogOptions method");
 
-            DirectoryInfo logDirectory=null;
+            DirectoryInfo logDirectory = null;
             if (isLogsEnabled)
             {
-                // Create log directory if it does not exist
                 try
                 {
                     logDirectory = new DirectoryInfo(logPath);
@@ -28,56 +27,54 @@ namespace PosLibs.ECRLibrary.Logger
                         logDirectory.Create();
                     }
                 }
-                catch(ArgumentException e){
-
+                catch (ArgumentException e)
+                {
                     Log.Error("File Path Not Found");
                     Console.WriteLine("File Path Not Found");
                 }
 
-               
-
-                // Set log file name based on current date
-                string fileName = $"poslib.log";
-                string filePath = Path.Combine(logPath, fileName);
-
-                Log.Information($"filename: {fileName}");
-                Log.Information($"filepath: {filePath}");
-
-                // Set log level
-                LogEventLevel logEventLevel = GetLogLevel(logLevel);
-                Log.Logger = new LoggerConfiguration()
-                    .MinimumLevel.Is(logEventLevel)
-                    .WriteTo.File(filePath, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-                    .CreateLogger();
-
-                try
+                if (logDirectory != null)
                 {
-                    // Set log file retention period
-                    DateTime expirationDate = DateTime.Now.AddDays(-dayToRetainLogs);
-                    FileInfo[] logFiles = logDirectory.GetFiles("poslib*.log");
+                    // Rest of the code related to log file operations
+                    string fileName = $"poslib.log";
+                    string filePath = Path.Combine(logPath, fileName);
 
-                    foreach (FileInfo file in logFiles)
+                    Log.Information($"filename: {fileName}");
+                    Log.Information($"filepath: {filePath}");
+
+                    // Set log level
+                    LogEventLevel logEventLevel = GetLogLevel(logLevel);
+                    Log.Logger = new LoggerConfiguration()
+                        .MinimumLevel.Is(logEventLevel)
+                        .WriteTo.File(filePath, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                        .CreateLogger();
+
+                    try
                     {
-                        DateTime lastModified = file.LastWriteTime;
+                        // Set log file retention period
+                        DateTime expirationDate = DateTime.Now.AddDays(-dayToRetainLogs);
+                        FileInfo[] logFiles = logDirectory.GetFiles("poslib*.log");
 
-                        if (lastModified < expirationDate)
+                        foreach (FileInfo file in logFiles)
                         {
-                            file.Delete();
+                            DateTime lastModified = file.LastWriteTime;
+
+                            if (lastModified < expirationDate)
+                            {
+                                file.Delete();
+                            }
+
+                            Log.Information("Logs Generated successfully: " + file);
                         }
-
-                        Log.Information("Logs Generated successfully: " + file);
                     }
-
-
+                    catch (IOException e)
+                    {
+                        Log.Error("Error | Failed to create log file | SetLogOptions method: " + e.Message);
+                    }
                 }
-                catch (IOException e)
-                {
-                    Log.Error("Error | Failed to create log file | SetLogOptions method: " + e.Message);
-                   
-                }
-
             }
         }
+
 
         // The level for logs
         private static LogEventLevel GetLogLevel(int logLevel)

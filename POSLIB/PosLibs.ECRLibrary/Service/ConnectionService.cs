@@ -26,15 +26,16 @@ using Serilog;
 using Serilog.Events;
 using System.Security.Cryptography.X509Certificates;
 using Xceed.Wpf.Toolkit;
+using System.CodeDom;
+
 
 namespace PosLibs.ECRLibrary.Service
 {
     public class ConnectionService
     {
          public ConnectionService() { }
-        // private static readonly ILogger logger = new LoggerConfiguration().CreateLogger();
-        public static Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        public static SerialPort serial = new SerialPort();
+        private  static Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        private static SerialPort serial = new SerialPort();
         public string PortCom;
         public string IPortCom;
         public string bafudRateCom = string.Empty;
@@ -42,13 +43,10 @@ namespace PosLibs.ECRLibrary.Service
         public int dataBitsCom;
         public int stopBitsCom;
         Boolean res = false;
-        public ScanDeviceListener listener;
-        public TransactionListener trasnlistener;
-        public static bool isConnectivityFallbackAllowed;
+        public IScanDeviceListener listener;
+        public ITransactionListener trasnlistener;
+        public readonly static bool isConnectivityFallbackAllowed;
         List<DeviceList> deviceLists = new List<DeviceList>();
-
-        public static string[] connectionPriorityMode;
-
         public Boolean responseboolean;
         private Thread thread;
         public static string fullcomportName = "";
@@ -114,7 +112,7 @@ namespace PosLibs.ECRLibrary.Service
             }
             return value;
         }
-        public Boolean isComDeviceConnected(int comPort)
+        public  Boolean isComDeviceConnected(int comPort)
         {
             bool responseInteger = false;
             var disconnect = doCOMDisconnection();
@@ -129,8 +127,8 @@ namespace PosLibs.ECRLibrary.Service
                     responseInteger = true;
                     configdata = getConfigData();
                     configdata.commPortNumber = comPort;
-                    configdata.tcpIp = configdata.tcpIp;
-                    configdata.tcpPort = configdata.tcpPort;
+                    this.configdata.tcpIp = configdata.tcpIp;
+                    this.configdata.tcpPort = configdata.tcpPort;
                     configdata.connectionMode = "COM";
                     configdata.isConnectivityFallBackAllowed = false;
                     setConfiguration(configdata);
@@ -182,7 +180,7 @@ namespace PosLibs.ECRLibrary.Service
             }
             return fullcomportName;
         }
-        public void scanSerialDevice(ScanDeviceListener scanDeviceListener)
+        public void scanSerialDevice(IScanDeviceListener scanDeviceListener)
         {
             Log.Information("Inside scanSerialDevice method");
             this.listener = scanDeviceListener;
@@ -239,21 +237,24 @@ namespace PosLibs.ECRLibrary.Service
                 }
                 catch (SocketException se)
                 {
-                    Console.WriteLine("Connection Problem");
-
+                    Log.Error(se.ToString());
+                    Console.WriteLine("Connection Problem"+se);
                 }
                 catch (TimeoutException ex)
                 {
                     listener.onFailure("No Device Found", 1002);
+                    Log.Error("Time out Exception" + ex);
                 }
                 catch (IOException io)
                 {
                     listener.onFailure("Try Again", 1005);
+                    Log.Error(io.ToString());
                 }
 
                 catch (InvalidOperationException e)
                 {
                     listener.onFailure("IOException", 1001);
+                    Log.Error(e.ToString());
                 }
             }
 
@@ -327,7 +328,7 @@ namespace PosLibs.ECRLibrary.Service
                 deviceList.deviceId = terminalConnectivity.devId;
                 deviceList.deviceIp = terminalConnectivity.posIP;
                 deviceList.devicePort = terminalConnectivity.posPort;
-                deviceList.msgType = terminalConnectivity.msgType;
+                deviceList.msgType = (int)terminalConnectivity.msgType;
                 if (deviceList.msgType == 1)
                 {
                     deviceList.connectionMode = "TCP IP";
@@ -343,7 +344,7 @@ namespace PosLibs.ECRLibrary.Service
             }
             catch (JsonReaderException ex)
             {
-                Console.WriteLine("JsonReaderException ");
+                Console.WriteLine("JsonReaderException "+ex);
             }
         }
         public string getComDeviceRequest()
@@ -363,14 +364,14 @@ namespace PosLibs.ECRLibrary.Service
             ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%'");
 
             // Iterate through the search results
-            foreach (ManagementObject obj in searcher.Get())
+            foreach (ManagementBaseObject obj in searcher.Get())
             {
                 string caption = obj["Caption"].ToString();
                 allComport.Add(caption);
             }
             return allComport;
         }
-        public void scanOnlineDevice(ScanDeviceListener scanDeviceListener)
+        public void scanOnlineDevice(IScanDeviceListener scanDeviceListener)
         {
             Log.Information("Inside scanOnline Device mehtod");
             this.listener = scanDeviceListener;
@@ -444,14 +445,11 @@ namespace PosLibs.ECRLibrary.Service
                     TcpClient client = server.AcceptTcpClient();
 
                     NetworkStream stream = client.GetStream();
-                    while (isServerActive == true)
+                   if(isServerActive)
                     {
-
                         byte[] buffer = new byte[256];
                         int bytesRead = stream.Read(buffer, 0, buffer.Length);
                         json = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                        break;
-
                     }
                     addToDeviceList(json);
                 }
@@ -488,40 +486,47 @@ namespace PosLibs.ECRLibrary.Service
             }
         }
         public Boolean isOnlineConnection(string IP, int PORT)
-        {
+        {   
             Log.Information("Inside IsOnlineConnection method");
             responseboolean = false;
-            IPAddress host = IPAddress.Parse(IP);
-            IPEndPoint hostep = new IPEndPoint(host, PORT);
-            try
-            {
-                int resdisconnect = doTCPIPDisconnection();
-                if (resdisconnect == 0)
+            if(CommaUtil.CheckIPAddress(IP)){
+                IPAddress host = IPAddress.Parse(IP);
+                IPEndPoint hostep = new IPEndPoint(host, PORT);
+                try
                 {
-                    sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                    sock.Connect(hostep);
-                    responseboolean = true;
-                    Log.Information("isOnline connected:" + responseboolean);
+                    int resdisconnect = doTCPIPDisconnection();
+                    if (resdisconnect == 0)
+                    {
+                        sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                        sock.Connect(hostep);
+                        responseboolean = true;
+                        Log.Information("isOnline connected:" + responseboolean);
+                    }
                 }
-            }
-            catch (SocketException e)
-            {
-                Console.WriteLine("Problem connecting to host");
-                Console.WriteLine(e.ToString());
-                responseboolean = false;
-                Log.Information("isOnline connected:" + responseboolean);
-                sock.Close();
-            }
-            configdata = getConfigData();
-            configdata.tcpIp = IP;
-            configdata.tcpPort = PORT;
-            configdata.connectionMode = "TCP/IP";
-            configdata.isConnectivityFallBackAllowed = false;
-            configdata.commPortNumber = configdata.commPortNumber;
+                catch (SocketException e)
+                {
+                    Console.WriteLine("Problem connecting to host");
+                    Console.WriteLine(e.ToString());
+                    responseboolean = false;
+                    Log.Information("isOnline connected:" + responseboolean);
+                    sock.Close();
+                }
+                configdata = getConfigData();
+                configdata.tcpIp = IP;
+                configdata.tcpPort = PORT;
+                configdata.connectionMode = "TCP/IP";
+                configdata.isConnectivityFallBackAllowed = false;
+               this.configdata.commPortNumber = configdata.commPortNumber;
 
-            setConfiguration(configdata);
+                setConfiguration(configdata);
+            }
+            else
+            {
+                Console.WriteLine("Invalid IP Number");
+            }
             return responseboolean;
         }
+       
         public bool sendTcpIpTxnData(string requestdata)
         {
             bool responseboolen = false;

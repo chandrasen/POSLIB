@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:POSLIB"
         mc:Ignorable="d"
     Title="PineLabs POSLIB v1.0.0.0"  Height="742" Width="1400" Background="#F5F5F5">
-    <Grid x:Name="fullScreen" Margin="10,20,72,21" IsEnabled="True">
+    <Grid x:Name="fullScreen" Margin="10,58,0,-6" IsEnabled="True">
         <Grid.ColumnDefinitions >
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="auto"/>
@@ -101,7 +101,6 @@
             </Grid>
         </GroupBox>
         <Label x:Name="ConnectL" Visibility="Hidden" Content="Not Connected" FontWeight="Bold" HorizontalContentAlignment="Center" FontSize="18" Background="#f0a6a1"   Grid.Column="1" HorizontalAlignment="Left" Margin="369,3,0,0" Grid.Row="1" VerticalAlignment="Top" Width="202" Height="30" />
-        <Image x:Name="ConnectImg" Grid.Column="1" HorizontalAlignment="Left" Height="28" Margin="651,85,0,0" Grid.Row="1" VerticalAlignment="Top" Width="28"/>
         <GroupBox Visibility="Hidden" Background="#E9E9E9" HorizontalAlignment="Left" Height="48" Margin="0,190,0,0" Grid.Row="1" VerticalAlignment="Top" Width="879" Grid.ColumnSpan="2">
             <Grid  Visibility="Hidden"  Margin="0,0,17,0" Height="45">
                 <Grid.ColumnDefinitions>
@@ -212,8 +211,8 @@
                 </TransformGroup>
             </TextBox.RenderTransform>
         </TextBox>
-        <Label  x:Name="ProgBarL" Content="Progress..." Visibility="Hidden"  FontSize="22" Grid.Column="1" HorizontalAlignment="Left" Margin="1091,367,0,0" Grid.Row="1" VerticalAlignment="Top"/>
-        <ProgressBar x:Name="ProgBar"  Visibility="Hidden" IsIndeterminate="False" Grid.Column="1" Height="25" Margin="1070,420,48,0" Grid.Row="1" VerticalAlignment="Top" Width="180"/>
+        <Label x:Name="ProgBarL" Content="Progress..." Visibility="Hidden"  FontSize="22" Grid.Column="1" HorizontalAlignment="Left" Margin="1091,367,0,0" Grid.Row="1" VerticalAlignment="Top"/>
+        <ProgressBar x:Name="ProgBar"  Visibility="Hidden" IsIndeterminate="False" Grid.Column="1" Height="25" Margin="1070,420,71,0" Grid.Row="1" VerticalAlignment="Top"/>
         <WebBrowser Visibility="Hidden" Name="myBrowser"  Grid.Column="1" HorizontalAlignment="Left" Height="123" Margin="393,379,0,0" VerticalAlignment="Top" Width="112" Grid.Row="1">
         </WebBrowser>
         <ListView x:Name="ComList" ItemsSource="{Binding comdata}" Visibility="Hidden" Grid.Row="1" Grid.ColumnSpan="2" Margin="28,108,1098,509">
@@ -231,7 +230,8 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <DataGrid x:Name="TcpIpList"  Visibility="Visible" ItemsSource="{Binding comdata}" Grid.Row="1" Margin="1070,221,124,396" Grid.Column="1" RenderTransformOrigin="0.708,0.499" AutoGenerateColumns="False" VerticalScrollBarVisibility="Auto" CanUserAddRows="False">
+
+        <DataGrid x:Name="TcpIpList"  Visibility="Hidden" ItemsSource="{Binding comdata}" Grid.Row="1" Margin="1054,202,140,415" Grid.Column="1" RenderTransformOrigin="0.708,0.499" AutoGenerateColumns="False" VerticalScrollBarVisibility="Auto" CanUserAddRows="False">
             <DataGrid.Columns>
                 <DataGridTemplateColumn>
                     <DataGridTemplateColumn.CellTemplate>
@@ -260,8 +260,8 @@
                         <DataTemplate>
                             <StackPanel>
 
-                                <Button Command="{Binding DataContext.ConnectCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}" CommandParameter="{Binding}" Click="ConnectButton_Click">
-                                    <Image Source="/img/noun-connect-3557866.png" Width="30" Height="30" />
+                                <Button Content="Select" Command="{Binding DataContext.ConnectCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}" CommandParameter="{Binding}" Click="ConnectButton_Click" Width="50" Height="50">
+
                                 </Button>
                             </StackPanel>
                         </DataTemplate>
@@ -269,6 +269,7 @@
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
+
 
 
 
@@ -304,7 +305,7 @@
             </Grid>
         </GroupBox>
         <Button x:Name="Scan_online_device"  Grid.Column="1" Content="Scan Devices" HorizontalAlignment="Left" Margin="892,120,0,0" Grid.Row="1" VerticalAlignment="Top" Width="146" Height="29" Background="White" Click="Button_Click" FontSize="14" FontFamily="Arial Black" />
-        <CheckBox x:Name="connectivityFallbackCheckBox"   Content="Allowed Connectivity Fallback" Grid.Column="1"  HorizontalAlignment="Left" Margin="673,20,0,0" Grid.Row="1" VerticalAlignment="Top" Height="28" Width="256" FontSize="14" FontFamily="Arial Black"/>
+        <CheckBox x:Name="connectivityFallbackCheckBox"   Content="Connection Fallback Allowed" Grid.Column="1"  HorizontalAlignment="Left" Margin="673,20,0,0" Grid.Row="1" VerticalAlignment="Top" Height="28" Width="256" FontSize="14" FontFamily="Arial Black"/>
         <Label x:Name="Priority"  Grid.Column="1" Content="Priority-1" HorizontalAlignment="Left" Margin="940,8,0,0" Grid.Row="1" VerticalAlignment="Top" Width="74" Height="30" FontSize="14"/>
 
         <ComboBox Grid.Column="1"  x:Name="comboBox" SelectionChanged="Priority1_SelectionChanged" SelectedIndex="0" HorizontalAlignment="Left" Margin="1019,10,0,0" Grid.Row="1" VerticalAlignment="Top" Width="111" Height="26">
@@ -313,19 +314,19 @@
             <ComboBoxItem x:Name ="Priority2" Content="COM"></ComboBoxItem>
         </ComboBox>
 
-        <Button Grid.Column="1" x:Name="btnSave"  Content="Save Settings" HorizontalAlignment="Left" Margin="923,554,0,0" Grid.Row="1" VerticalAlignment="Top" Height="54" Width="140" FontSize="14" Background="#FF367713" Foreground="White" Click="SaveSettings" RenderTransformOrigin="0.508,0.796"/>
+        <Button Grid.Column="1" x:Name="btnSave"  Content="Save Settings" HorizontalAlignment="Left" Margin="953,505,0,0" Grid.Row="1" VerticalAlignment="Top" Height="54" Width="140" FontSize="14" Background="#FF316D1C" Foreground="White" Click="SaveSettings" RenderTransformOrigin="0.508,0.796"/>
         <Button  x:Name="btnDisConnect"  Visibility="Hidden" Content="Disconnect" IsEnabled="False" Grid.Column="1" HorizontalAlignment="Left" Margin="252,0,0,0" VerticalAlignment="Top" Width="92" Foreground="Black" FontWeight="Bold" FontSize="15" Background="#f0a6a1" Height="36" Click="DisConnect" Grid.Row="1"/>
-        <ComboBox Grid.Column="1" x:Name="SELECTTRANSTYPE" HorizontalAlignment="Left" Margin="12,476,0,0" VerticalAlignment="Top" Width="426" Height="26" RenderTransformOrigin="0.092,0.521" Grid.Row="1">
+        <ComboBox Grid.Column="1" x:Name="SELECTTRANSTYPE" HorizontalAlignment="Left" Margin="48,494,0,0" VerticalAlignment="Top" Width="358" Height="26" RenderTransformOrigin="0.092,0.521" Grid.Row="1">
             <ComboBoxItem Content="Purchase"></ComboBoxItem>
             <ComboBoxItem Content="UPI"></ComboBoxItem>
             <ComboBoxItem Content="Brand EMI"></ComboBoxItem>
         </ComboBox>
-        <Button Grid.Column="1" Content="Process" HorizontalAlignment="Left" Margin="449,476,0,0" Grid.Row="1" VerticalAlignment="Top" Height="26" Width="117" FontSize="14" FontFamily="Segoe UI Black" Click="ProcessBtn"/>
-        <TextBox Grid.Column="1" x:Name="Requestsend" HorizontalAlignment="Left" Margin="14,298,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="552" Height="38" RenderTransformOrigin="0.521,1.538"/>
-        <TextBox x:Name="ResponseReceive" Grid.Column="1" HorizontalAlignment="Left" Margin="14,342,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="552" Height="93"/>
+        <Button Grid.Column="1" Content="Process" HorizontalAlignment="Left" Margin="411,494,0,0" Grid.Row="1" VerticalAlignment="Top" Height="26" Width="179" FontSize="14" FontFamily="Segoe UI Black" Click="ProcessBtn"/>
+        <TextBox Grid.Column="1" x:Name="Requestsend" HorizontalAlignment="Left" Margin="46,310,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="544" Height="38" RenderTransformOrigin="0.521,1.538"/>
+        <TextBox x:Name="ResponseReceive" Grid.Column="1" HorizontalAlignment="Left" Margin="46,353,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="544" Height="100"/>
 
-        <TextBox x:Name="Filepath" Grid.Column="1" HorizontalAlignment="Left" Margin="708,75,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="179" Height="30"/>
-        <Label Grid.Column="1" Content="Path" HorizontalAlignment="Left" Margin="665,78,0,0" Grid.Row="1" VerticalAlignment="Top" Height="30" Width="38" FontSize="14" FontFamily="Bahnschrift SemiBold" RenderTransformOrigin="1.296,0.968"/>
+        <TextBox x:Name="Filepath" Grid.Column="1" HorizontalAlignment="Left" Margin="708,75,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="147" Height="30" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
+        <Label Grid.Column="1" Content="Path" HorizontalAlignment="Left" Margin="665,78,0,0" Grid.Row="1" VerticalAlignment="Top" Height="27" Width="38" FontSize="14" FontFamily="Bahnschrift SemiBold" RenderTransformOrigin="1.296,0.968"/>
         <Label Grid.Column="1" Content="No.of Days To Retain Log" HorizontalAlignment="Left" Margin="892,76,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="0.659,0.926" Height="32" Width="146" FontSize="14" FontFamily="Segoe UI Semibold"/>
         <TextBox  x:Name="NoDay" Grid.Column="1"  KeyDown="AMOUNTT_KeyDown" HorizontalAlignment="Left" Margin="1038,81,0,0" Grid.Row="1" TextWrapping="Wrap"  VerticalAlignment="Top" Width="78" Height="24"/>
         <Label Grid.Column="1" Content="Log Level" HorizontalAlignment="Left" Margin="1121,79,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="0.317,0.502" FontFamily="Segoe UI Semibold" FontSize="14"/>
@@ -340,8 +341,7 @@
         <TextBox  Grid.Column="1" x:Name="serialNo" HorizontalAlignment="Left" Margin="686,262,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="94" Height="28" FontSize="14"/>
         <TextBox Grid.Column="1" x:Name="tcpip" HorizontalAlignment="Left" Margin="799,261,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="106" Height="28" FontSize="14"/>
         <TextBox Grid.Column="1" x:Name="tcpport" HorizontalAlignment="Left" Margin="923,260,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="98" Height="29" FontSize="14"/>
-        <Button  x:Name="TCPIPConnectbtn" Grid.Column="1" Content="Connect" HorizontalAlignment="Left" Margin="805,298,0,0" Grid.Row="1" VerticalAlignment="Top" Height="24" Width="86" FontFamily="Bahnschrift SemiBold" FontSize="14" Click="Button_Click_4"/>
-        <Button  x:Name="TcpipDisconnectbtn" IsEnabled="False" Grid.Column="1" Content="DisConnect" HorizontalAlignment="Left" Margin="913,296,0,0" Grid.Row="1" VerticalAlignment="Top" Width="108" Height="24" RenderTransformOrigin="0.514,-0.518" FontFamily="Bahnschrift SemiBold" FontSize="14" Click="Button_Click_5"/>
+        <Button  x:Name="TCPIPConnectbtn" Grid.Column="1" Content="Test" HorizontalAlignment="Left" Margin="934,304,0,0" Grid.Row="1" VerticalAlignment="Top" Height="24" Width="86" FontFamily="Bahnschrift SemiBold" FontSize="14" Click="Button_Click_4" Background="#FF347B2A" Foreground="White"/>
 
         <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="142" Margin="673,342,0,0" Grid.Row="1" Stroke="Black" VerticalAlignment="Top" Width="365"/>
         <Label Grid.Column="1" Content="Connection Mode:COM" HorizontalAlignment="Left" Margin="680,349,0,0" Grid.Row="1" VerticalAlignment="Top" Width="216" FontSize="14" FontFamily="Arial Black"/>
@@ -349,52 +349,81 @@
         <Label Grid.Column="1" Content=" PORT" HorizontalAlignment="Left" Margin="799,379,0,0" Grid.Row="1" VerticalAlignment="Top" Width="64" FontFamily="Bahnschrift SemiBold"/>
         <TextBox Grid.Column="1" x:Name="comserialNo" HorizontalAlignment="Left" Margin="689,406,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="94" Height="28" FontSize="14"/>
         <TextBox Grid.Column="1" x:Name="comfullname" HorizontalAlignment="Left" Margin="794,406,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="203" Height="28" FontSize="11"/>
-        <Button x:Name="COMConnetBtn" Grid.Column="1" Content="Connect" HorizontalAlignment="Left" Margin="809,448,0,0" Grid.Row="1" VerticalAlignment="Top" Height="24" Width="86" FontFamily="Bahnschrift SemiBold" FontSize="14" RenderTransformOrigin="0.366,1.298" Click="Button_Click_2"/>
-        <Button x:Name="ComdisConnectedBtn" IsEnabled="False" Grid.Column="1" Content="DisConnect" HorizontalAlignment="Left" Margin="911,448,0,0" Grid.Row="1" VerticalAlignment="Top" Width="108" Height="24" RenderTransformOrigin="0.514,-0.518" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+        <Button x:Name="COMConnetBtn" Grid.Column="1" Content="Test" HorizontalAlignment="Left" Margin="934,448,0,0" Grid.Row="1" VerticalAlignment="Top" Height="24" Width="86" FontFamily="Bahnschrift SemiBold" FontSize="14" RenderTransformOrigin="0.366,1.298" Click="Button_Click_2" Background="#FF117109" Foreground="White"/>
         <Label Grid.Column="1" Content="Availabe Devices" HorizontalAlignment="Left" Margin="1070,149,0,0" Grid.Row="1" VerticalAlignment="Top" Width="212" FontSize="14" FontFamily="Arial Black" RenderTransformOrigin="0.52,1.716"/>
-        <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="299" Margin="1043,187,0,0" Grid.Row="1" Stroke="Black" VerticalAlignment="Top" Width="239" RenderTransformOrigin="0.5,0.5">
-            <Rectangle.RenderTransform>
+        <Label Content="POS CONTROLLER" HorizontalAlignment="Left" Margin="215,0,0,0" VerticalAlignment="Center" Grid.ColumnSpan="2" Height="30" Width="178" FontSize="16" FontFamily="Arial Black"/>
+        <Label Grid.Column="1" Content="Cashier ID" HorizontalAlignment="Left" Margin="52,4,0,0" Grid.Row="1" VerticalAlignment="Top" Height="25" Width="102" FontFamily="Bahnschrift SemiBold" FontSize="16"/>
+        <Label Grid.Column="1" Content="Cashier Name" HorizontalAlignment="Left" Margin="52,31,0,0" Grid.Row="1" VerticalAlignment="Top" Height="24" Width="120" FontSize="16" FontFamily="Bahnschrift SemiBold"/>
+        <TextBox Grid.Column="1" IsEnabled="False" x:Name="CashierID" HorizontalAlignment="Left" Margin="174,10,0,0" Grid.Row="1" Text="123564" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="20" FontFamily="Arial Black" FontSize="14"/>
+        <TextBox Grid.Column="1"  IsEnabled="False" x:Name="CashireName" HorizontalAlignment="Left" Margin="174,36,0,0" Grid.Row="1"  Text="Prasanta" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="20" FontSize="14" FontFamily="Arial Black"/>
+        <Button Grid.Column="1" x:Name="EditBtn" Visibility="Visible" Content="EDIT" HorizontalAlignment="Left" Margin="453,42,0,0" Grid.Row="1" VerticalAlignment="Top" Height="20" Width="95" FontSize="16" FontFamily="Bahnschrift SemiBold" Click="Button_Click_6"/>
+        <TextBox x:Name="AMOUNTT" Grid.Column="1" HorizontalAlignment="Left" Margin="193,458,0,0" Grid.Row="1" TextWrapping="Wrap"  VerticalAlignment="Top" Width="397" Height="31" FontSize="14"  FontFamily="Bahnschrift SemiBold" RenderTransformOrigin="0.5,0.5">
+            <TextBox.RenderTransform>
                 <TransformGroup>
-                    <ScaleTransform ScaleY="1"/>
+                    <ScaleTransform/>
                     <SkewTransform/>
-                    <RotateTransform/>
+                    <RotateTransform Angle="-0.217"/>
                     <TranslateTransform/>
                 </TransformGroup>
-            </Rectangle.RenderTransform>
-        </Rectangle>
-        <Label Content="POS CONTROLLER" HorizontalAlignment="Left" Margin="198,8,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Height="30" Width="178" FontSize="16" FontFamily="Arial Black" Grid.RowSpan="2"/>
-        <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="60" Margin="10,18,0,0" Grid.Row="1" Stroke="Black" VerticalAlignment="Top" Width="561"/>
-        <Label Grid.Column="1" Content="Cashier ID" HorizontalAlignment="Left" Margin="23,19,0,0" Grid.Row="1" VerticalAlignment="Top" Height="25" Width="102" FontFamily="Bahnschrift SemiBold" FontSize="16"/>
-        <Label Grid.Column="1" Content="Cashier Name" HorizontalAlignment="Left" Margin="23,40,0,0" Grid.Row="1" VerticalAlignment="Top" Height="32" Width="120" FontSize="16" FontFamily="Bahnschrift SemiBold"/>
-        <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="163,23,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="19" FontFamily="Arial Black" FontSize="14"/>
-        <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="163,48,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="20" FontSize="14" FontFamily="Arial Black"/>
-        <Button Grid.Column="1" Content="EDIT" HorizontalAlignment="Left" Margin="476,56,0,0" Grid.Row="1" VerticalAlignment="Top" Height="21" Width="95" FontSize="16" FontFamily="Bahnschrift SemiBold"/>
-        <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="79" Margin="10,83,0,0" Grid.Row="1" Stroke="Black" VerticalAlignment="Top" Width="561"/>
-        <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="92" Margin="10,167,0,0" Grid.Row="1" Stroke="Black" VerticalAlignment="Top" Width="561"/>
-        <Label Grid.Column="1" Content="PRIORITY 1 " HorizontalAlignment="Left" Margin="14,83,0,0" Grid.Row="1" VerticalAlignment="Top" Height="23" Width="100" FontSize="14" FontFamily="Arial Black"/>
-        <Label Grid.Column="1" Content="Device ID" HorizontalAlignment="Left" Margin="21,104,0,0" Grid.Row="1" VerticalAlignment="Top" Height="25" Width="82" FontFamily="Segoe UI Semibold" FontSize="14"/>
-        <Label Grid.Column="1" Content="IP" HorizontalAlignment="Left" Margin="28,129,0,0" Grid.Row="1" VerticalAlignment="Top" Height="22" Width="53" FontFamily="Bahnschrift SemiBold" FontSize="14" RenderTransformOrigin="0.136,0.851"/>
-        <Label Grid.Column="1" Content="Serial No" HorizontalAlignment="Left" Margin="330,109,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="1.298,2.034" Height="23" Width="89" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
-        <Label Grid.Column="1" Content="Port" HorizontalAlignment="Left" Margin="339,131,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="0.79,2.159" Height="31" Width="54" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
-        <TextBox  x:Name="TdeviceId" Grid.Column="1" HorizontalAlignment="Left" Margin="110,110,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="18" RenderTransformOrigin="0.603,0.113"/>
-        <TextBox  x:Name="TIP" Grid.Column="1" HorizontalAlignment="Left" Margin="110,131,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="18" />
-        <TextBox x:Name="TSerial" Grid.Column="1" HorizontalAlignment="Left" Margin="424,112,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
-        <TextBox  x:Name="TPORT" Grid.Column="1" HorizontalAlignment="Left" Margin="424,135,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="18"/>
-        <Button Grid.Column="1" Content="ACTIVE" HorizontalAlignment="Left" Margin="464,83,0,0" Grid.Row="1" VerticalAlignment="Top" Height="21" Width="107" FontFamily="Bahnschrift SemiBold" Foreground="White" Background="#FF2A732A"/>
-        <Label Grid.Column="1" Content="PRIORITY 2 " HorizontalAlignment="Left" Margin="12,167,0,0" Grid.Row="1" VerticalAlignment="Top" Width="100" FontFamily="Arial Black" FontSize="14"/>
-        <TextBox  x:Name="lblText1" Grid.Column="1"  HorizontalAlignment="Left" Margin="119,85,0,0" Grid.Row="1" VerticalAlignment="Top" Width="57" Height="23" FontFamily="Arial Black" FontSize="14"/>
-        <TextBox x:Name="lblText2" Grid.Column="1"  HorizontalAlignment="Left" Margin="117,170,0,0" Grid.Row="1" VerticalAlignment="Top" Width="59" FontFamily="Arial Black" FontSize="14" Height="23"/>
-        <Button Grid.Column="1" Content="ACTIVE" HorizontalAlignment="Left" Margin="470,167,0,0" Grid.Row="1" VerticalAlignment="Top" Width="101" FontFamily="Bahnschrift SemiBold" Background="#FF337933" Foreground="White"/>
-        <TextBox x:Name="AMOUNTT" Grid.Column="1" HorizontalAlignment="Left" Margin="162,440,0,0" Grid.Row="1" TextWrapping="Wrap"  VerticalAlignment="Top" Width="404" Height="31" FontSize="14"  FontFamily="Bahnschrift SemiBold"/>
-        <Label Content="Device ID" HorizontalAlignment="Left" Margin="21,193,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="2.619,0.83" Grid.Column="1" Width="82" FontSize="14"/>
-        <Label Grid.Column="1" Content="IP" HorizontalAlignment="Left" Margin="21,214,0,0" Grid.Row="1" VerticalAlignment="Top" Width="80" FontSize="14"/>
-        <TextBox x:Name="CDeviceId" Grid.Column="1" HorizontalAlignment="Left" Margin="114,200,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" RenderTransformOrigin="0.483,0.81" Height="22" FontSize="14"/>
-        <TextBox  x:Name="CIP" Grid.Column="1" HorizontalAlignment="Left" Margin="114,228,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="21" FontSize="14"/>
-        <Label Grid.Column="1" Content="Serial No" HorizontalAlignment="Left" Margin="330,192,0,0" Grid.Row="1" VerticalAlignment="Top" Width="75" FontSize="14" FontFamily="Bahnschrift SemiBold SemiCondensed"/>
-        <TextBox x:Name="CSerial" Grid.Column="1" HorizontalAlignment="Left" Margin="424,193,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="21" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
-        <Label  Grid.Column="1" Content="Port" HorizontalAlignment="Left" Margin="339,219,0,0" Grid.Row="1" VerticalAlignment="Top" FontFamily="Bahnschrift SemiBold" FontSize="14" Width="41"/>
-        <TextBox x:Name="CPORT" Grid.Column="1" HorizontalAlignment="Left" Margin="424,221,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="21" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
-        <Label Content="ENTER AMOUNT" HorizontalAlignment="Left" Margin="21,442,0,0" Grid.Row="1" VerticalAlignment="Top" Grid.Column="1" Width="127" FontFamily="Bahnschrift SemiBold" FontSize="16"/>
+            </TextBox.RenderTransform>
+        </TextBox>
+        <Label Grid.Column="1" x:Name="COMLable"  Visibility="Hidden" Content="IP" HorizontalAlignment="Left" Margin="21,214,0,0" Grid.Row="1" VerticalAlignment="Top" Width="80" FontSize="14"/>
+        <TextBox  x:Name="CIP" Grid.Column="1" Visibility="Hidden" HorizontalAlignment="Left" Margin="114,228,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="21" FontSize="14"/>
+        <Label Content="ENTER AMOUNT" HorizontalAlignment="Left" Margin="48,460,0,0" Grid.Row="1" VerticalAlignment="Top" Grid.Column="1" Width="127" FontFamily="Bahnschrift SemiBold" FontSize="16"/>
+        <Label  x:Name="CHiddenPort" Visibility="Hidden" Grid.Column="1" Content="Port" HorizontalAlignment="Left" Margin="331,220,0,0" Grid.Row="1" VerticalAlignment="Top" FontSize="14" FontFamily="Bahnschrift SemiBold" Width="62"/>
+        <TextBox x:Name="CHidenTextBox" Visibility="Hidden" Grid.Column="1" HorizontalAlignment="Left" Margin="424,221,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="24" FontSize="14" FontFamily="Bahnschrift SemiCondensed"/>
+        <Button Grid.Column="1" Content="...." HorizontalAlignment="Left" Margin="851,73,0,0" Grid.Row="1" VerticalAlignment="Top" Height="32" Width="44" FontSize="16" FontFamily="Arial Black" Click="Button_Click_5" BorderBrush="White"/>
+        <Grid x:Name="TCPIPGrid" Visibility="Visible" Grid.ColumnSpan="2" Grid.Row="1" Margin="28,70,679,466">
+            <Rectangle HorizontalAlignment="Left" Height="88" Margin="19,10,0,0" Stroke="Black" VerticalAlignment="Top" Width="544"/>
+            <Label Content="Priority 1" HorizontalAlignment="Left" Margin="19,13,0,0" VerticalAlignment="Top" Width="88" FontSize="14" FontFamily="Arial Black" Height="29"/>
+            <TextBox x:Name="TCPlbl" HorizontalAlignment="Left" Margin="122,16,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="58" Height="23" FontSize="14" FontFamily="Arial Black"/>
+            <Label Content="IP" HorizontalAlignment="Left" Margin="21,67,0,0" VerticalAlignment="Top" Width="36" FontSize="14" FontFamily="Bahnschrift SemiBold" Height="23"/>
+            <Label Content="Serial No" HorizontalAlignment="Left" Margin="322,41,0,0" VerticalAlignment="Top" Width="71" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <Label Content="Port" HorizontalAlignment="Left" Margin="322,61,0,0" VerticalAlignment="Top" Width="71" FontFamily="Segoe UI Semibold" FontSize="14"/>
+            <Label Content="Device ID" HorizontalAlignment="Left" Margin="19,41,0,0" VerticalAlignment="Top" Width="76" FontSize="14" FontFamily="Segoe UI Semibold" Height="31"/>
+            <TextBox x:Name="TCPIPDeviceID" HorizontalAlignment="Left" Margin="122,45,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <TextBox x:Name="TCPSerialNO" HorizontalAlignment="Left" Margin="398,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Segoe UI Semibold" FontSize="14"/>
+            <TextBox x:Name="TCPIPIP" HorizontalAlignment="Left" Margin="398,67,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Segoe UI Semibold" FontSize="14"/>
+            <TextBox x:Name="TCPPORT" HorizontalAlignment="Left" Margin="122,69,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+        </Grid>
+        <Grid x:Name="TCPIPGrid1" Grid.ColumnSpan="2"  Visibility="Hidden"   Grid.Row="1" Margin="28,70,679,466">
+            <Rectangle HorizontalAlignment="Left" Height="88" Margin="19,10,0,0" Stroke="Black" VerticalAlignment="Top" Width="544"/>
+            <Label Content="Priority 1" HorizontalAlignment="Left" Margin="19,13,0,0" VerticalAlignment="Top" Width="88" FontSize="14" FontFamily="Arial Black" Height="29"/>
+            <TextBox  x:Name="TCPlbl1" HorizontalAlignment="Left" Margin="122,16,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="58" Height="23" FontSize="14" FontFamily="Arial Black"/>
+            <Label Content="Port" HorizontalAlignment="Left" Margin="21,67,0,0" VerticalAlignment="Top" Width="36" FontSize="14" FontFamily="Bahnschrift SemiBold" Height="23"/>
+            <Label Content="Serial No" HorizontalAlignment="Left" Margin="322,41,0,0" VerticalAlignment="Top" Width="71" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <Label Content="Device ID" HorizontalAlignment="Left" Margin="19,41,0,0" VerticalAlignment="Top" Width="76" FontSize="14" FontFamily="Segoe UI Semibold" Height="31"/>
+            <TextBox x:Name="COMSerialPort1" HorizontalAlignment="Left" Margin="122,45,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <TextBox x:Name="COMDeviceID1" HorizontalAlignment="Left" Margin="398,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Segoe UI Semibold" FontSize="14"/>
+            <TextBox x:Name="COMSerialNO"  HorizontalAlignment="Left" Margin="122,69,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="217" FontFamily="Bahnschrift SemiBold" Height="21"/>
+        </Grid>
+        <Grid x:Name="COMGrid" Grid.ColumnSpan="2" Grid.Row="1"   Visibility="Visible" Margin="37,183,679,331">
+            <Rectangle HorizontalAlignment="Left" Height="86" Stroke="Black" VerticalAlignment="Top" Width="544" Margin="10,0,0,0"/>
+            <Label Content="Priority 2" HorizontalAlignment="Left" Margin="13,5,0,0" VerticalAlignment="Top" Width="88" FontFamily="Arial Black" FontSize="14"/>
+            <TextBox x:Name="COMlbl" HorizontalAlignment="Left" Margin="114,5,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="61" Height="26" FontSize="14" FontFamily="Arial Black"/>
+            <Label Content="Device ID" HorizontalAlignment="Left" Margin="16,32,0,0" VerticalAlignment="Top" Width="72" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <TextBox x:Name="COMDeviceID" HorizontalAlignment="Left" Margin="114,36,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <Label Content="Port" HorizontalAlignment="Left" Margin="16,59,0,0" VerticalAlignment="Top" Width="61" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <TextBox x:Name="COMSerialPort" HorizontalAlignment="Left" Margin="114,60,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="223" FontFamily="Bahnschrift SemiBold"/>
+            <Label Content="Serial No" HorizontalAlignment="Left" Margin="315,30,0,0" VerticalAlignment="Top" Width="79" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <TextBox x:Name="COMSrialNO" HorizontalAlignment="Left" Margin="394,34,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
+        </Grid>
+        <Grid x:Name="COMGrid1" Grid.ColumnSpan="2" Visibility="Hidden" Grid.Row="1" Margin="37,183,679,331">
+            <Rectangle HorizontalAlignment="Left" Height="86" Stroke="Black" VerticalAlignment="Top" Width="544" Margin="10,0,0,0"/>
+            <Label Content="Priority 2" HorizontalAlignment="Left" Margin="13,5,0,0" VerticalAlignment="Top" Width="88" FontFamily="Arial Black" FontSize="14"/>
+            <TextBox x:Name="COMlbl1" HorizontalAlignment="Left" Margin="114,5,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="61" Height="26" FontSize="14" FontFamily="Arial Black"/>
+            <Label Content="Device ID" HorizontalAlignment="Left" Margin="16,32,0,0" VerticalAlignment="Top" Width="72" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <TextBox  x:Name="TCPDeviceID1" HorizontalAlignment="Left" Margin="114,36,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <Label Content="IP" HorizontalAlignment="Left" Margin="16,59,0,0" VerticalAlignment="Top" Width="61" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <TextBox x:Name="TCPIPIP1" HorizontalAlignment="Left" Margin="114,60,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <Label Content="Serial No" HorizontalAlignment="Left" Margin="315,30,0,0" VerticalAlignment="Top" Width="79" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <TextBox  x:Name="TCPSrialNO1" HorizontalAlignment="Left" Margin="394,34,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
+            <Label Content="Port" HorizontalAlignment="Left" Margin="317,54,0,0" VerticalAlignment="Top" Width="59" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <TextBox x:Name="TCPIPPORT" HorizontalAlignment="Left" Margin="394,61,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Bahnschrift SemiBold"/>
+        </Grid>
+        <Button  x:Name="savebtn" Visibility="Hidden" Grid.Column="1" Content="Save" HorizontalAlignment="Left" Margin="453,42,0,0" Grid.Row="1" VerticalAlignment="Top" Width="95" FontSize="14" FontFamily="Bahnschrift SemiBold" Click="savebtn_Click" Background="#FF2F8E15" Foreground="White"/>
+        <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="63" Margin="46,3,0,0" Stroke="Black" VerticalAlignment="Top" Width="544" RenderTransformOrigin="0.308,0.452" Grid.Row="1"/>
+        <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="297" Margin="1043,187,0,0" Grid.Row="1" Stroke="Black" VerticalAlignment="Top" Width="227"/>
 
 
 
