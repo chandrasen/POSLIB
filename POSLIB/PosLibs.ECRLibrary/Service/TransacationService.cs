@@ -33,9 +33,9 @@ namespace PosLibs.ECRLibrary.Service
             return jsontransrequest;
 
         }
-        public string transrequestBody(string requestbody)
+        public string transrequestBody(string requestbody,int txntype)
         {
-            return requestbody;
+            return CommaUtil.stringToCsv(txntype, requestbody);
         }
  public void doTransaction(string inputReqBody, int transactionType, ITransactionListener transactionListener)
   {
@@ -47,10 +47,11 @@ namespace PosLibs.ECRLibrary.Service
     configdata = conobj.getConfigData();
     TransactionReponse transactionReponse = new TransactionReponse();
 
-    string req = transrequestBody(inputReqBody);
+    string req = transrequestBody(inputReqBody,transactionType);
 
     string transactionRequestbody = transactionRequest(req);
     string encrypttxnrequst = XorEncryption.EncryptDecrypt(transactionRequestbody);
+           
     Log.Information("Txn request:-" + transactionRequestbody);
 
     try
@@ -166,7 +167,7 @@ namespace PosLibs.ECRLibrary.Service
                     Console.WriteLine("Selected ConnectionMode" + configdata?.connectionMode);
                     conobj?.sendCOMTXNData(encrypttxnrequst);
                     Array.Clear(buffer, 0, buffer.Length);
-                    responseString = conobj?.receiveCOMTxnrep();
+                    responseString = conobj?.receiveCOMTxnrep();        
                     Console.WriteLine("COM Transaction Response:" + responseString);
                 }
                 else
@@ -197,7 +198,9 @@ namespace PosLibs.ECRLibrary.Service
 
     if (trasnlistener != null)
     {
-        transactionListener?.onSuccess(responseString);
+                string decreresponse = XorEncryption.EncryptDecrypt(responseString);
+
+                transactionListener?.onSuccess(decreresponse);
     }
     else
     {
