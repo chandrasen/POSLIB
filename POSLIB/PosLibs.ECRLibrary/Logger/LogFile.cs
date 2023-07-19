@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Serilog.Events;
 using Serilog;
+using PosLibs.ECRLibrary.Common;
 
 namespace PosLibs.ECRLibrary.Logger
 {
@@ -29,8 +30,8 @@ namespace PosLibs.ECRLibrary.Logger
                 }
                 catch (ArgumentException e)
                 {
-                    Log.Error("File Path Not Found");
-                    Console.WriteLine("File Path Not Found");
+                    Log.Error(PinLabsEcrConstant.FILE_NOT_FOUND);
+                    
                 }
 
                 if (logDirectory != null)

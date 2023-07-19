@@ -5,14 +5,15 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using PosLibs.ECRLibrary.Model;
+using Serilog;
+
 namespace PosLibs.ECRLibrary.Common
 {
     public class CommaUtil
     {
-        protected CommaUtil()
-        {
-            
-        }
+        protected CommaUtil() { }
+
+        //IP Address Validaiton
         public static bool CheckIPAddress(string ipAddress)
         {
             try
@@ -29,24 +30,32 @@ namespace PosLibs.ECRLibrary.Common
             }
             return true;
         }
+
+        //Convert string to Csv format
         public static string stringToCsv(int txntype,string amount)
         {
+            Log.Debug("Inside StringToCsv method");
+            
             string value = "TX12345678";
-            string fullrequbody = txntype.ToString() + "," + value + "," + amount + "," + "," + "," + "," + "," + "," + ",";
-          string HaxDecimalreqbody=  GetPaymentPacket(fullrequbody);
+            string fullrequbody = txntype.ToString() + "," +
+                value + "," + amount + "," + "," + "," + "," + "," + "," + ",";
+            string HaxDecimalreqbody=  GetPaymentPacket(fullrequbody);
+            Log.Information("Txn Request Body in Csv format:" + HaxDecimalreqbody);
             return HaxDecimalreqbody;
         }
+
+        //getPaymentPacket method
         static string GetPaymentPacket(string csvData)
         {
+            Log.Debug("Inside GetPaymentPacket method");
             if (!string.IsNullOrEmpty(csvData))
             {
                 int iOffset = 0;
                 byte[] msgBytes = Encoding.UTF8.GetBytes(csvData);
                 int iCSVLen = msgBytes.Length;
                 int finalMsgLen = iCSVLen + 7;
-                // 7 = 2 byte source , 2 byte function code, 2 byte length, 1 byte termination
                 byte[] msgBytesExtra = new byte[finalMsgLen];
-                //source id - 2 bytes
+            
                 msgBytesExtra[iOffset] = 0x10;
                 iOffset++;
                 msgBytesExtra[iOffset] = 0x00;
@@ -67,13 +76,17 @@ namespace PosLibs.ECRLibrary.Common
                 iOffset++;
                 string hexString = BytesToHex(msgBytesExtra);
                 Console.WriteLine(hexString);
+                Log.Information("Txn Request Body HexDecimal String" + hexString);
                 return hexString;
             }
             else
             {
+                Log.Information("Txn Request Body Hexdecimal String :" + " ");
                 return "";
             }
         }
+
+        //Convert Byte To Hex String
         static string BytesToHex(byte[] bytes)
         {
             StringBuilder hexBuilder = new StringBuilder(bytes.Length * 2);

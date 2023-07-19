@@ -27,29 +27,20 @@ using Serilog.Events;
 using System.Security.Cryptography.X509Certificates;
 using Xceed.Wpf.Toolkit;
 using System.CodeDom;
-
+using System.Runtime.CompilerServices;
 
 namespace PosLibs.ECRLibrary.Service
 {
     public class ConnectionService
     {
-         public ConnectionService() { }
-        private  static Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        private static SerialPort serial = new SerialPort();
-        public string PortCom;
-        public string IPortCom;
-        public string bafudRateCom = string.Empty;
-        public string parityCom = string.Empty;
-        public int dataBitsCom;
-        public int stopBitsCom;
-        Boolean res = false;
-        public IScanDeviceListener listener;
-        public ITransactionListener trasnlistener;
+        public ConnectionService() { }
+        private  Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        private  SerialPort serial = new SerialPort();
+        private string PortCom=string.Empty;
+        private IScanDeviceListener? listener;
         public readonly static bool isConnectivityFallbackAllowed;
-        List<DeviceList> deviceLists = new List<DeviceList>();
-        public Boolean responseboolean;
-        private Thread thread;
-        public static string fullcomportName = "";
+        readonly List<DeviceList>  deviceLists = new List<DeviceList>();
+        private string fullcomportName = string.Empty;
         ConfigData configdata = new ConfigData();
         public bool checkComConn()
         {
@@ -57,19 +48,22 @@ namespace PosLibs.ECRLibrary.Service
             return status;
 
         }
-        private const string PortSettingsFilePath = "C:\\PinLabs\\Configure.json";
 
-        public ConfigData getConfigData()
+
+        private const string PortSettingsFilePath = PinLabsEcrConstant.FILE_PATH;
+
+        public ConfigData? getConfigData()
         {
 
             if (File.Exists(PortSettingsFilePath))
             {
                 string json = File.ReadAllText(PortSettingsFilePath);
                 configdata = JsonConvert.DeserializeObject<ConfigData>(json);
-                return configdata;
+                if (configdata != null)
+                {
+                    return configdata;
+                }
             }
-
-            // Default port number if the file doesn't exist
             return configdata;
         }
         public void setConfiguration(ConfigData configData)
@@ -90,29 +84,29 @@ namespace PosLibs.ECRLibrary.Service
         public Boolean AutoConnect()
         {
             Boolean value = false;
-            ConfigData configdata = getConfigData();
-            if (configdata != null)
+            ConfigData? fetchData = getConfigData();
+            if (fetchData != null)
             {
-                if (configdata.connectionMode == "TCP/IP")
+                if (fetchData.connectionMode == PinLabsEcrConstant.TCPIP)
                 {
-                    string tcpip = configdata.tcpIp.ToString();
-                    int tcpport = configdata.tcpPort;
+                    string tcpip = fetchData.tcpIp.ToString();
+                    int tcpport = fetchData.tcpPort;
                     value = isOnlineConnection(tcpip, tcpport);
                 }
-                else if (configdata.connectionMode == "COM")
+                else if (fetchData.connectionMode == PinLabsEcrConstant.COM)
                 {
-                    int commport = configdata.commPortNumber;
+                    int commport = fetchData.commPortNumber;
                     value = isComDeviceConnected(commport);
                 }
                 else
                 {
-                    //MessageBox.Show("Please connect with Termianl");
+                    Log.Error("AutoConnect Fail");
                 }
 
             }
             return value;
         }
-        public  Boolean isComDeviceConnected(int comPort)
+        public Boolean isComDeviceConnected(int comPort)
         {
             bool responseInteger = false;
             var disconnect = doCOMDisconnection();
@@ -126,12 +120,15 @@ namespace PosLibs.ECRLibrary.Service
                     serial.Open();
                     responseInteger = true;
                     configdata = getConfigData();
-                    configdata.commPortNumber = comPort;
-                    this.configdata.tcpIp = configdata.tcpIp;
-                    this.configdata.tcpPort = configdata.tcpPort;
-                    configdata.connectionMode = "COM";
-                    configdata.isConnectivityFallBackAllowed = false;
-                    setConfiguration(configdata);
+                    if (configdata != null)
+                    {
+                        configdata.commPortNumber = comPort;
+                        this.configdata.tcpIp = configdata.tcpIp;
+                        this.configdata.tcpPort = configdata.tcpPort;
+                        configdata.connectionMode = PinLabsEcrConstant.COM;
+                        configdata.isConnectivityFallBackAllowed = false;
+                        setConfiguration(configdata);
+                    }
                 }
                 catch (IOException e)
                 {
@@ -146,32 +143,31 @@ namespace PosLibs.ECRLibrary.Service
             }
             return responseInteger;
         }
-        public T jsonParser<T>(string json)
+        public T? jsonParser<T>(string json)
         {
-            T res = default(T);
+            T? res = default;
             try
             {
                 res = JsonConvert.DeserializeObject<T>(json);
-                return res;
             }
             catch (JsonReaderException e)
             {
-                Console.WriteLine("Unexcepted character");
+                Console.WriteLine("Unexcepted character"+e);
+                
             }
             return res;
         }
         public string checkComport(string port)
         {
-            ISet<string> comallport = new HashSet<string>();
-            string fullcomportName = "";
-            comallport = getDeviceManagerComPort();
+            ISet<string> comallport = getDeviceManagerComPort();
+
             if (comallport != null)
             {
                 foreach (string portString in comallport)
                 {
                     string comPort = portString.Substring(portString.IndexOf("COM") + 3, portString.Length - portString.IndexOf("COM") - 4);
-                    string res = "COM" + comPort;
-                    if (port == res)
+                    string result = "COM" + comPort;
+                    if (port == result)
                     {
                         fullcomportName = portString;
                         Console.WriteLine(portString);
@@ -184,10 +180,10 @@ namespace PosLibs.ECRLibrary.Service
         {
             Log.Information("Inside scanSerialDevice method");
             this.listener = scanDeviceListener;
+            bool comres = false;
             string responseString = "";
             string comreq = getComDeviceRequest();
-            ISet<string> allcomport = new HashSet<string>();
-            allcomport = getDeviceManagerComPort();
+            ISet<string> allcomport = getDeviceManagerComPort();
             if (allcomport.Count == 0)
             {
                 listener.onFailure("Please Connect Terminal/USB Error", 1005);
@@ -205,8 +201,6 @@ namespace PosLibs.ECRLibrary.Service
                 string comPort = portString.Substring(portString.IndexOf("COM") + 3, portString.Length - portString.IndexOf("COM") - 4);
                 comPorts[i++] = comPort;
             }
-
-            byte[] dataBytes = Encoding.UTF8.GetBytes(comreq);
             foreach (string comPort in comPorts)
             {
                 string portcom = "COM" + comPort;
@@ -223,7 +217,7 @@ namespace PosLibs.ECRLibrary.Service
                     var disconnect = doCOMDisconnection();
                     if (disconnect == 0)
                     {
-                        res = isComDeviceConnected(int.Parse(comPort));
+                        comres = isComDeviceConnected(int.Parse(comPort));
                         Log.Information("isComDeviceConnected" + true);
                     }
                     fullcomportName = checkComport(portcom);
@@ -238,35 +232,28 @@ namespace PosLibs.ECRLibrary.Service
                 catch (SocketException se)
                 {
                     Log.Error(se.ToString());
-                    Console.WriteLine("Connection Problem"+se);
                 }
                 catch (TimeoutException ex)
                 {
-                    listener.onFailure("No Device Found", 1002);
-                    Log.Error("Time out Exception" + ex);
+                    listener.onFailure(PinLabsEcrConstant.NO_DEVICE_FOUND, PinLabsEcrConstant.NO_DEV_FOUND);
+                    Log.Error(PinLabsEcrConstant.TIME_OUT_EXC + ex);
                 }
                 catch (IOException io)
                 {
-                    listener.onFailure("Try Again", 1005);
+                    listener.onFailure("Try Again", PinLabsEcrConstant.IOEXCEPTION);
                     Log.Error(io.ToString());
                 }
 
                 catch (InvalidOperationException e)
                 {
-                    listener.onFailure("IOException", 1001);
+                    listener.onFailure("IOException", PinLabsEcrConstant.IOEXCEPTION);
                     Log.Error(e.ToString());
                 }
             }
 
-            if (listener != null)
+            if (listener != null && deviceLists != null && deviceLists.Count > 0)
             {
-                if (deviceLists != null && deviceLists.Count > 0)
-                {
-
                     listener.onSuccess(deviceLists);
-
-                }
-
             }
         }
         public bool sendData(string res)
@@ -323,28 +310,31 @@ namespace PosLibs.ECRLibrary.Service
                 DeviceList deviceList = new DeviceList();
 
                 TerminalConnectivityResponse terminalConnectivity = JsonConvert.DeserializeObject<TerminalConnectivityResponse>(recivebuff);
-                deviceList.cashierId = terminalConnectivity.cashierId;
-                deviceList.MerchantName = terminalConnectivity.MerchantName;
-                deviceList.deviceId = terminalConnectivity.devId;
-                deviceList.deviceIp = terminalConnectivity.posIP;
-                deviceList.devicePort = terminalConnectivity.posPort;
-                deviceList.msgType = (int)terminalConnectivity.msgType;
-                if (deviceList.msgType == 1)
+                if (terminalConnectivity != null)
                 {
-                    deviceList.connectionMode = "TCP IP";
+                    deviceList.cashierId = terminalConnectivity.cashierId;
+                    deviceList.MerchantName = terminalConnectivity.MerchantName;
+                    deviceList.deviceId = terminalConnectivity.devId;
+                    deviceList.deviceIp = terminalConnectivity.posIP;
+                    deviceList.devicePort = terminalConnectivity.posPort;
+                    deviceList.msgType = terminalConnectivity.msgType;
+                    if (deviceList.msgType == 1)
+                    {
+                        deviceList.connectionMode = PinLabsEcrConstant.TCPIP;
+                    }
+                    else
+                    {
+                        deviceList.connectionMode = PinLabsEcrConstant.COM;
+                    }
+                    deviceList.SerialNo = terminalConnectivity.slNo;
+                    deviceList.COM = PortCom;
                 }
-                else
-                {
-                    deviceList.connectionMode = "COM";
-                }
-                deviceList.SerialNo = terminalConnectivity.slNo;
-                deviceList.COM = PortCom;
 
                 deviceLists.Add(deviceList);
             }
             catch (JsonReaderException ex)
             {
-                Console.WriteLine("JsonReaderException "+ex);
+                Console.WriteLine("JsonReaderException " + ex);
             }
         }
         public string getComDeviceRequest()
@@ -363,7 +353,7 @@ namespace PosLibs.ECRLibrary.Service
             ISet<String> allComport = new HashSet<string>();
             ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%'");
 
-            // Iterate through the search results
+          
             foreach (ManagementBaseObject obj in searcher.Get())
             {
                 string caption = obj["Caption"].ToString();
@@ -412,13 +402,14 @@ namespace PosLibs.ECRLibrary.Service
             {
                 if (listener != null)
                 {
-                    listener.onFailure("IOException", 1001);
+                    listener.onFailure(PinLabsEcrConstant.IO_EXC_MSG, PinLabsEcrConstant.IOEXCEPTION);
+                    Log.Error("IOException" + e);
                 }
             }
         }
         private void TcpListen()
         {
-            thread = new Thread(Run);
+           Thread thread = new Thread(Run);
             thread.Priority = ThreadPriority.Normal;
             thread.Start();
         }
@@ -440,12 +431,12 @@ namespace PosLibs.ECRLibrary.Service
                 server.Start();
                 Timer timer = new Timer(StopServer, null, 10000, Timeout.Infinite);
                 isServerActive = server.Server?.IsBound ?? false;
-                while (isServerActive == true)
+                while (isServerActive)
                 {
                     TcpClient client = server.AcceptTcpClient();
 
                     NetworkStream stream = client.GetStream();
-                   if(isServerActive)
+                    if (isServerActive)
                     {
                         byte[] buffer = new byte[256];
                         int bytesRead = stream.Read(buffer, 0, buffer.Length);
@@ -457,7 +448,7 @@ namespace PosLibs.ECRLibrary.Service
             catch (SocketException ex)
             {
 
-                Console.WriteLine("Network Error");
+                Log.Error("Socket Exception" + ex);
             }
             catch (IOException e)
             {
@@ -474,22 +465,26 @@ namespace PosLibs.ECRLibrary.Service
                     }
                     else
                     {
-                        listener.onFailure("No Device Found Please Check NetWork", 1005);
-                   }
+                        listener.onFailure("No Device Found Please Check NetWork", PinLabsEcrConstant.NO_DEV_FOUND);
+                    }
                 }
             }
             void StopServer(object state)
             {
+                Log.Debug("Inside Stop Server Method");
                 server.Stop();
                 isServerActive = false;
-                Console.WriteLine("Server stopped.");
+                Log.Information("Server stopped");
+
             }
         }
         public Boolean isOnlineConnection(string IP, int PORT)
-        {   
-            Log.Information("Inside IsOnlineConnection method");
-            responseboolean = false;
-            if(CommaUtil.CheckIPAddress(IP)){
+        {
+            
+            Log.Debug("Inside IsOnlineConnection method");
+             bool responseboolean = false;
+            if (CommaUtil.CheckIPAddress(IP))
+            {
                 IPAddress host = IPAddress.Parse(IP);
                 IPEndPoint hostep = new IPEndPoint(host, PORT);
                 try
@@ -514,19 +509,19 @@ namespace PosLibs.ECRLibrary.Service
                 configdata = getConfigData();
                 configdata.tcpIp = IP;
                 configdata.tcpPort = PORT;
-                configdata.connectionMode = "TCP/IP";
+                configdata.connectionMode = PinLabsEcrConstant.TCPIP;
                 configdata.isConnectivityFallBackAllowed = false;
-               this.configdata.commPortNumber = configdata.commPortNumber;
+                this.configdata.commPortNumber = configdata.commPortNumber;
 
                 setConfiguration(configdata);
             }
             else
             {
-                Console.WriteLine("Invalid IP Number");
+                Log.Information("Invalid IP Number");
             }
             return responseboolean;
         }
-       
+
         public bool sendTcpIpTxnData(string requestdata)
         {
             bool responseboolen = false;
@@ -537,7 +532,7 @@ namespace PosLibs.ECRLibrary.Service
 
                     byte[] requestData = Encoding.ASCII.GetBytes(requestdata);
                     sock.SendTimeout = 27000;
-                    int bytesSent = sock.Send(requestData);
+                    sock.Send(requestData);
                     Console.WriteLine("Transaction RequestBody:" + requestdata);
                     responseboolen = true;
                     Log.Information("tcp/ip transaction data send successfully");
@@ -545,7 +540,7 @@ namespace PosLibs.ECRLibrary.Service
                 catch (SocketException e)
                 {
                     Console.WriteLine("Socket is closed please try agian");
-                    Log.Error("send tcp/Ip txn request failed");
+                    Log.Error("send tcp/Ip txn request failed"+e);
                     responseboolen = false;
                 }
             }

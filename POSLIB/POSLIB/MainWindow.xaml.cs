@@ -40,10 +40,10 @@ namespace POSLIB
     /// </summary>
     public partial class MainWindow : Window
     {
-        string TerminalId = "";
+        string TerminalId = string.Empty;
         int status = 0;
-        string cashRegister = "";
-        string transaction = "";
+        string cashRegister = string.Empty;
+        string transaction = string.Empty;
 
         string prvsRCRNumber;
         static string textFocus = string.Empty;
@@ -70,13 +70,13 @@ namespace POSLIB
         static bool printCheck;
         static bool ECRrefNum;
         static bool pfcCheck;
-        string savetcpIp = "";
-        string savetcpport = "";
-        string savedeviceid = "";
-        string savecomdeviceid = "";
-        string savetcpserialno = "";
-        string savecomserialno = "";
-        string savecomport = "";
+        string savetcpIp = string.Empty;
+        string savetcpport = string.Empty;
+        string savedeviceid = string.Empty;
+        string savecomdeviceid = string.Empty;
+        string savetcpserialno = string.Empty;
+        string savecomserialno = string.Empty;
+        string savecomport = string.Empty;
         static string transTypeSelected;
         static string transTypeSelectedPos;
         static string AMOUNT;
@@ -103,10 +103,10 @@ namespace POSLIB
         string sendData;
         static int countAmount = 0;
         static int countCB = 0;
-        public string tcpdeviceID = "";
-        public string comdeviceID = "";
+        public string tcpdeviceID = string.Empty;
+        public string comdeviceID = string.Empty;
 
-        static string deviceName = " ";
+        static string deviceName = string.Empty;
 
         BackgroundWorker worker;
         BackgroundWorker workerSend;
@@ -781,7 +781,6 @@ namespace POSLIB
                 ProgBarL.Visibility = Visibility.Hidden;
                 ProgBar.Visibility = Visibility.Hidden;
                 fullScreen.IsEnabled = true;
-                MessageBox.Show(Application.Current.MainWindow, ConnectionService.fullcomportName, "Scan Done");
                 btnConnect.IsEnabled = true;
                 ProgBar.IsIndeterminate = false;
             }
@@ -8168,7 +8167,7 @@ namespace POSLIB
 
 
 
-              if (items.connectionMode == "TCP IP")
+              if (items.connectionMode == "TCP/IP")
                 {
                     
                     serialNo.Text = items.SerialNo;
@@ -8462,7 +8461,7 @@ namespace POSLIB
                 return;
             }
 
-            intvalue = "";
+            intvalue = string.Empty;
             selectCom = comfullname.Text;
             foreach (char c in selectCom)
             {
