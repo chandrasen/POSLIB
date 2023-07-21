@@ -141,7 +141,7 @@ namespace POSLIB
         static int errorCode;
         public static List<DeviceList> serialdevice = new List<DeviceList>();
         public List<DeviceList> serialdevicelist = new List<DeviceList>();
-        public class ScanLisnter : IScanDeviceListener
+        public class ScanLisnter : ScanDeviceListener
         {
             public void onFailure(string errorMsg, int errorCode)
             {

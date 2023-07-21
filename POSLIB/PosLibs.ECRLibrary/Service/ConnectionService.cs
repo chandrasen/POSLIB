@@ -35,9 +35,10 @@ namespace PosLibs.ECRLibrary.Service
     {
         public ConnectionService() { }
         private  Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        private  SerialPort serial = new SerialPort();
+        public static SerialPort serial = new SerialPort();
         private string PortCom=string.Empty;
-        private IScanDeviceListener? listener;
+        private ScanDeviceListener? listener;
+        Boolean res = false;
         public readonly static bool isConnectivityFallbackAllowed;
         readonly List<DeviceList>  deviceLists = new List<DeviceList>();
         private string fullcomportName = string.Empty;
@@ -120,15 +121,12 @@ namespace PosLibs.ECRLibrary.Service
                     serial.Open();
                     responseInteger = true;
                     configdata = getConfigData();
-                    if (configdata != null)
-                    {
-                        configdata.commPortNumber = comPort;
-                        this.configdata.tcpIp = configdata.tcpIp;
-                        this.configdata.tcpPort = configdata.tcpPort;
-                        configdata.connectionMode = PinLabsEcrConstant.COM;
-                        configdata.isConnectivityFallBackAllowed = false;
-                        setConfiguration(configdata);
-                    }
+                    configdata.commPortNumber = comPort;
+                    configdata.tcpIp = configdata.tcpIp;
+                    configdata.tcpPort = configdata.tcpPort;
+                    configdata.connectionMode = "COM";
+                    configdata.isConnectivityFallBackAllowed = false;
+                    setConfiguration(configdata);
                 }
                 catch (IOException e)
                 {
@@ -159,15 +157,16 @@ namespace PosLibs.ECRLibrary.Service
         }
         public string checkComport(string port)
         {
-            ISet<string> comallport = getDeviceManagerComPort();
-
+            ISet<string> comallport = new HashSet<string>();
+            string fullcomportName = "";
+            comallport = getDeviceManagerComPort();
             if (comallport != null)
             {
                 foreach (string portString in comallport)
                 {
                     string comPort = portString.Substring(portString.IndexOf("COM") + 3, portString.Length - portString.IndexOf("COM") - 4);
-                    string result = "COM" + comPort;
-                    if (port == result)
+                    string res = "COM" + comPort;
+                    if (port == res)
                     {
                         fullcomportName = portString;
                         Console.WriteLine(portString);
@@ -176,14 +175,14 @@ namespace PosLibs.ECRLibrary.Service
             }
             return fullcomportName;
         }
-        public void scanSerialDevice(IScanDeviceListener scanDeviceListener)
+        public void scanSerialDevice(ScanDeviceListener scanDeviceListener)
         {
             Log.Information("Inside scanSerialDevice method");
             this.listener = scanDeviceListener;
-            bool comres = false;
             string responseString = "";
             string comreq = getComDeviceRequest();
-            ISet<string> allcomport = getDeviceManagerComPort();
+            ISet<string> allcomport = new HashSet<string>();
+            allcomport = getDeviceManagerComPort();
             if (allcomport.Count == 0)
             {
                 listener.onFailure("Please Connect Terminal/USB Error", 1005);
@@ -201,6 +200,8 @@ namespace PosLibs.ECRLibrary.Service
                 string comPort = portString.Substring(portString.IndexOf("COM") + 3, portString.Length - portString.IndexOf("COM") - 4);
                 comPorts[i++] = comPort;
             }
+
+            byte[] dataBytes = Encoding.UTF8.GetBytes(comreq);
             foreach (string comPort in comPorts)
             {
                 string portcom = "COM" + comPort;
@@ -217,7 +218,7 @@ namespace PosLibs.ECRLibrary.Service
                     var disconnect = doCOMDisconnection();
                     if (disconnect == 0)
                     {
-                        comres = isComDeviceConnected(int.Parse(comPort));
+                        res = isComDeviceConnected(int.Parse(comPort));
                         Log.Information("isComDeviceConnected" + true);
                     }
                     fullcomportName = checkComport(portcom);
@@ -231,29 +232,33 @@ namespace PosLibs.ECRLibrary.Service
                 }
                 catch (SocketException se)
                 {
-                    Log.Error(se.ToString());
+                    Console.WriteLine("Connection Problem");
+
                 }
                 catch (TimeoutException ex)
                 {
-                    listener.onFailure(PinLabsEcrConstant.NO_DEVICE_FOUND, PinLabsEcrConstant.NO_DEV_FOUND);
-                    Log.Error(PinLabsEcrConstant.TIME_OUT_EXC + ex);
+                    listener.onFailure("No Device Found", 1002);
                 }
                 catch (IOException io)
                 {
-                    listener.onFailure("Try Again", PinLabsEcrConstant.IOEXCEPTION);
-                    Log.Error(io.ToString());
+                    listener.onFailure("Try Again", 1005);
                 }
 
                 catch (InvalidOperationException e)
                 {
-                    listener.onFailure("IOException", PinLabsEcrConstant.IOEXCEPTION);
-                    Log.Error(e.ToString());
+                    listener.onFailure("IOException", 1001);
                 }
             }
 
-            if (listener != null && deviceLists != null && deviceLists.Count > 0)
+            if (listener != null)
             {
+                if (deviceLists != null && deviceLists.Count > 0)
+                {
+
                     listener.onSuccess(deviceLists);
+
+                }
+
             }
         }
         public bool sendData(string res)
@@ -361,7 +366,7 @@ namespace PosLibs.ECRLibrary.Service
             }
             return allComport;
         }
-        public void scanOnlineDevice(IScanDeviceListener scanDeviceListener)
+        public void scanOnlineDevice(ScanDeviceListener scanDeviceListener)
         {
             Log.Information("Inside scanOnline Device mehtod");
             this.listener = scanDeviceListener;

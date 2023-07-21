@@ -21,8 +21,9 @@ namespace PosLibs.ECRLibrary.Service
         {
             TransactionRequest trnrequest = new TransactionRequest();
             trnrequest.cashierId = "";
-            trnrequest.pType = "1";
-            trnrequest.msgType = "0";
+            trnrequest.isDemoMode = false;
+            trnrequest.msgType = 6;
+            trnrequest.pType = 1;
             trnrequest.requestBody = requestbody;
             trnrequest.isDemoMode = false;
             string jsontransrequest = JsonConvert.SerializeObject(trnrequest);
@@ -44,6 +45,7 @@ namespace PosLibs.ECRLibrary.Service
             string req = transrequestBody(inputReqBody, transactionType);
             string transactionRequestbody = transactionRequest(req);
             string encrypttxnrequst = XorEncryption.EncryptDecrypt(transactionRequestbody);
+            string Decrypted = XorEncryption.EncryptDecrypt(encrypttxnrequst);
 
             Log.Information("Txn request:-" + transactionRequestbody);
 
@@ -155,6 +157,8 @@ namespace PosLibs.ECRLibrary.Service
                     }
                     else if (configdata?.connectionMode == PinLabsEcrConstant.COM)
                     {
+                              
+
                         if (isNetworkAvailabe())
                         {
                             Log.Information("Selected ConnectionMode:-" + configdata?.connectionMode);
@@ -166,7 +170,7 @@ namespace PosLibs.ECRLibrary.Service
                         }
                         else
                         {
-                            transactionListener?.onFailure("Please Connected with Serial Cable", PinLabsEcrConstant.TXN_FAILD);
+                            transactionListener.onFailure("Please Connected with Serial Cable", 1005);
                         }
                     }
                     else
