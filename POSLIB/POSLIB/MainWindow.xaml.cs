@@ -30,6 +30,9 @@ using PosLibs.ECRLibrary.Model;
 using PosLibs.ECRLibrary.Service;
 using Serilog.Core;
 using Path = System.IO.Path;
+using Microsoft.Win32;
+using System.Net;
+
 namespace POSLIB
 {
     /// <summary>
@@ -37,10 +40,10 @@ namespace POSLIB
     /// </summary>
     public partial class MainWindow : Window
     {
-        string TerminalId = "";
+        string TerminalId = string.Empty;
         int status = 0;
-        string cashRegister = "";
-        string transaction = "";
+        string cashRegister = string.Empty;
+        string transaction = string.Empty;
 
         string prvsRCRNumber;
         static string textFocus = string.Empty;
@@ -67,6 +70,13 @@ namespace POSLIB
         static bool printCheck;
         static bool ECRrefNum;
         static bool pfcCheck;
+        string savetcpIp = string.Empty;
+        string savetcpport = string.Empty;
+        string savedeviceid = string.Empty;
+        string savecomdeviceid = string.Empty;
+        string savetcpserialno = string.Empty;
+        string savecomserialno = string.Empty;
+        string savecomport = string.Empty;
         static string transTypeSelected;
         static string transTypeSelectedPos;
         static string AMOUNT;
@@ -93,8 +103,10 @@ namespace POSLIB
         string sendData;
         static int countAmount = 0;
         static int countCB = 0;
+        public string tcpdeviceID = string.Empty;
+        public string comdeviceID = string.Empty;
 
-        static string deviceName = " ";
+        static string deviceName = string.Empty;
 
         BackgroundWorker worker;
         BackgroundWorker workerSend;
@@ -322,7 +334,7 @@ namespace POSLIB
                     {
                         MessageBox.Show(Application.Current.MainWindow, "Disconnected Successfully");
                         ConnectL.Content = "Not Connected";
-                        ConnectImg.Source = null;
+                        //ConnectImg.Source = null;
                         //txtIpAddress.Text = "";
                         // txtPort.Text = "";
                         BUFFERSEND.Text = "";
@@ -495,7 +507,7 @@ namespace POSLIB
             }
         }
         static string resp = "";
-        public class TransactionDrive : TransactionListener
+        public class TransactionDrive : ITransactionListener
         {
             public void onFailure(string errorMsg, int errorCode)
             {
@@ -550,9 +562,9 @@ namespace POSLIB
 
                     if (Amount != "")
                     {
-                        requestbody = "10000997001A343030312C545831323334353637382C3131312C2C2C2C2C2C2CFF";
+                        requestbody = Amount;
                         string afterreplace = requestbody.Replace("10000", Amount);
-                        trxobj.doTransaction(requestbody, int.Parse(transactionType), transactionDrive);
+                        trxobj.doTransaction(afterreplace, int.Parse(transactionType), transactionDrive);
 
                         Application.Current.Dispatcher.Invoke(() =>
                         {
@@ -759,7 +771,7 @@ namespace POSLIB
                 ProgBarL.Visibility = Visibility.Hidden;
                 ProgBar.Visibility = Visibility.Hidden;
                 fullScreen.IsEnabled = true;
-                MessageBox.Show(Application.Current.MainWindow, "Scan Done");
+                
                 btnConnect.IsEnabled = true;
                 ProgBar.IsIndeterminate = false;
             }
@@ -769,7 +781,6 @@ namespace POSLIB
                 ProgBarL.Visibility = Visibility.Hidden;
                 ProgBar.Visibility = Visibility.Hidden;
                 fullScreen.IsEnabled = true;
-                MessageBox.Show(Application.Current.MainWindow, ConnectionService.fullcomportName, "Scan Done");
                 btnConnect.IsEnabled = true;
                 ProgBar.IsIndeterminate = false;
             }
@@ -835,8 +846,8 @@ namespace POSLIB
                     bmi.BeginInit();
                     bmi.UriSource = new Uri("img\\connectedIcon.png", UriKind.Relative);
                     bmi.EndInit();
-                    ConnectImg.Stretch = Stretch.Fill;
-                    ConnectImg.Source = bmi;
+                   // ConnectImg.Stretch = Stretch.Fill;
+                    //ConnectImg.Source = bmi;
                     ConnectL.Content = "Connected";
                     rdbCom.IsEnabled = false;
                     rdbTcp.IsEnabled = false;
@@ -4447,7 +4458,7 @@ namespace POSLIB
                 {
                     MessageBox.Show(Application.Current.MainWindow, "Disconnected Successfully");
                     ConnectL.Content = "Not Connected";
-                    ConnectImg.Source = null;
+                    //ConnectImg.Source = null;
                     //txtIpAddress.Text = "";
                     // txtPort.Text = "";
                     BUFFERSEND.Text = "";
@@ -8156,18 +8167,22 @@ namespace POSLIB
 
 
 
-              if (items.connectionMode == "TCP IP")
+              if (items.connectionMode == "TCP/IP")
                 {
                     
                     serialNo.Text = items.SerialNo;
                     tcpip.Text = items.deviceIp;
                     tcpport.Text = items.devicePort;
+                    tcpdeviceID = items.deviceId;
+
+                    
                 }
                 else
                 {
                     
                     comserialNo.Text = items.SerialNo;
                     comfullname.Text = items.COM;
+                    comdeviceID = items.deviceId;
 
                 }
 
@@ -8280,15 +8295,38 @@ namespace POSLIB
                 {
                     firstPriority = "TCP/IP";
                     secondPriority = "COM";
-                    lblText1.Text = "TCP/IP";
-                    lblText2.Text = "COM";
+                    TCPlbl.Text = "TCP IP";
+                    COMlbl.Text = "COM";
+                    TCPIPGrid.Visibility = Visibility.Visible;
+                    TCPIPGrid1.Visibility = Visibility.Hidden;
+                    COMGrid.Visibility = Visibility.Visible;
+                    COMGrid1.Visibility = Visibility.Hidden;
+                    TCPIPDeviceID.Text = tcpdeviceID;
+                    TCPIPIP.Text = savetcpport;
+                    TCPPORT.Text = savetcpIp;
+                    TCPSerialNO.Text = savetcpserialno;
+                    COMDeviceID.Text = comdeviceID;
+                    COMSerialPort.Text = savecomport;
+                    COMSrialNO.Text = savecomserialno;
+
                 }
                 else
                 {
-                    lblText1.Text = "COM";
-                    lblText2.Text = "TCP/IP";
                     firstPriority = "COM";
                     secondPriority = "TCP/IP";
+                    TCPlbl1.Text = "COM";
+                    COMlbl1.Text = "TCP IP";
+                    TCPIPGrid.Visibility = Visibility.Hidden;
+                    TCPIPGrid1.Visibility = Visibility.Visible;
+                    COMGrid.Visibility = Visibility.Hidden;
+                    COMGrid1.Visibility = Visibility.Visible;
+                    COMDeviceID1.Text = savecomserialno;
+                    COMSerialPort1.Text =tcpdeviceID ;
+                    COMSerialNO.Text = savecomport;
+                    TCPIPIP1.Text = savetcpIp;
+                    TCPSrialNO1.Text = savetcpserialno;
+                    TCPIPPORT.Text = savetcpport;
+                    TCPDeviceID1.Text = comdeviceID;
 
                 }
              
@@ -8298,14 +8336,13 @@ namespace POSLIB
                 configdata = obj.getConfigData();
                 configdata.commPortNumber = configdata.commPortNumber;
                 configdata.connectionMode = configdata.connectionMode;
+                configdata.communicationPriorityList = connectionPriorityMode;
                 configdata.tcpIp = configdata.tcpIp;
                 configdata.tcpPort = configdata.tcpPort;
                 configdata.communicationPriorityList = configdata.communicationPriorityList;
                 configdata.isConnectivityFallBackAllowed = isFallbackAllowed;
-                configdata.communicationPriorityList = connectionPriorityMode;
+                
                 obj.setConfiguration(configdata);
-
-                ConnectionService.connectionPriorityMode = connectionPriorityMode;
                 MessageBox.Show("Settings saved successfully.", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
@@ -8418,8 +8455,13 @@ namespace POSLIB
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(comfullname.Text))
+            {
+                MessageBox.Show("COM is In Empty.", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
-            intvalue = "";
+            intvalue = string.Empty;
             selectCom = comfullname.Text;
             foreach (char c in selectCom)
             {
@@ -8431,14 +8473,12 @@ namespace POSLIB
             isOnlineDevice = obj.isComDeviceConnected(int.Parse(intvalue));
             if (isOnlineDevice == true)
             {
-                ComdisConnectedBtn.IsEnabled = true;
-                COMConnetBtn.IsEnabled = false;
+                savecomport = comfullname.Text;
+                savecomserialno = comserialNo.Text;
                 enter.IsEnabled = true;
                 AMOUNTT.IsEnabled = true;
                 ConnectL.Content = "Connected";
                 MessageBox.Show("COM Connection Successfull");
-
-
             }
             else
             {
@@ -8446,54 +8486,85 @@ namespace POSLIB
             }
 
         }
-        string savetcpIp = "";
-        string savetcpport = "";
         private void Button_Click_4(object sender, RoutedEventArgs e)
         {
-
-
-            isOnlineDevice = obj.isOnlineConnection(tcpip.Text, int.Parse(tcpport.Text));
-            if (isOnlineDevice == true)
+            if (string.IsNullOrEmpty(tcpip.Text))
             {
-                TcpipDisconnectbtn.IsEnabled = true;
-                TCPIPConnectbtn.IsEnabled = false;
+                MessageBox.Show("IP is In Empty.", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (string.IsNullOrEmpty(tcpport.Text))
+            {
+                MessageBox.Show("Port is Empty", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (tcpport.Text.Length >= 6)
+            {
+                MessageBox.Show("Port number cannot be more than 6 characters long", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            if (!IPAddress.TryParse(tcpip.Text, out IPAddress ipAddress))
+            {
+                tcpip.Text = "Failed to connect";
+
+                return;
+            }
+            isOnlineDevice = obj.isOnlineConnection(tcpip.Text, int.Parse(tcpport.Text));
+            if (isOnlineDevice)
+            {
                 enter.IsEnabled = true;
                 AMOUNTT.IsEnabled = true;
                 ConnectL.Content = "Connected";
+                savedeviceid = "123456";
                 savetcpIp = tcpip.Text;
                 savetcpport = tcpport.Text;
-                MessageBox.Show("TCP IP Connection Successfull");
+                savetcpserialno = serialNo.Text;
+                MessageBox.Show("TCP IP Connection Successful");
             }
             else
             {
                 MessageBox.Show("Problem Connecting with Terminal");
             }
-
         }
 
         private void Button_Click_5(object sender, RoutedEventArgs e)
         {
-            int responseInteger = 1;
-            responseInteger = obj.doTCPIPDisconnection();
-            if (responseInteger == 0)
+            var dialog = new OpenFileDialog
             {
-                MessageBox.Show("TCP IP Disconnected Successfully");
-                TCPIPConnectbtn.IsEnabled = true;
-                TcpipDisconnectbtn.IsEnabled = false;
+                ValidateNames = false,
+                CheckFileExists = false,
+                CheckPathExists = true,
+                FileName = "",
+                
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                string selectedPath = System.IO.Path.GetDirectoryName(dialog.FileName);
+                Filepath.Text = selectedPath;
 
             }
+
         }
 
-        private void ComdisConnectedBtn_Click(object sender, RoutedEventArgs e)
+        private void Button_Click_6(object sender, RoutedEventArgs e)
         {
-            int responseInteger = 1;
-            responseInteger = obj.doCOMDisconnection();
-            if (responseInteger == 0)
-            {
-                MessageBox.Show("COM Discconected Successfully");
-                COMConnetBtn.IsEnabled = true;
-                ComdisConnectedBtn.IsEnabled = false;
-            }
+            EditBtn.Visibility = Visibility.Hidden;
+            CashierID.IsEnabled = true;
+            CashireName.IsEnabled = true;
+            savebtn.Visibility = Visibility.Visible;
+
+
+        }
+
+        private void savebtn_Click(object sender, RoutedEventArgs e)
+        {
+            savebtn.Visibility = Visibility.Hidden;
+            CashierID.IsEnabled = false;
+            CashireName.IsEnabled = false;
+            EditBtn.Visibility = Visibility.Visible;
+
         }
     }
 }

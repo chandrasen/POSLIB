@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PosLibs.ECRLibrary.Common
 {
-    public interface TransactionListener
+    public interface ITransactionListener
     {
 
         void onSuccess(String paymentResponse);

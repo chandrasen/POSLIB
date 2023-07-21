@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace PosLibs.ECRLibrary.Common
 {
-    public  class ComConstants
+    public static class ComConstants
     {
-      public static string BAUDRATECOM = "115200";
-        public static string PARITYCOM = "None";
-        public static int    DATABITSCOM = 8;
-        public static int  STOPBITSCOM = 1;
+       public const string BAUDRATECOM = "115200";
+        public const string PARITYCOM = "None";
+        public const int    DATABITSCOM = 8;
+        public const int  STOPBITSCOM = 1;
 
     }
 }
