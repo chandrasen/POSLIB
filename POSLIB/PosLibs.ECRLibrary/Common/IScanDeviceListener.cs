@@ -7,7 +7,7 @@ using PosLibs.ECRLibrary.Model;
 
 namespace PosLibs.ECRLibrary.Common
 {
-    public interface IScanDeviceListener
+    public interface IScanDeviceListener 
     {
         void onSuccess(List<DeviceList> list);
         void onFailure(string errorMsg, int errorCode);

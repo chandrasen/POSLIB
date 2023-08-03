@@ -16,19 +16,19 @@ namespace PosLibs.ECRLibrary.Service
         public TransacationService() { }
         private ITransactionListener? trasnlistener;
         ConfigData configdata = new ConfigData();
+        //private static ICommaUtil comUtil;
         readonly ConnectionService conobj = new ConnectionService();
         public string transactionRequest(string requestbody)
         {
             TransactionRequest trnrequest = new TransactionRequest();
             trnrequest.cashierId = "";
+            trnrequest.isDemoMode = false;
             trnrequest.pType = "1";
-            trnrequest.msgType = "0";
+            trnrequest.msgType = 6;
             trnrequest.requestBody = requestbody;
             trnrequest.isDemoMode = false;
             string jsontransrequest = JsonConvert.SerializeObject(trnrequest);
-
             return jsontransrequest;
-
         }
         public string transrequestBody(string requestbody, int txntype)
         {
@@ -44,17 +44,14 @@ namespace PosLibs.ECRLibrary.Service
             string req = transrequestBody(inputReqBody, transactionType);
             string transactionRequestbody = transactionRequest(req);
             string encrypttxnrequst = XorEncryption.EncryptDecrypt(transactionRequestbody);
-
+            string Decrypted = XorEncryption.EncryptDecrypt(encrypttxnrequst);
             Log.Information("Txn request:-" + transactionRequestbody);
-
             try
             {
                 Log.Information("isConnectionFollwedBack:" + configdata?.isConnectivityFallBackAllowed);
-
                 if (configdata?.isConnectivityFallBackAllowed == true)
                 {
                     bool transactionSuccessful = false;
-
                     for (int i = 0; i < configdata?.communicationPriorityList?.Length; i++)
                     {
                         Log.Information("communication Priority List " + ":-" + i + " " + configdata?.communicationPriorityList[i]);
@@ -155,19 +152,13 @@ namespace PosLibs.ECRLibrary.Service
                     }
                     else if (configdata?.connectionMode == PinLabsEcrConstant.COM)
                     {
-                        if (isNetworkAvailabe())
-                        {
+                        
                             Log.Information("Selected ConnectionMode:-" + configdata?.connectionMode);
                             Console.WriteLine("Selected ConnectionMode" + configdata?.connectionMode);
                             conobj.sendCOMTXNData(encrypttxnrequst);
                             Array.Clear(buffer, 0, buffer.Length);
                             responseString = conobj.receiveCOMTxnrep();
                             Console.WriteLine("COM Transaction Response:" + responseString);
-                        }
-                        else
-                        {
-                            transactionListener?.onFailure("Please Connected with Serial Cable", PinLabsEcrConstant.TXN_FAILD);
-                        }
                     }
                     else
                     {

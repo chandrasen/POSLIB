@@ -9,18 +9,18 @@ using Serilog;
 
 namespace PosLibs.ECRLibrary.Common
 {
-    public class CommaUtil
+    public class CommaUtil : ICommaUtil
     {
         protected CommaUtil() { }
 
         //IP Address Validaiton
-        public static bool CheckIPAddress(string ipAddress)
+        public  bool CheckIPAddress(string IP)
         {
             try
             {
-                if (!IPAddress.TryParse(ipAddress, out IPAddress? parsedIPAddress) || parsedIPAddress == null)
+                if (!IPAddress.TryParse(IP, out IPAddress? parsedIPAddress) || parsedIPAddress == null)
                     return false;
-                string[] octets = ipAddress.Split('.');
+                string[] octets = IP.Split('.');
                 if (octets.Length != 4)
                     return false;
             }
@@ -73,7 +73,6 @@ namespace PosLibs.ECRLibrary.Common
                 Array.Copy(msgBytes, 0, msgBytesExtra, iOffset, msgBytes.Length);
                 iOffset += msgBytes.Length;
                 msgBytesExtra[iOffset] = 0xFF;
-                iOffset++;
                 string hexString = BytesToHex(msgBytesExtra);
                 Console.WriteLine(hexString);
                 Log.Information("Txn Request Body HexDecimal String" + hexString);

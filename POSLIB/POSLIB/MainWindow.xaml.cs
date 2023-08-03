@@ -11,13 +11,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -33,13 +29,20 @@ using Path = System.IO.Path;
 using Microsoft.Win32;
 using System.Net;
 
+using Microsoft.WindowsAPICodePack.Dialogs;
+
 namespace POSLIB
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    /// 
     public partial class MainWindow : Window
     {
+
+       // private Properties.Settings settings = Properties.Settings.Default;
+      
+
         string TerminalId = string.Empty;
         int status = 0;
         string cashRegister = string.Empty;
@@ -106,6 +109,7 @@ namespace POSLIB
         public string tcpdeviceID = string.Empty;
         public string comdeviceID = string.Empty;
 
+
         static string deviceName = string.Empty;
 
         BackgroundWorker worker;
@@ -129,12 +133,15 @@ namespace POSLIB
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
+        
         public MainWindow()
         {
             InitializeComponent();
             DataContext = this;
             GetCOMPort();
+            ConfigData? fetchData = obj.getConfigData();
+            CashierID.Text = fetchData.CashierID;
+            CashireName.Text =fetchData.CashierName;
         }
 
         static string errorMsg = "";
@@ -453,8 +460,9 @@ namespace POSLIB
                     serialdevice.Clear();
                     serialdevicelist.Clear();
                 });
-                obj.scanSerialDevice(deviceslisnter);
                 obj.scanOnlineDevice(deviceslisnter);
+                obj.scanSerialDevice(deviceslisnter);
+                
 
                 Thread.Sleep(20000);
 
@@ -8277,12 +8285,24 @@ namespace POSLIB
         {
             ConfigData configdata = new ConfigData();
             bool isFallbackAllowed = false;
+            string filepath = string.Empty;
             string firstPriority = "";
             string secondPriority = "";
             Dispatcher.Invoke(() =>
             {
                 isFallbackAllowed = connectivityFallbackCheckBox.IsChecked == true;
             });
+
+            if (Filepath.Text != "")
+            {
+                filepath = Filepath.Text;
+                if (!Directory.Exists(Path.GetDirectoryName(filepath)))
+                {
+                    MessageBox.Show("Folder does not exist.");
+                    return;
+                }
+            }
+
 
             ComboBoxItem selectedComboBoxItem = comboBox.SelectedItem as ComboBoxItem;
 
@@ -8414,6 +8434,10 @@ namespace POSLIB
             string filepath = "";
             string NoOfday = NoDay.Text;
             string loglevel = LogLevel.Text;
+            NoDay.IsEnabled = true;
+            LogLevel.IsEnabled=true;
+            Filepath.IsEnabled = true;
+            broswing.IsEnabled = true;
 
             Dispatcher.Invoke(() =>
             {
@@ -8427,13 +8451,9 @@ namespace POSLIB
                         return;
                     }
                 }
-                else
-                {
-                    MessageBox.Show("Please select a path.");
-                    return;
-                }
-
             });
+
+
 
             int noOfDayValue;
             if (!int.TryParse(NoOfday, out noOfDayValue))
@@ -8441,16 +8461,8 @@ namespace POSLIB
                 MessageBox.Show("Invalid value for NoOfday. Please enter a valid integer.");
                 return;
             }
-
-            int logLevelValue;
-            if (!int.TryParse(loglevel, out logLevelValue))
-            {
-                MessageBox.Show("Invalid value for loglevel. Please enter a valid integer.");
-                return;
-            }
-
-            obj.SetLogOptions(logLevelValue, islogAllowed, filepath, noOfDayValue);
-
+            
+            obj.SetLogOptions(loglevel, islogAllowed, filepath, noOfDayValue);
         }
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
@@ -8503,13 +8515,6 @@ namespace POSLIB
                 MessageBox.Show("Port number cannot be more than 6 characters long", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-
-            if (!IPAddress.TryParse(tcpip.Text, out IPAddress ipAddress))
-            {
-                tcpip.Text = "Failed to connect";
-
-                return;
-            }
             isOnlineDevice = obj.isOnlineConnection(tcpip.Text, int.Parse(tcpport.Text));
             if (isOnlineDevice)
             {
@@ -8522,49 +8527,76 @@ namespace POSLIB
                 savetcpserialno = serialNo.Text;
                 MessageBox.Show("TCP IP Connection Successful");
             }
+            if (! IPAddress.TryParse(tcpip.Text, out IPAddress ipAddress))
+            {
+                MessageBox.Show("IP Adress is invalid");
+            }
             else
             {
                 MessageBox.Show("Problem Connecting with Terminal");
             }
         }
-
         private void Button_Click_5(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFileDialog
+            var dialog = new CommonOpenFileDialog
             {
-                ValidateNames = false,
-                CheckFileExists = false,
-                CheckPathExists = true,
-                FileName = "",
-                
+                IsFolderPicker = true,
+                Title = "Select a folder"
             };
-
-            if (dialog.ShowDialog() == true)
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                string selectedPath = System.IO.Path.GetDirectoryName(dialog.FileName);
-                Filepath.Text = selectedPath;
-
+                string selectedFolderPath = dialog.FileName;               
+                Filepath.Text = selectedFolderPath;
             }
-
         }
-
         private void Button_Click_6(object sender, RoutedEventArgs e)
         {
             EditBtn.Visibility = Visibility.Hidden;
             CashierID.IsEnabled = true;
             CashireName.IsEnabled = true;
             savebtn.Visibility = Visibility.Visible;
-
-
         }
-
         private void savebtn_Click(object sender, RoutedEventArgs e)
         {
             savebtn.Visibility = Visibility.Hidden;
             CashierID.IsEnabled = false;
             CashireName.IsEnabled = false;
             EditBtn.Visibility = Visibility.Visible;
+            ConfigData config = new ConfigData();
+            config.CashierID = CashierID.Text;
+            config.CashierName = CashireName.Text;
+            obj.setConfiguration(config);
+        }
 
+        private void isEnabledlog_Unchecked(object sender, RoutedEventArgs e)
+        {
+            NoDay.IsEnabled = false;
+            LogLevel.IsEnabled = false;
+            Filepath.IsEnabled = false;
+            broswing.IsEnabled = false;
+        }
+
+        private void CashierID_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            Regex regex = new Regex("[^0-9.]+");
+            e.Handled = regex.IsMatch(e.Text);
+        }
+
+        private void tcpport_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (!char.IsDigit(e.Text, e.Text.Length - 1))
+            {
+                e.Handled = true; 
+            }
+            else
+            {
+                string newText = tcpport.Text + e.Text;
+                if (newText.Length > 4)
+                {
+                    e.Handled = true; 
+                    MessageBox.Show("Port number should be 4 digits.");
+                }
+            }
         }
     }
 }
