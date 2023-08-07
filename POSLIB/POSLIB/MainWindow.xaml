@@ -330,8 +330,8 @@
         <Label Grid.Column="1" Content="No.of Days To Retain Log" HorizontalAlignment="Left" Margin="892,76,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="0.659,0.926" Height="32" Width="146" FontSize="14" FontFamily="Segoe UI Semibold"/>
         <TextBox  x:Name="NoDay" Text="2"  Grid.Column="1"  KeyDown="AMOUNTT_KeyDown" HorizontalAlignment="Left" Margin="1038,81,0,0" Grid.Row="1" TextWrapping="Wrap"  VerticalAlignment="Top" Width="78" Height="24"/>
         <Label Grid.Column="1" Content="Log Level" HorizontalAlignment="Left" Margin="1121,79,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="0.317,0.502" FontFamily="Segoe UI Semibold" FontSize="14"/>
+        <CheckBox x:Name="isEnabledlog" Grid.Column="1" Content="Log Option" HorizontalAlignment="Left" Margin="673,48,0,0" Grid.Row="1" VerticalAlignment="Top" Checked="CheckBox_Checked_1" FontSize="14" FontFamily="Arial Black" Height="18" Width="126"/>
 
-        <CheckBox x:Name="isEnabledlog" Grid.Column="1" Unchecked="isEnabledlog_Unchecked" Content="Log Option" HorizontalAlignment="Left" Margin="673,48,0,0" Grid.Row="1" VerticalAlignment="Top" Checked="CheckBox_Checked_1" FontSize="14" FontFamily="Arial Black" Height="18" Width="126"/>
         <Label Grid.Column="1" Content="Connected Devices" HorizontalAlignment="Left" Margin="717,149,0,0" Grid.Row="1" VerticalAlignment="Top" Width="228" FontFamily="Arial Black" FontSize="14"/>
         <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="150" Margin="673,187,0,0" Grid.Row="1" Stroke="Black" VerticalAlignment="Top" Width="365"/>
         <Label Grid.Column="1" Content="Connection Mode:TCP IP" HorizontalAlignment="Left" Margin="680,196,0,0" Grid.Row="1" VerticalAlignment="Top" Width="216" FontSize="14" FontFamily="Arial Black"/>

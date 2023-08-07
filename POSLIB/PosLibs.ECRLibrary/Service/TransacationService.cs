@@ -96,11 +96,11 @@ namespace PosLibs.ECRLibrary.Service
                                     catch (SocketException e)
                                     {
                                         transactionSuccessful = false;
-                                        Log.Information("Txn failed Due to TCP/IP Connection "+e);
+                                        Log.Information("Txn failed Due to TCP/IP Connection " + e);
                                     }
                                     catch (ObjectDisposedException ex)
                                     {
-                                        Console.Write("Please check TCP/IP Connection"+ex);
+                                        Console.Write("Please check TCP/IP Connection" + ex);
                                         transactionListener?.onFailure("Please check TCP/IP connection", PinLabsEcrConstant.CON_FAILD_EXCEPTION);
                                     }
 
@@ -173,14 +173,13 @@ namespace PosLibs.ECRLibrary.Service
                         }
                         catch (ObjectDisposedException ex)
                         {
-                            Console.Write("Please check TCP/IP Connection"+ex);
+                            Console.Write("Please check TCP/IP Connection" + ex);
                             Log.Error("Please check TCP/IP connection" + PinLabsEcrConstant.TXN_FAILD);
                             transactionListener?.onFailure("Please check TCP/IP connection", PinLabsEcrConstant.TXN_FAILD);
                         }
                     }
                     else if (configdata?.connectionMode == PinLabsEcrConstant.COM)
                     {
-                     
                         Log.Information("Selected ConnectionMode:-" + configdata?.connectionMode);
                         if (conobj.isComDeviceConnected(configdata.commPortNumber))
                         {
@@ -189,11 +188,12 @@ namespace PosLibs.ECRLibrary.Service
                             responseString = conobj.receiveCOMTxnrep();
                             Log.Information("received com txn response:" + responseString);
                             Console.WriteLine("COM Transaction Response:" + responseString);
+
                         }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Transaction Not Found");
+                        else
+                        {
+                            Console.WriteLine("Transaction Not Found");
+                        }
                     }
                 }
             }

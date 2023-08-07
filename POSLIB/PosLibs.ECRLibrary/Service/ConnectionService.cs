@@ -183,15 +183,16 @@ namespace PosLibs.ECRLibrary.Service
         /// <returns></returns>
         public string checkComport(string port)
         {
-            ISet<string> comallport = getDeviceManagerComPort();
-
+            ISet<string> comallport = new HashSet<string>();
+            string fullcomportName = "";
+            comallport = getDeviceManagerComPort();
             if (comallport != null)
             {
                 foreach (string portString in comallport)
                 {
                     string comPort = portString.Substring(portString.IndexOf("COM") + 3, portString.Length - portString.IndexOf("COM") - 4);
-                    string result = "COM" + comPort;
-                    if (port == result)
+                    string res = "COM" + comPort;
+                    if (port == res)
                     {
                         fullcomportName = portString;
                         Console.WriteLine(portString);
@@ -200,7 +201,6 @@ namespace PosLibs.ECRLibrary.Service
             }
             return fullcomportName;
         }
-
         /// <summary>
         /// this method is used to fetch all the com port from POS bride
         /// </summary>
@@ -209,10 +209,10 @@ namespace PosLibs.ECRLibrary.Service
         {
             Log.Information("Inside scanSerialDevice method");
             this.listener = scanDeviceListener;
-            bool comres = false;
             string responseString = "";
             string comreq = getComDeviceRequest();
-            ISet<string> allcomport = getDeviceManagerComPort();
+            ISet<string> allcomport = new HashSet<string>();
+            allcomport = getDeviceManagerComPort();
             if (allcomport.Count == 0)
             {
                 listener.onFailure("Please Connect Terminal/USB Error", 1005);
@@ -230,6 +230,8 @@ namespace PosLibs.ECRLibrary.Service
                 string comPort = portString.Substring(portString.IndexOf("COM") + 3, portString.Length - portString.IndexOf("COM") - 4);
                 comPorts[i++] = comPort;
             }
+
+            byte[] dataBytes = Encoding.UTF8.GetBytes(comreq);
             foreach (string comPort in comPorts)
             {
                 string portcom = "COM" + comPort;
@@ -237,9 +239,13 @@ namespace PosLibs.ECRLibrary.Service
                                                    ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
                 try
                 {
-
                     sendData(comreq);
                     responseString = serialrevData();
+                    if (sendData(comreq))
+                    {
+                        responseString = serialrevData();
+
+                    }
                     fullcomportName = checkComport(portcom);
                     PortCom = fullcomportName;
                     if (responseString != "")
@@ -251,29 +257,32 @@ namespace PosLibs.ECRLibrary.Service
                 }
                 catch (SocketException se)
                 {
-                    Log.Error(se.ToString());
+                    Console.WriteLine("Connection Problem");
+
                 }
                 catch (TimeoutException ex)
                 {
-                    listener.onFailure(PinLabsEcrConstant.NO_DEVICE_FOUND, PinLabsEcrConstant.NO_DEV_FOUND);
-                    Log.Error(PinLabsEcrConstant.TIME_OUT_EXC + ex);
+                    listener.onFailure("No Device Found", 1002);
                 }
                 catch (IOException io)
                 {
-                    listener.onFailure("Try Again", PinLabsEcrConstant.IOEXCEPTION);
-                    Log.Error(io.ToString());
+                    listener.onFailure("Try Again", 1005);
                 }
 
                 catch (InvalidOperationException e)
                 {
-                    listener.onFailure("IOException", PinLabsEcrConstant.IOEXCEPTION);
-                    Log.Error(e.ToString());
+                    listener.onFailure("IOException", 1001);
                 }
             }
 
-            if (listener != null && deviceLists != null && deviceLists.Count > 0)
+            if (listener != null)
             {
-                listener.onSuccess(deviceLists);
+                if (deviceLists != null && deviceLists.Count > 0)
+                {
+
+                    listener.onSuccess(deviceLists);
+
+                }
             }
         }
 
