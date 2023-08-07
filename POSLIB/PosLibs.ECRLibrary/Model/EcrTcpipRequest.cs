@@ -9,7 +9,15 @@ namespace PosLibs.ECRLibrary.Model
     public class EcrTcpipRequest
     {
 
-        public EcrTcpipRequest() { }
+        public EcrTcpipRequest() {
+            cashierId = string.Empty;
+            msgType = string.Empty;
+            ecrIP = string.Empty;
+            ecrPort = string.Empty;
+            RFU1 = string.Empty;
+
+        
+        }
         public string cashierId { get; set; }
         public string msgType { get; set; }
         public string ecrIP { get; set; }

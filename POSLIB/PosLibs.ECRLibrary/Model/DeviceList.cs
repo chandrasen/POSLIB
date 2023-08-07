@@ -8,7 +8,17 @@ namespace PosLibs.ECRLibrary.Model
 {
     public class DeviceList
     {
-        public DeviceList() { }
+        public DeviceList() {
+            deviceId = string.Empty;
+            cashierId = string.Empty;
+            MerchantName = string.Empty;
+            SerialNo = string.Empty;
+            deviceIp = string.Empty;
+            deviceIp = string.Empty;
+            devicePort = string.Empty;
+            connectionMode = string.Empty;
+            COM = string.Empty;
+        }
         public string deviceId { get; set; }
         public string cashierId { get; set; }
         public string MerchantName { get; set; }

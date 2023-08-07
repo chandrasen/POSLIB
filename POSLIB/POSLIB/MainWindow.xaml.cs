@@ -30,6 +30,8 @@ using Microsoft.Win32;
 using System.Net;
 
 using Microsoft.WindowsAPICodePack.Dialogs;
+using PosLibs.ECRLibrary.Common.Interface;
+using Microsoft.VisualBasic;
 
 namespace POSLIB
 {
@@ -121,12 +123,9 @@ namespace POSLIB
             get { return data; }
             set { data = value; OnPropertyChanged(); }
         }
-        private ObservableCollection<List<TcpIpTerminalResponse>> tcpdata = new ObservableCollection<List<TcpIpTerminalResponse>>();
-        public ObservableCollection<List<TcpIpTerminalResponse>> tcpipdata
-        {
-            get { return tcpdata; }
-            set { tcpdata = value; OnPropertyChanged(); }
-        }
+       
+
+       
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -536,6 +535,7 @@ namespace POSLIB
         static string requestbody = "";
         void work_onlineTrans_scan(object sender, DoWorkEventArgs e)
         {
+           
             bool checkNullValidation = true;
 
             ConnectionService obj = new ConnectionService();
@@ -577,7 +577,7 @@ namespace POSLIB
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             ResponseReceive.Text = resp;
-                            Requestsend.Text = afterreplace;
+                            Requestsend.Text = TransacationService.transactionrequestbody;
                         });
 
                     }
@@ -8433,11 +8433,26 @@ namespace POSLIB
             bool islogAllowed = false;
             string filepath = "";
             string NoOfday = NoDay.Text;
-            string loglevel = LogLevel.Text;
-            NoDay.IsEnabled = true;
-            LogLevel.IsEnabled=true;
-            Filepath.IsEnabled = true;
-            broswing.IsEnabled = true;
+            string loglevel="";
+            string loglevelval = LogLevel.Text;
+            switch (loglevelval.ToLower()) // Convert input to lowercase for case-insensitivity
+            {
+                case "warning":
+                    loglevel = "1";
+                    break;
+                case "debug":
+                    loglevel = "2";
+                    break;
+                case "information":
+                    loglevel = "3";
+                    break;
+                default:
+                    break;
+            }
+
+
+
+
 
             Dispatcher.Invoke(() =>
             {
@@ -8462,7 +8477,7 @@ namespace POSLIB
                 return;
             }
             
-            obj.SetLogOptions(loglevel, islogAllowed, filepath, noOfDayValue);
+            LogFile.SetLogOptions(int.Parse(loglevel), islogAllowed, filepath, noOfDayValue);
         }
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
@@ -8527,14 +8542,7 @@ namespace POSLIB
                 savetcpserialno = serialNo.Text;
                 MessageBox.Show("TCP IP Connection Successful");
             }
-            if (! IPAddress.TryParse(tcpip.Text, out IPAddress ipAddress))
-            {
-                MessageBox.Show("IP Adress is invalid");
-            }
-            else
-            {
-                MessageBox.Show("Problem Connecting with Terminal");
-            }
+           
         }
         private void Button_Click_5(object sender, RoutedEventArgs e)
         {
