@@ -106,6 +106,8 @@ namespace POSLIB
         static string AutohostIp = string.Empty;
         static string Autoport = string.Empty;
         string sendData;
+        string recount = string.Empty;
+        string connectionTimeout = string.Empty;
         static int countAmount = 0;
         static int countCB = 0;
         public string tcpdeviceID = string.Empty;
@@ -138,9 +140,40 @@ namespace POSLIB
             InitializeComponent();
             DataContext = this;
             GetCOMPort();
-            ConfigData? fetchData = obj.getConfigData();
+            showData();
+          
+            
+        }
+
+        public void showData()
+        {
+          ConfigData? fetchData=  obj.getConfigData();
+            retrivalCount.Text = fetchData.retrivalcount;
+            ConnectionTimeOut.Text = fetchData.connectionTimeOut;
+            TCPIPIP1.Text = fetchData.tcpIpaddress;
+            TCPSrialNO1.Text = fetchData.tcpIpSerialNumber;
+            TCPIPPORT.Text = fetchData.tcpIpaddress;
+            TCPDeviceID1.Text = fetchData.tcpIpDeviceId;
+
+            tcpip.Text=fetchData.tcpIpaddress;
+            tcpport.Text=fetchData.tcpIpPort;
+            serialNo.Text = fetchData.tcpIpSerialNumber;
+            comfullname.Text=fetchData.comfullName;
+            comserialNo.Text = fetchData.comserialNumber;
+
+
+            TCPIPDeviceID.Text = fetchData.tcpIpDeviceId;
+            TCPIPIP.Text = fetchData.tcpIpPort;
+            TCPPORT.Text = fetchData.tcpIpaddress;
+            TCPSerialNO.Text = fetchData.tcpIpSerialNumber;
+            COMDeviceID.Text = fetchData.comDeviceId;
+            COMSerialPort.Text = fetchData.comfullName;
+            COMSrialNO.Text = fetchData.comserialNumber;
+
             CashierID.Text = fetchData.CashierID;
-            CashireName.Text =fetchData.CashierName;
+            CashireName.Text = fetchData.CashierName;
+            
+
         }
 
         static string errorMsg = "";
@@ -8163,6 +8196,8 @@ namespace POSLIB
 
             var selectedItem = ((Button)sender).DataContext;
             ComboBoxItem selectedComboBoxItem = comboBox.SelectedItem as ComboBoxItem;
+            ConfigData data = new ConfigData();
+            data = obj.getConfigData();
             if (selectedItem is DeviceList items)
             {
                 // Get the first item in the list
@@ -8182,6 +8217,8 @@ namespace POSLIB
                     tcpip.Text = items.deviceIp;
                     tcpport.Text = items.devicePort;
                     tcpdeviceID = items.deviceId;
+                    data.tcpIpDeviceId = items.deviceId;
+                    data.comDeviceId = data.comDeviceId;
 
                     
                 }
@@ -8191,10 +8228,12 @@ namespace POSLIB
                     comserialNo.Text = items.SerialNo;
                     comfullname.Text = items.COM;
                     comdeviceID = items.deviceId;
+                    data.tcpIpDeviceId = data.tcpIpDeviceId;
+                    data.comDeviceId = items.deviceId;
 
                 }
 
-
+                obj.setConfiguration(data);
 
                 //ip = items.deviceIp;
                 //aport = items.devicePort;
@@ -8341,12 +8380,12 @@ namespace POSLIB
                     COMGrid.Visibility = Visibility.Hidden;
                     COMGrid1.Visibility = Visibility.Visible;
                     COMDeviceID1.Text = savecomserialno;
-                    COMSerialPort1.Text =tcpdeviceID ;
+                    COMSerialPort1.Text =comdeviceID ;
                     COMSerialNO.Text = savecomport;
                     TCPIPIP1.Text = savetcpIp;
                     TCPSrialNO1.Text = savetcpserialno;
                     TCPIPPORT.Text = savetcpport;
-                    TCPDeviceID1.Text = comdeviceID;
+                    TCPDeviceID1.Text = tcpdeviceID;
 
                 }
              
@@ -8357,11 +8396,20 @@ namespace POSLIB
                 configdata.commPortNumber = configdata.commPortNumber;
                 configdata.connectionMode = configdata.connectionMode;
                 configdata.communicationPriorityList = connectionPriorityMode;
+                configdata.comfullName = comfullname.Text; 
+                configdata.comserialNumber = comserialNo.Text;
+                configdata.comDeviceId = configdata.comDeviceId;
+                configdata.tcpIpaddress = tcpip.Text;
+                configdata.tcpIpPort = tcpport.Text;
+                configdata.tcpIpSerialNumber = serialNo.Text;
+                configdata.tcpIpDeviceId = configdata.tcpIpDeviceId;
+
                 configdata.tcpIp = configdata.tcpIp;
                 configdata.tcpPort = configdata.tcpPort;
                 configdata.communicationPriorityList = configdata.communicationPriorityList;
                 configdata.isConnectivityFallBackAllowed = isFallbackAllowed;
-                
+                configdata.retrivalcount = retrivalCount.Text;
+                configdata.connectionTimeOut = ConnectionTimeOut.Text;
                 obj.setConfiguration(configdata);
                 MessageBox.Show("Settings saved successfully.", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -8500,8 +8548,11 @@ namespace POSLIB
             isOnlineDevice = obj.isComDeviceConnected(int.Parse(intvalue));
             if (isOnlineDevice == true)
             {
+                
                 savecomport = comfullname.Text;
                 savecomserialno = comserialNo.Text;
+               
+                
                 enter.IsEnabled = true;
                 AMOUNTT.IsEnabled = true;
                 ConnectL.Content = "Connected";

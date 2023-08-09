@@ -87,6 +87,19 @@ namespace PosLibs.ECRLibrary.Service
                 isConnectivityFallBackAllowed = configData.isConnectivityFallBackAllowed,
                 CashierID = configData.CashierID,
                 CashierName = configData.CashierName,
+                retrivalcount = configdata.retrivalcount,
+                connectionTimeOut = configData.connectionTimeOut,
+                tcpIpaddress = configData.tcpIpaddress,
+                comfullName = configData.comfullName,
+                comserialNumber = configData.comserialNumber,
+                tcpIpPort = configData.tcpIpPort,
+                tcpIpDeviceId = configData.tcpIpDeviceId,
+                tcpIpSerialNumber = configData.tcpIpSerialNumber,
+                comDeviceId = configData.comDeviceId,
+
+                
+
+            
             };
             string json = JsonConvert.SerializeObject(portSettings);
 
@@ -340,9 +353,9 @@ namespace PosLibs.ECRLibrary.Service
         {
 
             byte[] buffer = new byte[500];
-            serial.ReadTimeout = 80000;
+            serial.ReadTimeout = 40000;
             int bytesRead = serial.BaseStream.Read(buffer, 0, buffer.Length);
-            Log.Information("com response receive timeout:-" + 80000);
+            Log.Information("com response receive timeout:-" + 40000);
             string responseString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
             Log.Information("receive com txn response:" + responseString);
             if (serial.IsOpen)
@@ -558,12 +571,48 @@ namespace PosLibs.ECRLibrary.Service
                 int resdisconnect = doTCPIPDisconnection();
                 if (resdisconnect == 0)
                 {
+                    int maxRetries = int.Parse(configdata.retrivalcount);
                     sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                    sock.Connect(hostep);
-                    Log.Information("Connected IP:" + IP);
-                    Log.Information("Connexted POrt:" + PORT);
-                    responseboolean = true;
-                    Log.Information("isOnline connected:" + responseboolean);
+                    int connectionTimeoutMillis = int.Parse(configdata.connectionTimeOut);
+                    
+                    for (int retry = 1; retry <= maxRetries; retry++)
+                    {
+                        try
+                        {
+                            IAsyncResult result = sock.BeginConnect(hostep, null, null);
+                            bool success = result.AsyncWaitHandle.WaitOne(connectionTimeoutMillis*1000);
+                            if (success)
+                            {
+                                sock.EndConnect(result);
+                                Log.Information("Connected IP:" + IP);
+                                Log.Information("Connexted Port:" + PORT);
+                                Log.Information("Connection Time Out :" + connectionTimeoutMillis*1000);
+                                Log.Information("Connection retry " + maxRetries);
+                                responseboolean = true;
+                                Log.Information("isOnline connected:" + responseboolean);
+                                break;
+                            }
+                        }
+                        catch(SocketException e)
+                        {
+                            if (retry < maxRetries)
+                            {
+                                try
+                                {
+                                    Thread.Sleep(1000);
+                                }
+                                catch (ThreadInterruptedException ie)
+                                {
+                                    Thread.CurrentThread.Abort();
+                                    Console.WriteLine(ie.ToString());
+                                }
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                        }
+                    }
                 }
             }
             catch (SocketException e)
@@ -579,6 +628,8 @@ namespace PosLibs.ECRLibrary.Service
                 configdata.tcpIp = IP;
                 configdata.tcpPort = PORT;
                 configdata.connectionMode = PinLabsEcrConstant.TCPIP;
+                this.configdata.retrivalcount = configdata.retrivalcount;
+                this.configdata.connectionTimeOut = configdata.connectionTimeOut;
                 this.configdata.commPortNumber = configdata.commPortNumber;
                 setConfiguration(configdata);
             }
@@ -621,9 +672,9 @@ namespace PosLibs.ECRLibrary.Service
         {
             string responseString = "";
             byte[] responseData = new byte[5000];
-            sock.ReceiveTimeout = 80000;
+            sock.ReceiveTimeout = 40000;
             Console.WriteLine("TCP/IP socket Receive Timeout:" + 18000);
-            Log.Information("Txn response receive timeout" + 80000);
+            Log.Information("Txn response receive timeout" + 40000);
             int bytesReceived = sock.Receive(responseData);
             responseString = Encoding.ASCII.GetString(responseData, 0, bytesReceived);
             Console.WriteLine("Transaction Response:" + responseString);

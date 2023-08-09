@@ -211,8 +211,8 @@
                 </TransformGroup>
             </TextBox.RenderTransform>
         </TextBox>
-        <Label x:Name="ProgBarL" Content="Progress..." Visibility="Visible"  FontSize="22" Grid.Column="1" HorizontalAlignment="Left" Margin="1091,367,0,0" Grid.Row="1" VerticalAlignment="Top"/>
-        <ProgressBar x:Name="ProgBar"  Visibility="Visible" IsIndeterminate="False" Grid.Column="1" Height="29" Margin="1091,411,125,0" Grid.Row="1" VerticalAlignment="Top"/>
+        <Label x:Name="ProgBarL"  Content="Progress..." Visibility="Hidden"  FontSize="22" Grid.Column="1" HorizontalAlignment="Left" Margin="1091,367,0,0" Grid.Row="1" VerticalAlignment="Top"/>
+        <ProgressBar x:Name="ProgBar"  Visibility="Hidden" IsIndeterminate="False" Grid.Column="1" Height="29" Margin="1091,411,125,0" Grid.Row="1" VerticalAlignment="Top"/>
         <WebBrowser Visibility="Hidden" Name="myBrowser"  Grid.Column="1" HorizontalAlignment="Left" Height="123" Margin="393,379,0,0" VerticalAlignment="Top" Width="112" Grid.Row="1">
         </WebBrowser>
         <ListView x:Name="ComList" ItemsSource="{Binding comdata}" Visibility="Hidden" Grid.Row="1" Grid.ColumnSpan="2" Margin="28,108,1098,509">
@@ -305,10 +305,10 @@
             </Grid>
         </GroupBox>
         <Button x:Name="Scan_online_device"  Grid.Column="1" Content="Scan Devices" HorizontalAlignment="Left" Margin="892,120,0,0" Grid.Row="1" VerticalAlignment="Top" Width="146" Height="29" Background="White" Click="Button_Click" FontSize="14" FontFamily="Arial Black" />
-        <CheckBox x:Name="connectivityFallbackCheckBox"   Content="Connection Fallback Allowed" Grid.Column="1"  HorizontalAlignment="Left" Margin="673,20,0,0" Grid.Row="1" VerticalAlignment="Top" Height="28" Width="256" FontSize="14" FontFamily="Arial Black"/>
-        <Label x:Name="Priority"  Grid.Column="1" Content="Priority-1" HorizontalAlignment="Left" Margin="940,8,0,0" Grid.Row="1" VerticalAlignment="Top" Width="74" Height="30" FontSize="14"/>
+        <CheckBox x:Name="connectivityFallbackCheckBox"   Content="Connection Fallback Allowed" Grid.Column="1"  HorizontalAlignment="Left" Margin="673,2,0,0" Grid.Row="1" VerticalAlignment="Top" Height="28" Width="256" FontSize="14" FontFamily="Arial Black"/>
+        <Label x:Name="Priority"  Grid.Column="1" Content="Priority-1" HorizontalAlignment="Left" Margin="934,23,0,0" VerticalAlignment="Top" Width="74" Height="30" FontSize="14" Grid.RowSpan="2"/>
 
-        <ComboBox Grid.Column="1"  x:Name="comboBox" SelectionChanged="Priority1_SelectionChanged" SelectedIndex="0" HorizontalAlignment="Left" Margin="1019,10,0,0" Grid.Row="1" VerticalAlignment="Top" Width="111" Height="26">
+        <ComboBox Grid.Column="1"  x:Name="comboBox" SelectionChanged="Priority1_SelectionChanged" SelectedIndex="0" HorizontalAlignment="Left" Margin="1013,24,0,0" VerticalAlignment="Top" Width="111" Height="26" Grid.RowSpan="2">
 
             <ComboBoxItem x:Name ="Priority1" Content="TCP/IP" IsSelected="true"></ComboBoxItem>
             <ComboBoxItem x:Name ="Priority2" Content="COM"></ComboBoxItem>
@@ -330,7 +330,7 @@
         <Label Grid.Column="1" Content="No.of Days To Retain Log" HorizontalAlignment="Left" Margin="892,76,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="0.659,0.926" Height="32" Width="146" FontSize="14" FontFamily="Segoe UI Semibold"/>
         <TextBox  x:Name="NoDay" Text="2"  Grid.Column="1"  KeyDown="AMOUNTT_KeyDown" HorizontalAlignment="Left" Margin="1038,81,0,0" Grid.Row="1" TextWrapping="Wrap"  VerticalAlignment="Top" Width="78" Height="24"/>
         <Label Grid.Column="1" Content="Log Level" HorizontalAlignment="Left" Margin="1121,79,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="0.317,0.502" FontFamily="Segoe UI Semibold" FontSize="14"/>
-        <CheckBox x:Name="isEnabledlog" Grid.Column="1" Content="Log Option" HorizontalAlignment="Left" Margin="673,48,0,0" Grid.Row="1" VerticalAlignment="Top" Checked="CheckBox_Checked_1" FontSize="14" FontFamily="Arial Black" Height="18" Width="126"/>
+        <CheckBox x:Name="isEnabledlog" Grid.Column="1" Content="Log Option" HorizontalAlignment="Left" Margin="673,51,0,0" Grid.Row="1" VerticalAlignment="Top" Checked="CheckBox_Checked_1" FontSize="14" FontFamily="Arial Black" Height="18" Width="126"/>
 
         <Label Grid.Column="1" Content="Connected Devices" HorizontalAlignment="Left" Margin="717,149,0,0" Grid.Row="1" VerticalAlignment="Top" Width="228" FontFamily="Arial Black" FontSize="14"/>
         <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="150" Margin="673,187,0,0" Grid.Row="1" Stroke="Black" VerticalAlignment="Top" Width="365"/>
@@ -429,6 +429,19 @@
             <ComboBoxItem Content="debug"></ComboBoxItem>
             <ComboBoxItem Content="information"></ComboBoxItem>
         </ComboBox>
+        <Label Grid.Column="1" Content="Connection TimeOut" HorizontalAlignment="Left" Margin="689,22,0,0" Grid.Row="1" VerticalAlignment="Top" Width="147" FontFamily="Arial Black"/>
+        <TextBox Grid.Column="1"  x:Name="ConnectionTimeOut" HorizontalAlignment="Left" Margin="836,23,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="93" Height="23" RenderTransformOrigin="0.527,0.697" FontFamily="Bahnschrift SemiBold"/>
+        <Label Grid.Column="1" Content="Retrival Time" HorizontalAlignment="Left" Margin="933,22,0,0" Grid.Row="1" VerticalAlignment="Top" Width="100" FontFamily="Arial Black" RenderTransformOrigin="0.5,0.5">
+            <Label.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform/>
+                    <RotateTransform Angle="0.39"/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </Label.RenderTransform>
+        </Label>
+        <TextBox Grid.Column="1" IsEnabled="False" x:Name="retrivalCount" HorizontalAlignment="Left" Margin="1043,25,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="77" Height="21" FontFamily="Arial Black"/>
 
 
 

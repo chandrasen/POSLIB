@@ -17,8 +17,8 @@ namespace PosLibs.ECRLibrary.Service
         public TransacationService() { }
         private ITransactionListener? trasnlistener;
         public static string transactionrequestbody;
-        ConfigData configdata = new ConfigData();
-        readonly ConnectionService conobj = new ConnectionService();
+        ConfigData? configdata = new ConfigData();
+        readonly ConnectionService? conobj = new ConnectionService();
         /// <summary>
         /// this mehthod accept the txn requestbody and make full txn request
         /// </summary>
