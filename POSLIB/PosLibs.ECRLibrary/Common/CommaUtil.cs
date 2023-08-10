@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PosLibs.ECRLibrary.Model;
 using Serilog;
 
@@ -31,6 +34,27 @@ namespace PosLibs.ECRLibrary.Common
             return true;
         }
 
+        /// <summary>
+        /// this method replace the requesbody with csv data
+        /// </summary>
+        /// <param name="inputJson"></param>
+        /// <param name="newRequestBody"></param>
+        /// <returns></returns>
+        public static string ReplaceRequestBody(string inputJson, string newRequestBody)
+        {
+            try
+            {
+                dynamic parsedJson = JToken.Parse(inputJson);
+                parsedJson["requestBody"] = newRequestBody;
+
+                string modifiedJson = parsedJson.ToString();
+                return modifiedJson;
+            }
+            catch
+            {
+                return "Invalid JSON";
+            }
+        }
         //Convert string to Csv format
         public static string stringToCsv(int txntype,string amount)
         {
@@ -92,6 +116,80 @@ namespace PosLibs.ECRLibrary.Common
             foreach (byte b in bytes)
                 hexBuilder.AppendFormat("{0:x2}", b);
             return hexBuilder.ToString().ToUpper();
+        }
+
+       public static string HexToString(string hexValue)
+        {
+            byte[] bytes = Regex.Matches(hexValue, ".{2}")
+                                 .Cast<Match>()
+                                 .Select(m => Convert.ToByte(m.Value, 16))
+                                 .ToArray();
+            return System.Text.Encoding.UTF8.GetString(bytes);
+        }
+        /// <summary>
+        /// this method convert the hexstring to normal csv data or string 
+        /// </summary>
+        /// <param name="hexString"></param>
+        /// <returns></returns>
+        public  static string HexToCsv(string hexString)
+        {
+            byte[] hexBytes = HexToBytes(hexString);
+
+            if (hexBytes != null && hexBytes.Length >= 7)
+            {
+                int csvLength = (hexBytes[4] << 8) | hexBytes[5];
+                string csvData = Encoding.UTF8.GetString(hexBytes, 6, csvLength);
+                return csvData;
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        public static string ExtractHexValue(string inputJson)
+        {
+            try
+            {
+                dynamic parsedJson = JsonConvert.DeserializeObject(inputJson);
+                string responseBody = parsedJson.responseBody;
+
+                // Remove non-hexadecimal characters
+                string hexValue = Regex.Replace(responseBody, "[^0-9a-fA-F]", "");
+
+             string hexresult =   HexToString(hexValue);
+
+                return hexresult;
+            }
+            catch
+            {
+                return "Invalid JSON";
+            }
+        }
+        /// <summary>
+        /// this mehtod use inside HexToCsv data to remove spaces and convert it to bytes array
+        /// </summary>
+        /// <param name="hex"></param>
+        /// <returns></returns>
+        static byte[] HexToBytes(string hex)
+        {
+            hex = hex.Replace(" ", ""); // Remove spaces if any
+            int length = hex.Length;
+
+            if (length % 2 != 0)
+            {
+                hex = "0" + hex; // Add a leading zero if the length is odd
+                length++;
+            }
+
+            byte[] bytes = new byte[length / 2];
+
+            for (int i = 0; i < length; i += 2)
+            {
+                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            }
+
+            return bytes;
         }
 
     }

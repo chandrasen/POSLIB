@@ -32,6 +32,9 @@ using System.Net;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using PosLibs.ECRLibrary.Common.Interface;
 using Microsoft.VisualBasic;
+using Newtonsoft.Json;
+using System.Reflection.Metadata;
+using POSLIB.Model;
 
 namespace POSLIB
 {
@@ -125,9 +128,9 @@ namespace POSLIB
             get { return data; }
             set { data = value; OnPropertyChanged(); }
         }
-       
 
-       
+
+        ConfigData? fetchData;
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -141,39 +144,69 @@ namespace POSLIB
             DataContext = this;
             GetCOMPort();
             showData();
-          
-            
+            Autodiscover();
+
+
+
         }
 
         public void showData()
         {
-          ConfigData? fetchData=  obj.getConfigData();
+            fetchData = obj.getConfigData();
             retrivalCount.Text = fetchData.retrivalcount;
             ConnectionTimeOut.Text = fetchData.connectionTimeOut;
-            TCPIPIP1.Text = fetchData.tcpIpaddress;
-            TCPSrialNO1.Text = fetchData.tcpIpSerialNumber;
-            TCPIPPORT.Text = fetchData.tcpIpaddress;
-            TCPDeviceID1.Text = fetchData.tcpIpDeviceId;
-
-            tcpip.Text=fetchData.tcpIpaddress;
-            tcpport.Text=fetchData.tcpIpPort;
+            tcpip.Text = fetchData.tcpIpaddress;
+            tcpport.Text = fetchData.tcpIpPort;
             serialNo.Text = fetchData.tcpIpSerialNumber;
-            comfullname.Text=fetchData.comfullName;
+            comfullname.Text = fetchData.comfullName;
             comserialNo.Text = fetchData.comserialNumber;
-
-
-            TCPIPDeviceID.Text = fetchData.tcpIpDeviceId;
             TCPIPIP.Text = fetchData.tcpIpPort;
             TCPPORT.Text = fetchData.tcpIpaddress;
             TCPSerialNO.Text = fetchData.tcpIpSerialNumber;
-            COMDeviceID.Text = fetchData.comDeviceId;
-            COMSerialPort.Text = fetchData.comfullName;
-            COMSrialNO.Text = fetchData.comserialNumber;
-
             CashierID.Text = fetchData.CashierID;
             CashireName.Text = fetchData.CashierName;
-            
+            for (int i = 0; i < fetchData?.communicationPriorityList?.Length; i++)
+            {
+                if (fetchData.communicationPriorityList[i] == "TCP/IP")
+                {
+                    TCPlbl.Text = "TCP IP";
+                    COMlbl.Text = "COM";
+                    TCPIPGrid.Visibility = Visibility.Visible;
+                    TCPIPGrid1.Visibility = Visibility.Hidden;
+                    COMGrid.Visibility = Visibility.Visible;
+                    COMGrid1.Visibility = Visibility.Hidden;
+                    TCPIPIP1.Text = fetchData.tcpIpPort;
+                    TCPSrialNO1.Text = fetchData.tcpIpSerialNumber;
+                    TCPIPPORT.Text = fetchData.tcpIpaddress;
+                    TCPIPDeviceID.Text = fetchData.tcpIpDeviceId;
+                    COMDeviceID.Text = fetchData.comDeviceId;
+                    COMSerialPort.Text = fetchData.comfullName;
+                    COMSrialNO.Text = fetchData.comserialNumber;
+                    break;
 
+                }
+                else
+                {
+                    TCPlbl1.Text = "COM";
+                    COMlbl1.Text = "TCP IP";
+                    TCPIPGrid.Visibility = Visibility.Hidden;
+                    TCPIPGrid1.Visibility = Visibility.Visible;
+                    COMGrid.Visibility = Visibility.Hidden;
+                    COMGrid1.Visibility = Visibility.Visible;
+                    COMDeviceID1.Text = fetchData.comserialNumber;
+                    COMSerialPort1.Text = fetchData.comDeviceId;
+                    COMSerialNO.Text = fetchData.comfullName;
+                    TCPIPIP1.Text = fetchData.tcpIpaddress;
+                    TCPSrialNO1.Text = fetchData.tcpIpSerialNumber;
+                    TCPIPPORT.Text = fetchData.tcpIpPort;
+                    TCPDeviceID1.Text = fetchData.tcpIpDeviceId;
+
+                    break;
+
+                }
+            }
+
+            
         }
 
         static string errorMsg = "";
@@ -319,13 +352,7 @@ namespace POSLIB
 
             worker.RunWorkerAsync();
 
-            // obj.doautotcpipconnection();
-            //fullscreen.isenabled = false;
-            //worker = new backgroundworker();
-            //worker.workerreportsprogress = true;
-            //worker.dowork += work_auto;
-            ////worker.progresschanged += worker_progresschanged;
-            //worker.runworkerasync();
+            obj.AutoConnect();
         }
 
         private void ScanOnlineDevices()
@@ -579,10 +606,24 @@ namespace POSLIB
                 {
                     if (transTypeSelectedPos != null)
                     {
-                        if (transTypeSelectedPos.ToString() == "Purchase")
+                        if (transTypeSelectedPos.ToString() == TxnConstant.SALE)
                         {
                             transactionType = "4001";
                         }
+                        else if (transTypeSelectedPos.ToString() == TxnConstant.UPI)
+                        {
+                            transactionType = "5120";
+                        }
+                        else if(transTypeSelectedPos.ToString()== TxnConstant.BRAND_EMI)
+                        {
+                            transactionType = "4006";
+                        }
+                        else if(transTypeSelectedPos.ToString()==TxnConstant.REFUND)
+                        {
+                            transactionType = "4002";
+                        }
+
+
                     }
                     else
                     {
@@ -606,11 +647,10 @@ namespace POSLIB
                         requestbody = Amount;
                         string afterreplace = requestbody.Replace("10000", Amount);
                         trxobj.doTransaction(afterreplace, int.Parse(transactionType), transactionDrive);
-
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             ResponseReceive.Text = resp;
-                            Requestsend.Text = TransacationService.transactionrequestbody;
+                            Requestsend.Text = RemoveNewlines(trxobj.transactionrequestbody);
                         });
 
                     }
@@ -642,7 +682,10 @@ namespace POSLIB
                 MessageBox.Show("An error occurred: " + ex.Message);
             }
         }
-
+        public string RemoveNewlines(string input)
+        {
+            return input.Replace("\r", "").Replace("\n", "");
+        }
 
         void work_Comdevices_scan(object sender, DoWorkEventArgs e)
         {
@@ -8318,15 +8361,49 @@ namespace POSLIB
 
 
         //}
+
+        string loglevel = string.Empty;
+        bool islogAllowed;
+        int noOfDayValue=0;
+        string filepath = string.Empty;
         String priority1;
         String priority2;
         private void SaveSettings(object sender, RoutedEventArgs e)
         {
             ConfigData configdata = new ConfigData();
             bool isFallbackAllowed = false;
-            string filepath = string.Empty;
             string firstPriority = "";
             string secondPriority = "";
+            string loglevelval = LogLevel.Text;
+            switch (loglevelval.ToLower()) // Convert input to lowercase for case-insensitivity
+            {
+                case "warning":
+                    loglevel = "1";
+                    break;
+                case "debug":
+                    loglevel = "2";
+                    break;
+                case "information":
+                    loglevel = "3";
+                    break;
+                default:
+                    break;
+            }
+            Dispatcher.Invoke(() =>
+            {
+                islogAllowed = isEnabledlog.IsChecked == true;
+                if (Filepath.Text != "")
+                {
+                    filepath = Filepath.Text;
+                    if (!Directory.Exists(Path.GetDirectoryName(filepath)))
+                    {
+                        MessageBox.Show("Invalid file path. Please enter a valid file path.");
+                        return;
+                    }
+                }
+            });
+
+            LogFile.SetLogOptions(int.Parse(loglevel), islogAllowed, filepath, noOfDayValue);
             Dispatcher.Invoke(() =>
             {
                 isFallbackAllowed = connectivityFallbackCheckBox.IsChecked == true;
@@ -8470,62 +8547,22 @@ namespace POSLIB
             OnlineTrans();
         }
 
-        private void isLogEnabled_Checked(object sender, RoutedEventArgs e)
-        {
-
-        }
+     
 
         private void CheckBox_Checked_1(object sender, RoutedEventArgs e)
         {
-            LogFile obj = new LogFile();
-            bool islogAllowed = false;
-            string filepath = "";
-            string NoOfday = NoDay.Text;
-            string loglevel="";
-            string loglevelval = LogLevel.Text;
-            switch (loglevelval.ToLower()) // Convert input to lowercase for case-insensitivity
-            {
-                case "warning":
-                    loglevel = "1";
-                    break;
-                case "debug":
-                    loglevel = "2";
-                    break;
-                case "information":
-                    loglevel = "3";
-                    break;
-                default:
-                    break;
-            }
-
-
-
-
-
-            Dispatcher.Invoke(() =>
-            {
-                islogAllowed = isEnabledlog.IsChecked == true;
-                if (Filepath.Text != "")
-                {
-                    filepath = Filepath.Text;
-                    if (!Directory.Exists(Path.GetDirectoryName(filepath)))
-                    {
-                        MessageBox.Show("Invalid file path. Please enter a valid file path.");
-                        return;
-                    }
-                }
-            });
-
-
-
-            int noOfDayValue;
-            if (!int.TryParse(NoOfday, out noOfDayValue))
-            {
-                MessageBox.Show("Invalid value for NoOfday. Please enter a valid integer.");
-                return;
-            }
+            LogLevel.IsEnabled = true;
+            NoDay.IsEnabled = true;
+            Filepath.IsEnabled = true;
+            noOfDayValue = int.Parse(NoDay.Text);
+           
             
-            LogFile.SetLogOptions(int.Parse(loglevel), islogAllowed, filepath, noOfDayValue);
+            //if (!int.TryParse(NoOfday, out noOfDayValue))
+            //{
+            //    MessageBox.Show("Invalid value for NoOfday. Please enter a valid integer.");
+            //    return;
+            //}
+               
         }
 
         private void Button_Click_2(object sender, RoutedEventArgs e)

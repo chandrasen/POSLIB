@@ -16,7 +16,8 @@ namespace PosLibs.ECRLibrary.Service
     {
         public TransacationService() { }
         private ITransactionListener? trasnlistener;
-        public static string transactionrequestbody;
+        public  string transactionrequestbody { get; set; }
+
         ConfigData? configdata = new ConfigData();
         readonly ConnectionService? conobj = new ConnectionService();
         /// <summary>
@@ -33,7 +34,8 @@ namespace PosLibs.ECRLibrary.Service
             trnrequest.pType = 1;
             trnrequest.requestBody = requestbody;
             string jsontransrequest = JsonConvert.SerializeObject(trnrequest);
-            transactionrequestbody = jsontransrequest;
+             string newrquestBody= CommaUtil.HexToCsv(requestbody);
+            transactionrequestbody =CommaUtil.ReplaceRequestBody(jsontransrequest, newrquestBody);
             return jsontransrequest;
         }
         /// <summary>
@@ -215,8 +217,8 @@ namespace PosLibs.ECRLibrary.Service
             if (trasnlistener != null)
             {
                 string decreresponse = XorEncryption.EncryptDecrypt(responseString);
-
-                transactionListener?.onSuccess(decreresponse);
+                string decreptresponse=  CommaUtil.ExtractHexValue(decreresponse);
+                transactionListener?.onSuccess(decreptresponse);
             }
             else
             {
@@ -228,4 +230,6 @@ namespace PosLibs.ECRLibrary.Service
         }
 
     }
+
+   
 }

@@ -352,8 +352,8 @@ namespace PosLibs.ECRLibrary.Service
         public string receiveCOMTxnrep()
         {
 
-            byte[] buffer = new byte[500];
-            serial.ReadTimeout = 40000;
+            byte[] buffer = new byte[6000];
+            serial.ReadTimeout = 50000;
             int bytesRead = serial.BaseStream.Read(buffer, 0, buffer.Length);
             Log.Information("com response receive timeout:-" + 40000);
             string responseString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
@@ -671,10 +671,10 @@ namespace PosLibs.ECRLibrary.Service
         public string receiveTcpIpTxnData()
         {
             string responseString = "";
-            byte[] responseData = new byte[5000];
-            sock.ReceiveTimeout = 40000;
+            byte[] responseData = new byte[6000];
+            sock.ReceiveTimeout = 50000;
             Console.WriteLine("TCP/IP socket Receive Timeout:" + 18000);
-            Log.Information("Txn response receive timeout" + 40000);
+            Log.Information("Txn response receive timeout" + 50000);
             int bytesReceived = sock.Receive(responseData);
             responseString = Encoding.ASCII.GetString(responseData, 0, bytesReceived);
             Console.WriteLine("Transaction Response:" + responseString);
