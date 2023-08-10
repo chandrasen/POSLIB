@@ -11,13 +11,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -33,13 +29,22 @@ using Path = System.IO.Path;
 using Microsoft.Win32;
 using System.Net;
 
+using Microsoft.WindowsAPICodePack.Dialogs;
+using PosLibs.ECRLibrary.Common.Interface;
+using Microsoft.VisualBasic;
+
 namespace POSLIB
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    /// 
     public partial class MainWindow : Window
     {
+
+       // private Properties.Settings settings = Properties.Settings.Default;
+      
+
         string TerminalId = string.Empty;
         int status = 0;
         string cashRegister = string.Empty;
@@ -101,10 +106,13 @@ namespace POSLIB
         static string AutohostIp = string.Empty;
         static string Autoport = string.Empty;
         string sendData;
+        string recount = string.Empty;
+        string connectionTimeout = string.Empty;
         static int countAmount = 0;
         static int countCB = 0;
         public string tcpdeviceID = string.Empty;
         public string comdeviceID = string.Empty;
+
 
         static string deviceName = string.Empty;
 
@@ -117,31 +125,62 @@ namespace POSLIB
             get { return data; }
             set { data = value; OnPropertyChanged(); }
         }
-        private ObservableCollection<List<TcpIpTerminalResponse>> tcpdata = new ObservableCollection<List<TcpIpTerminalResponse>>();
-        public ObservableCollection<List<TcpIpTerminalResponse>> tcpipdata
-        {
-            get { return tcpdata; }
-            set { tcpdata = value; OnPropertyChanged(); }
-        }
+       
+
+       
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
+        
         public MainWindow()
         {
             InitializeComponent();
             DataContext = this;
             GetCOMPort();
+            showData();
+          
+            
+        }
+
+        public void showData()
+        {
+          ConfigData? fetchData=  obj.getConfigData();
+            retrivalCount.Text = fetchData.retrivalcount;
+            ConnectionTimeOut.Text = fetchData.connectionTimeOut;
+            TCPIPIP1.Text = fetchData.tcpIpaddress;
+            TCPSrialNO1.Text = fetchData.tcpIpSerialNumber;
+            TCPIPPORT.Text = fetchData.tcpIpaddress;
+            TCPDeviceID1.Text = fetchData.tcpIpDeviceId;
+
+            tcpip.Text=fetchData.tcpIpaddress;
+            tcpport.Text=fetchData.tcpIpPort;
+            serialNo.Text = fetchData.tcpIpSerialNumber;
+            comfullname.Text=fetchData.comfullName;
+            comserialNo.Text = fetchData.comserialNumber;
+
+
+            TCPIPDeviceID.Text = fetchData.tcpIpDeviceId;
+            TCPIPIP.Text = fetchData.tcpIpPort;
+            TCPPORT.Text = fetchData.tcpIpaddress;
+            TCPSerialNO.Text = fetchData.tcpIpSerialNumber;
+            COMDeviceID.Text = fetchData.comDeviceId;
+            COMSerialPort.Text = fetchData.comfullName;
+            COMSrialNO.Text = fetchData.comserialNumber;
+
+            CashierID.Text = fetchData.CashierID;
+            CashireName.Text = fetchData.CashierName;
+            
+
         }
 
         static string errorMsg = "";
         static int errorCode;
         public static List<DeviceList> serialdevice = new List<DeviceList>();
         public List<DeviceList> serialdevicelist = new List<DeviceList>();
-        public class ScanLisnter : ScanDeviceListener
+        public class ScanLisnter : IScanDeviceListener
         {
             public void onFailure(string errorMsg, int errorCode)
             {
@@ -453,8 +492,9 @@ namespace POSLIB
                     serialdevice.Clear();
                     serialdevicelist.Clear();
                 });
-                obj.scanSerialDevice(deviceslisnter);
                 obj.scanOnlineDevice(deviceslisnter);
+                obj.scanSerialDevice(deviceslisnter);
+                
 
                 Thread.Sleep(20000);
 
@@ -528,6 +568,7 @@ namespace POSLIB
         static string requestbody = "";
         void work_onlineTrans_scan(object sender, DoWorkEventArgs e)
         {
+           
             bool checkNullValidation = true;
 
             ConnectionService obj = new ConnectionService();
@@ -569,7 +610,7 @@ namespace POSLIB
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             ResponseReceive.Text = resp;
-                            Requestsend.Text = afterreplace;
+                            Requestsend.Text = TransacationService.transactionrequestbody;
                         });
 
                     }
@@ -8155,6 +8196,8 @@ namespace POSLIB
 
             var selectedItem = ((Button)sender).DataContext;
             ComboBoxItem selectedComboBoxItem = comboBox.SelectedItem as ComboBoxItem;
+            ConfigData data = new ConfigData();
+            data = obj.getConfigData();
             if (selectedItem is DeviceList items)
             {
                 // Get the first item in the list
@@ -8174,6 +8217,8 @@ namespace POSLIB
                     tcpip.Text = items.deviceIp;
                     tcpport.Text = items.devicePort;
                     tcpdeviceID = items.deviceId;
+                    data.tcpIpDeviceId = items.deviceId;
+                    data.comDeviceId = data.comDeviceId;
 
                     
                 }
@@ -8183,10 +8228,12 @@ namespace POSLIB
                     comserialNo.Text = items.SerialNo;
                     comfullname.Text = items.COM;
                     comdeviceID = items.deviceId;
+                    data.tcpIpDeviceId = data.tcpIpDeviceId;
+                    data.comDeviceId = items.deviceId;
 
                 }
 
-
+                obj.setConfiguration(data);
 
                 //ip = items.deviceIp;
                 //aport = items.devicePort;
@@ -8277,12 +8324,24 @@ namespace POSLIB
         {
             ConfigData configdata = new ConfigData();
             bool isFallbackAllowed = false;
+            string filepath = string.Empty;
             string firstPriority = "";
             string secondPriority = "";
             Dispatcher.Invoke(() =>
             {
                 isFallbackAllowed = connectivityFallbackCheckBox.IsChecked == true;
             });
+
+            if (Filepath.Text != "")
+            {
+                filepath = Filepath.Text;
+                if (!Directory.Exists(Path.GetDirectoryName(filepath)))
+                {
+                    MessageBox.Show("Folder does not exist.");
+                    return;
+                }
+            }
+
 
             ComboBoxItem selectedComboBoxItem = comboBox.SelectedItem as ComboBoxItem;
 
@@ -8321,12 +8380,12 @@ namespace POSLIB
                     COMGrid.Visibility = Visibility.Hidden;
                     COMGrid1.Visibility = Visibility.Visible;
                     COMDeviceID1.Text = savecomserialno;
-                    COMSerialPort1.Text =tcpdeviceID ;
+                    COMSerialPort1.Text =comdeviceID ;
                     COMSerialNO.Text = savecomport;
                     TCPIPIP1.Text = savetcpIp;
                     TCPSrialNO1.Text = savetcpserialno;
                     TCPIPPORT.Text = savetcpport;
-                    TCPDeviceID1.Text = comdeviceID;
+                    TCPDeviceID1.Text = tcpdeviceID;
 
                 }
              
@@ -8337,11 +8396,20 @@ namespace POSLIB
                 configdata.commPortNumber = configdata.commPortNumber;
                 configdata.connectionMode = configdata.connectionMode;
                 configdata.communicationPriorityList = connectionPriorityMode;
+                configdata.comfullName = comfullname.Text; 
+                configdata.comserialNumber = comserialNo.Text;
+                configdata.comDeviceId = configdata.comDeviceId;
+                configdata.tcpIpaddress = tcpip.Text;
+                configdata.tcpIpPort = tcpport.Text;
+                configdata.tcpIpSerialNumber = serialNo.Text;
+                configdata.tcpIpDeviceId = configdata.tcpIpDeviceId;
+
                 configdata.tcpIp = configdata.tcpIp;
                 configdata.tcpPort = configdata.tcpPort;
                 configdata.communicationPriorityList = configdata.communicationPriorityList;
                 configdata.isConnectivityFallBackAllowed = isFallbackAllowed;
-                
+                configdata.retrivalcount = retrivalCount.Text;
+                configdata.connectionTimeOut = ConnectionTimeOut.Text;
                 obj.setConfiguration(configdata);
                 MessageBox.Show("Settings saved successfully.", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -8413,7 +8481,26 @@ namespace POSLIB
             bool islogAllowed = false;
             string filepath = "";
             string NoOfday = NoDay.Text;
-            string loglevel = LogLevel.Text;
+            string loglevel="";
+            string loglevelval = LogLevel.Text;
+            switch (loglevelval.ToLower()) // Convert input to lowercase for case-insensitivity
+            {
+                case "warning":
+                    loglevel = "1";
+                    break;
+                case "debug":
+                    loglevel = "2";
+                    break;
+                case "information":
+                    loglevel = "3";
+                    break;
+                default:
+                    break;
+            }
+
+
+
+
 
             Dispatcher.Invoke(() =>
             {
@@ -8427,13 +8514,9 @@ namespace POSLIB
                         return;
                     }
                 }
-                else
-                {
-                    MessageBox.Show("Please select a path.");
-                    return;
-                }
-
             });
+
+
 
             int noOfDayValue;
             if (!int.TryParse(NoOfday, out noOfDayValue))
@@ -8441,16 +8524,8 @@ namespace POSLIB
                 MessageBox.Show("Invalid value for NoOfday. Please enter a valid integer.");
                 return;
             }
-
-            int logLevelValue;
-            if (!int.TryParse(loglevel, out logLevelValue))
-            {
-                MessageBox.Show("Invalid value for loglevel. Please enter a valid integer.");
-                return;
-            }
-
-            obj.SetLogOptions(logLevelValue, islogAllowed, filepath, noOfDayValue);
-
+            
+            LogFile.SetLogOptions(int.Parse(loglevel), islogAllowed, filepath, noOfDayValue);
         }
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
@@ -8473,8 +8548,11 @@ namespace POSLIB
             isOnlineDevice = obj.isComDeviceConnected(int.Parse(intvalue));
             if (isOnlineDevice == true)
             {
+                
                 savecomport = comfullname.Text;
                 savecomserialno = comserialNo.Text;
+               
+                
                 enter.IsEnabled = true;
                 AMOUNTT.IsEnabled = true;
                 ConnectL.Content = "Connected";
@@ -8503,13 +8581,6 @@ namespace POSLIB
                 MessageBox.Show("Port number cannot be more than 6 characters long", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-
-            if (!IPAddress.TryParse(tcpip.Text, out IPAddress ipAddress))
-            {
-                tcpip.Text = "Failed to connect";
-
-                return;
-            }
             isOnlineDevice = obj.isOnlineConnection(tcpip.Text, int.Parse(tcpport.Text));
             if (isOnlineDevice)
             {
@@ -8522,49 +8593,69 @@ namespace POSLIB
                 savetcpserialno = serialNo.Text;
                 MessageBox.Show("TCP IP Connection Successful");
             }
-            else
-            {
-                MessageBox.Show("Problem Connecting with Terminal");
-            }
+           
         }
-
         private void Button_Click_5(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFileDialog
+            var dialog = new CommonOpenFileDialog
             {
-                ValidateNames = false,
-                CheckFileExists = false,
-                CheckPathExists = true,
-                FileName = "",
-                
+                IsFolderPicker = true,
+                Title = "Select a folder"
             };
-
-            if (dialog.ShowDialog() == true)
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                string selectedPath = System.IO.Path.GetDirectoryName(dialog.FileName);
-                Filepath.Text = selectedPath;
-
+                string selectedFolderPath = dialog.FileName;               
+                Filepath.Text = selectedFolderPath;
             }
-
         }
-
         private void Button_Click_6(object sender, RoutedEventArgs e)
         {
             EditBtn.Visibility = Visibility.Hidden;
             CashierID.IsEnabled = true;
             CashireName.IsEnabled = true;
             savebtn.Visibility = Visibility.Visible;
-
-
         }
-
         private void savebtn_Click(object sender, RoutedEventArgs e)
         {
             savebtn.Visibility = Visibility.Hidden;
             CashierID.IsEnabled = false;
             CashireName.IsEnabled = false;
             EditBtn.Visibility = Visibility.Visible;
+            ConfigData config = new ConfigData();
+            config.CashierID = CashierID.Text;
+            config.CashierName = CashireName.Text;
+            obj.setConfiguration(config);
+        }
 
+        private void isEnabledlog_Unchecked(object sender, RoutedEventArgs e)
+        {
+            NoDay.IsEnabled = false;
+            LogLevel.IsEnabled = false;
+            Filepath.IsEnabled = false;
+            broswing.IsEnabled = false;
+        }
+
+        private void CashierID_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            Regex regex = new Regex("[^0-9.]+");
+            e.Handled = regex.IsMatch(e.Text);
+        }
+
+        private void tcpport_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (!char.IsDigit(e.Text, e.Text.Length - 1))
+            {
+                e.Handled = true; 
+            }
+            else
+            {
+                string newText = tcpport.Text + e.Text;
+                if (newText.Length > 4)
+                {
+                    e.Handled = true; 
+                    MessageBox.Show("Port number should be 4 digits.");
+                }
+            }
         }
     }
 }

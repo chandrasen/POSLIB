@@ -9,7 +9,19 @@ namespace PosLibs.ECRLibrary.Model
     public class TerminalConnectivityResponse
     {
 
-        public TerminalConnectivityResponse() { }
+        public TerminalConnectivityResponse() {
+            devId = string.Empty;
+            MerchantName = string.Empty;
+            cashierId = string.Empty;
+            protocolType = string.Empty;
+            transactionType = string.Empty;
+            dateTime = string.Empty;
+            slNo = string.Empty;
+            isWifiSupported = string.Empty;
+            posIP = string.Empty;
+            posPort = string.Empty;
+            COM = string.Empty;
+        }
         public string devId { get; set; }
         public Boolean isCommSupported { get; set; }
         public string MerchantName { get; set; }

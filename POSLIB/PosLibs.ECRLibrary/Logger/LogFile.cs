@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Serilog.Events;
+﻿using Serilog.Events;
 using Serilog;
 using PosLibs.ECRLibrary.Common;
 
@@ -11,9 +6,16 @@ namespace PosLibs.ECRLibrary.Logger
 {
     public class LogFile
     {
-       public LogFile() { }
+    
 
-        public void SetLogOptions(int logLevel, bool isLogsEnabled, string logPath, int dayToRetainLogs)
+        /// <summary>
+        /// This method is used to set log level and log details
+        /// </summary>
+        /// <param name="logLevel"></param>
+        /// <param name="isLogsEnabled"></param>
+        /// <param name="logPath"></param>
+        /// <param name="dayToRetainLogs"></param>
+        public static void SetLogOptions(int logLevel, bool isLogsEnabled, string logPath, int dayToRetainLogs)
         {
             Log.Information("Inside SetLogOptions method");
 
@@ -31,7 +33,7 @@ namespace PosLibs.ECRLibrary.Logger
                 catch (ArgumentException e)
                 {
                     Log.Error(PinLabsEcrConstant.FILE_NOT_FOUND);
-                    
+
                 }
 
                 if (logDirectory != null)
@@ -100,3 +102,5 @@ namespace PosLibs.ECRLibrary.Logger
         }
     }
 }
+
+
