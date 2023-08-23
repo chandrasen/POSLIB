@@ -60,7 +60,7 @@ namespace PosLibs.ECRLibrary.Service
             this.trasnlistener = transactionListener;
             string responseString = string.Empty;
             byte[] buffer = new byte[50000];
-            configdata = conobj.getConfigData();
+            configdata = conobj?.getConfigData();
             string req = transrequestBody(inputReqBody, transactionType);
             string transactionRequestbody = transactionRequest(req);
             string encrypttxnrequst = XorEncryption.EncryptDecrypt(transactionRequestbody);
@@ -87,7 +87,8 @@ namespace PosLibs.ECRLibrary.Service
                                         {
                                             conobj.sendTcpIpTxnData(encrypttxnrequst);
                                             responseString = conobj.receiveTcpIpTxnData();
-                                            Log.Information("received tcp/ip auto fallback txn:" + responseString);
+                                            string decreptresponse = CommaUtil.convertHexdecimaltotransactionReponse(responseString);
+                                            Log.Information("received tcp/ip auto fallback txn:" + decreptresponse);
                                             transactionSuccessful = true;
                                         }
                                         else
@@ -118,7 +119,8 @@ namespace PosLibs.ECRLibrary.Service
                                             conobj.sendData(encrypttxnrequst);
                                             Array.Clear(buffer, 0, buffer.Length);
                                             responseString = conobj.receiveCOMTxnrep();
-                                            Log.Information("received auto connection COM Transaction Response:" + responseString);
+                                            string decreptresponse = CommaUtil.convertHexdecimaltotransactionReponse(responseString);
+                                            Log.Information("received auto connection COM Transaction Response:" + decreptresponse);
                                             Console.WriteLine("COM Transaction Response:" + responseString);
                                             transactionSuccessful = true;
                                         }
@@ -157,20 +159,27 @@ namespace PosLibs.ECRLibrary.Service
                         bool isSend = true;
                         try
                         {
-
-                            isSend = conobj.sendTcpIpTxnData(encrypttxnrequst);
-                            if (isSend)
+                            if (conobj.isOnlineTest(configdata.tcpIp, configdata.tcpPort))
                             {
-                                Console.WriteLine("Selected ConnectionMode" + configdata?.connectionMode);
-                                Log.Information("Selected ConnectionMode:-" + configdata?.connectionMode);
-                                responseString = conobj.receiveTcpIpTxnData();
-                                Log.Information("TCP/IP connection Txn Response:" + responseString);
+                                isSend = conobj.sendTcpIpTxnData(encrypttxnrequst);
+                                if (isSend)
+                                {
+                                    Console.WriteLine("Selected ConnectionMode" + configdata?.connectionMode);
+                                    Log.Information("Selected ConnectionMode:-" + configdata?.connectionMode);
+                                    responseString = conobj.receiveTcpIpTxnData();
+                                    string decreptresponse = CommaUtil.convertHexdecimaltotransactionReponse(responseString);
+                                    Log.Information("TCP/IP connection Txn Response:" + decreptresponse);
+                                }
+                                else
+                                {
+                                    Console.Write("Please check TCP/IP Connection");
+                                    Log.Warning("Please check TCP/IP Connection");
+                                    transactionListener?.onFailure("Please check TCP/IP connection", PinLabsEcrConstant.TXN_FAILD);
+                                }
                             }
                             else
                             {
-                                Console.Write("Please check TCP/IP Connection");
-                                Log.Warning("Please check TCP/IP Connection");
-                                transactionListener?.onFailure("Please check TCP/IP connection", PinLabsEcrConstant.TXN_FAILD);
+                                Log.Information("TCP IP Connection faield try to connect");
                             }
                         }
                         catch (ObjectDisposedException ex)
@@ -188,7 +197,8 @@ namespace PosLibs.ECRLibrary.Service
                             conobj.sendData(encrypttxnrequst);
                             Array.Clear(buffer, 0, buffer.Length);
                             responseString = conobj.receiveCOMTxnrep();
-                            Log.Information("received com txn response:" + responseString);
+                            string decreptresponse = CommaUtil.convertHexdecimaltotransactionReponse(responseString);
+                            Log.Information("received com txn response:" + decreptresponse);
                             Console.WriteLine("COM Transaction Response:" + responseString);
 
                         }
@@ -216,9 +226,10 @@ namespace PosLibs.ECRLibrary.Service
 
             if (trasnlistener != null)
             {
-                string decreresponse = XorEncryption.EncryptDecrypt(responseString);
-                string decreptresponse=  CommaUtil.ExtractHexValue(decreresponse);
+
+                string decreptresponse = CommaUtil.convertHexdecimaltotransactionReponse(responseString);
                 transactionListener?.onSuccess(decreptresponse);
+               
             }
             else
             {
@@ -227,9 +238,12 @@ namespace PosLibs.ECRLibrary.Service
                     trasnlistener?.onFailure("Transaction Failed", PinLabsEcrConstant.TXN_FAILD);
                 }
             }
+            Log.Information("======================================================================================================================================================");
         }
 
     }
+
+
 
    
 }

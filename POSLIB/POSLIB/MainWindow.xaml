@@ -305,7 +305,7 @@
             </Grid>
         </GroupBox>
         <Button x:Name="Scan_online_device"  Grid.Column="1" Content="Scan Devices" HorizontalAlignment="Left" Margin="892,120,0,0" Grid.Row="1" VerticalAlignment="Top" Width="146" Height="29" Background="White" Click="Button_Click" FontSize="14" FontFamily="Arial Black" />
-        <CheckBox x:Name="connectivityFallbackCheckBox"   Content="Connection Fallback Allowed" Grid.Column="1"  HorizontalAlignment="Left" Margin="673,2,0,0" Grid.Row="1" VerticalAlignment="Top" Height="28" Width="256" FontSize="14" FontFamily="Arial Black"/>
+        <CheckBox x:Name="connectivityFallbackCheckBox"   Content="Connection Fallback Allowed" Grid.Column="1"  HorizontalAlignment="Left" Margin="673,2,0,0" Grid.Row="1" VerticalAlignment="Top" Height="28" Width="256" FontSize="14" FontFamily="Arial Black" Checked="connectivityFallbackCheckBox_Checked"/>
         <Label x:Name="Priority"  Grid.Column="1" Content="Priority-1" HorizontalAlignment="Left" Margin="934,23,0,0" VerticalAlignment="Top" Width="74" Height="30" FontSize="14" Grid.RowSpan="2"/>
 
         <ComboBox Grid.Column="1"  x:Name="comboBox" SelectionChanged="Priority1_SelectionChanged" SelectedIndex="0" HorizontalAlignment="Left" Margin="1013,24,0,0" VerticalAlignment="Top" Width="111" Height="26" Grid.RowSpan="2">
@@ -372,7 +372,7 @@
         <Label Content="ENTER AMOUNT" HorizontalAlignment="Left" Margin="48,460,0,0" Grid.Row="1" VerticalAlignment="Top" Grid.Column="1" Width="127" FontFamily="Bahnschrift SemiBold" FontSize="16"/>
         <Label  x:Name="CHiddenPort" Visibility="Hidden" Grid.Column="1" Content="Port" HorizontalAlignment="Left" Margin="331,220,0,0" Grid.Row="1" VerticalAlignment="Top" FontSize="14" FontFamily="Bahnschrift SemiBold" Width="62"/>
         <TextBox x:Name="CHidenTextBox" Visibility="Hidden" Grid.Column="1" HorizontalAlignment="Left" Margin="424,221,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="24" FontSize="14" FontFamily="Bahnschrift SemiCondensed"/>
-        <Button Grid.Column="1" Content="...."  x:Name="broswing" HorizontalAlignment="Left" Margin="851,73,0,0" Grid.Row="1" VerticalAlignment="Top" Height="32" Width="44" FontSize="16" FontFamily="Arial Black" Click="Button_Click_5" BorderBrush="White"/>
+        <Button Grid.Column="1" Content="...." IsEnabled="False" x:Name="broswing" HorizontalAlignment="Left" Margin="851,73,0,0" Grid.Row="1" VerticalAlignment="Top" Height="32" Width="44" FontSize="16" FontFamily="Arial Black" Click="Button_Click_5" BorderBrush="White"/>
         <Grid x:Name="TCPIPGrid" Visibility="Visible" Grid.ColumnSpan="2" Grid.Row="1" Margin="28,70,679,466">
             <Rectangle HorizontalAlignment="Left" Height="88" Margin="19,10,0,0" Stroke="Black" VerticalAlignment="Top" Width="544"/>
             <Label Content="Priority 1" HorizontalAlignment="Left" Margin="19,13,0,0" VerticalAlignment="Top" Width="88" FontSize="14" FontFamily="Arial Black" Height="29"/>
@@ -427,11 +427,11 @@
         <ComboBox  IsEnabled="False" Grid.Column="1" x:Name="LogLevel"  HorizontalAlignment="Left" Margin="1196,82,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120">
             <ComboBoxItem Content="warning"></ComboBoxItem>
             <ComboBoxItem Content="debug"></ComboBoxItem>
-            <ComboBoxItem Content="information"></ComboBoxItem>
+            <ComboBoxItem Content="information" IsSelected="true"> </ComboBoxItem>
         </ComboBox>
         <Label Grid.Column="1" Content="Connection TimeOut" HorizontalAlignment="Left" Margin="689,22,0,0" Grid.Row="1" VerticalAlignment="Top" Width="147" FontFamily="Arial Black"/>
-        <TextBox Grid.Column="1"  x:Name="ConnectionTimeOut" HorizontalAlignment="Left" Margin="836,23,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="93" Height="23" RenderTransformOrigin="0.527,0.697" FontFamily="Bahnschrift SemiBold"/>
-        <Label Grid.Column="1" Content="Retrival Time" HorizontalAlignment="Left" Margin="933,22,0,0" Grid.Row="1" VerticalAlignment="Top" Width="100" FontFamily="Arial Black" RenderTransformOrigin="0.5,0.5">
+        <TextBox Grid.Column="1"  IsEnabled="False" x:Name="ConnectionTimeOut" HorizontalAlignment="Left" Margin="836,23,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="93" Height="23" RenderTransformOrigin="0.527,0.697" FontFamily="Bahnschrift SemiBold"/>
+        <Label Grid.Column="1" Content="Retry Time" HorizontalAlignment="Left" Margin="933,22,0,0" Grid.Row="1" VerticalAlignment="Top" Width="100" FontFamily="Arial Black" RenderTransformOrigin="0.5,0.5">
             <Label.RenderTransform>
                 <TransformGroup>
                     <ScaleTransform/>

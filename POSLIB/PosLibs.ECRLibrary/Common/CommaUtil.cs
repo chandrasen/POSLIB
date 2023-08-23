@@ -52,7 +52,7 @@ namespace PosLibs.ECRLibrary.Common
             }
             catch
             {
-                return "Invalid JSON";
+                return "Transaction Failed";
             }
         }
         //Convert string to Csv format
@@ -64,7 +64,6 @@ namespace PosLibs.ECRLibrary.Common
             string fullrequbody = txntype.ToString() + "," +
                 value + "," + amount + "," + "," + "," + "," + "," + "," + ",";
             string HaxDecimalreqbody=  GetPaymentPacket(fullrequbody);
-            Log.Information("Txn Request Body in Csv format:" + HaxDecimalreqbody);
             return HaxDecimalreqbody;
         }
 
@@ -147,6 +146,7 @@ namespace PosLibs.ECRLibrary.Common
             }
         }
 
+        //this method Extract the Hex decimal value
         public static string ExtractHexValue(string inputJson)
         {
             try
@@ -163,7 +163,7 @@ namespace PosLibs.ECRLibrary.Common
             }
             catch
             {
-                return "Invalid JSON";
+                return "Transaction Failed";
             }
         }
         /// <summary>
@@ -190,6 +190,13 @@ namespace PosLibs.ECRLibrary.Common
             }
 
             return bytes;
+        }
+
+        public static string convertHexdecimaltotransactionReponse(string transactionResponse)
+        {
+            string decreresponse = XorEncryption.EncryptDecrypt(transactionResponse);
+            string decreptresponse = CommaUtil.ExtractHexValue(decreresponse);
+            return decreptresponse;
         }
 
     }

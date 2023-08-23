@@ -161,6 +161,7 @@ namespace POSLIB
             comfullname.Text = fetchData.comfullName;
             comserialNo.Text = fetchData.comserialNumber;
             TCPIPIP.Text = fetchData.tcpIpPort;
+            Filepath.Text = fetchData.LogPath;
             TCPPORT.Text = fetchData.tcpIpaddress;
             TCPSerialNO.Text = fetchData.tcpIpSerialNumber;
             CashierID.Text = fetchData.CashierID;
@@ -8370,7 +8371,6 @@ namespace POSLIB
         String priority2;
         private void SaveSettings(object sender, RoutedEventArgs e)
         {
-            ConfigData configdata = new ConfigData();
             bool isFallbackAllowed = false;
             string firstPriority = "";
             string secondPriority = "";
@@ -8392,6 +8392,10 @@ namespace POSLIB
             Dispatcher.Invoke(() =>
             {
                 islogAllowed = isEnabledlog.IsChecked == true;
+               
+            });
+            if (islogAllowed)
+            {
                 if (Filepath.Text != "")
                 {
                     filepath = Filepath.Text;
@@ -8401,9 +8405,8 @@ namespace POSLIB
                         return;
                     }
                 }
-            });
-
-            LogFile.SetLogOptions(int.Parse(loglevel), islogAllowed, filepath, noOfDayValue);
+                LogFile.SetLogOptions(int.Parse(loglevel), islogAllowed, filepath, noOfDayValue);
+            }
             Dispatcher.Invoke(() =>
             {
                 isFallbackAllowed = connectivityFallbackCheckBox.IsChecked == true;
@@ -8469,25 +8472,28 @@ namespace POSLIB
                 
 
                 string[] connectionPriorityMode = new string[] { firstPriority, secondPriority };
-                configdata = obj.getConfigData();
-                configdata.commPortNumber = configdata.commPortNumber;
-                configdata.connectionMode = configdata.connectionMode;
-                configdata.communicationPriorityList = connectionPriorityMode;
-                configdata.comfullName = comfullname.Text; 
-                configdata.comserialNumber = comserialNo.Text;
-                configdata.comDeviceId = configdata.comDeviceId;
-                configdata.tcpIpaddress = tcpip.Text;
-                configdata.tcpIpPort = tcpport.Text;
-                configdata.tcpIpSerialNumber = serialNo.Text;
-                configdata.tcpIpDeviceId = configdata.tcpIpDeviceId;
+                fetchData = obj.getConfigData();
+                fetchData.commPortNumber = fetchData.commPortNumber;
+                fetchData.connectionMode = fetchData.connectionMode;
+                fetchData.communicationPriorityList = connectionPriorityMode;
+                fetchData.comfullName = comfullname.Text; 
+                fetchData.comserialNumber = comserialNo.Text;
+                fetchData.comDeviceId = fetchData.comDeviceId;
+                fetchData.tcpIpaddress = tcpip.Text;
+                fetchData.tcpIpPort = tcpport.Text;
+                fetchData.tcpIpSerialNumber = serialNo.Text;
+                fetchData.tcpIpDeviceId = fetchData.tcpIpDeviceId;
 
-                configdata.tcpIp = configdata.tcpIp;
-                configdata.tcpPort = configdata.tcpPort;
-                configdata.communicationPriorityList = configdata.communicationPriorityList;
-                configdata.isConnectivityFallBackAllowed = isFallbackAllowed;
-                configdata.retrivalcount = retrivalCount.Text;
-                configdata.connectionTimeOut = ConnectionTimeOut.Text;
-                obj.setConfiguration(configdata);
+                fetchData.tcpIp = fetchData.tcpIp;
+                fetchData.tcpPort = fetchData.tcpPort;
+                fetchData.communicationPriorityList = fetchData.communicationPriorityList;
+                fetchData.isConnectivityFallBackAllowed = isFallbackAllowed;
+                fetchData.retrivalcount = retrivalCount.Text;
+                fetchData.connectionTimeOut = ConnectionTimeOut.Text;
+                fetchData.LogPath = filepath;
+                fetchData.loglevel = loglevel;
+                obj.setConfiguration(fetchData);
+                showData();
                 MessageBox.Show("Settings saved successfully.", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
@@ -8553,6 +8559,7 @@ namespace POSLIB
         {
             LogLevel.IsEnabled = true;
             NoDay.IsEnabled = true;
+            broswing.IsEnabled = true;
             Filepath.IsEnabled = true;
             noOfDayValue = int.Parse(NoDay.Text);
            
@@ -8618,7 +8625,7 @@ namespace POSLIB
                 MessageBox.Show("Port number cannot be more than 6 characters long", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            isOnlineDevice = obj.isOnlineConnection(tcpip.Text, int.Parse(tcpport.Text));
+            isOnlineDevice = obj.isOnlineTest(tcpip.Text, int.Parse(tcpport.Text));
             if (isOnlineDevice)
             {
                 enter.IsEnabled = true;
@@ -8658,10 +8665,10 @@ namespace POSLIB
             CashierID.IsEnabled = false;
             CashireName.IsEnabled = false;
             EditBtn.Visibility = Visibility.Visible;
-            ConfigData config = new ConfigData();
-            config.CashierID = CashierID.Text;
-            config.CashierName = CashireName.Text;
-            obj.setConfiguration(config);
+            
+            fetchData.CashierID = CashierID.Text;
+            fetchData.CashierName = CashireName.Text;
+            obj.setConfiguration(fetchData);
         }
 
         private void isEnabledlog_Unchecked(object sender, RoutedEventArgs e)
@@ -8693,6 +8700,12 @@ namespace POSLIB
                     MessageBox.Show("Port number should be 4 digits.");
                 }
             }
+        }
+
+        private void connectivityFallbackCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            ConnectionTimeOut.IsEnabled = true;
+            retrivalCount.IsEnabled = true;
         }
     }
 }

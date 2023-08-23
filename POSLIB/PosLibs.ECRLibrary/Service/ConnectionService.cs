@@ -96,6 +96,8 @@ namespace PosLibs.ECRLibrary.Service
                 tcpIpDeviceId = configData.tcpIpDeviceId,
                 tcpIpSerialNumber = configData.tcpIpSerialNumber,
                 comDeviceId = configData.comDeviceId,
+                LogPath=configData.LogPath,
+                loglevel=configData.loglevel,
 
                 
 
@@ -270,11 +272,12 @@ namespace PosLibs.ECRLibrary.Service
                 }
                 catch (SocketException se)
                 {
-                    Console.WriteLine("Connection Problem");
+                    Console.WriteLine("Connection Problem"+se);
 
                 }
                 catch (TimeoutException ex)
                 {
+                    Console.WriteLine("Connection Problem" + ex);
                     listener.onFailure("No Device Found", 1002);
                 }
                 catch (IOException io)
@@ -353,11 +356,10 @@ namespace PosLibs.ECRLibrary.Service
         {
 
             byte[] buffer = new byte[6000];
-            serial.ReadTimeout = 50000;
+            serial.ReadTimeout = 180000;
             int bytesRead = serial.BaseStream.Read(buffer, 0, buffer.Length);
-            Log.Information("com response receive timeout:-" + 40000);
+            Log.Information("com response receive timeout:" +180000);
             string responseString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-            Log.Information("receive com txn response:" + responseString);
             if (serial.IsOpen)
             {
                 serial.Close();
@@ -551,6 +553,46 @@ namespace PosLibs.ECRLibrary.Service
                 Log.Information("Server stopped");
             }
         }
+        public Boolean isOnlineTest(string IP, int PORT)
+        {
+
+            Log.Debug("Inside IsOnlineConnection method");
+            bool responseboolean = false;
+
+
+            IPAddress host = IPAddress.Parse(IP);
+            IPEndPoint hostep = new IPEndPoint(host, PORT);
+            try
+            {
+                int resdisconnect = doTCPIPDisconnection();
+                if (resdisconnect == 0)
+                {
+                    sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    sock.Connect(hostep);
+                    Log.Information("Connected IP:" + IP);
+                    Log.Information("Connexted POrt:" + PORT);
+                    responseboolean = true;
+                    Log.Information("isOnline connected:" + responseboolean);
+                }
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine("Problem connecting to host");
+                Console.WriteLine(e.ToString());
+                responseboolean = false;
+                Log.Information("isOnline connected:" + responseboolean);
+                sock.Close();
+            }
+            if (configdata != null)
+            {
+                configdata.tcpIp = IP;
+                configdata.tcpPort = PORT;
+                configdata.connectionMode = PinLabsEcrConstant.TCPIP;
+                this.configdata.commPortNumber = configdata.commPortNumber;
+                setConfiguration(configdata);
+            }
+            return responseboolean;
+        }
         /// <summary>
         /// this accept the the IP address and Port number and make a online connection like tcp/ip connection 
         /// </summary>
@@ -672,9 +714,9 @@ namespace PosLibs.ECRLibrary.Service
         {
             string responseString = "";
             byte[] responseData = new byte[6000];
-            sock.ReceiveTimeout = 50000;
+            sock.ReceiveTimeout = 180000;
             Console.WriteLine("TCP/IP socket Receive Timeout:" + 18000);
-            Log.Information("Txn response receive timeout" + 50000);
+            Log.Information("Txn response receive timeout:" + 180000);
             int bytesReceived = sock.Receive(responseData);
             responseString = Encoding.ASCII.GetString(responseData, 0, bytesReceived);
             Console.WriteLine("Transaction Response:" + responseString);
