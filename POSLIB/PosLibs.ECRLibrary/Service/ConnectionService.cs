@@ -121,7 +121,7 @@ namespace PosLibs.ECRLibrary.Service
                 {
                     string tcpip = fetchData.tcpIp.ToString();
                     int tcpport = fetchData.tcpPort;
-                    value = isOnlineConnection(tcpip, tcpport);
+                    value = isOnlineTest(tcpip, tcpport);
                 }
                 else if (fetchData.connectionMode == PinLabsEcrConstant.COM)
                 {
@@ -152,6 +152,8 @@ namespace PosLibs.ECRLibrary.Service
                                                    ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
                 try
                 {
+
+                    
                     serial.Open();
                     responseInteger = true;
                     configdata = getConfigData();
@@ -169,6 +171,7 @@ namespace PosLibs.ECRLibrary.Service
                     Console.WriteLine("Problem connecting to host");
                     Console.WriteLine(e.ToString());
                     serial.Close();
+                    serial.Dispose();
                 }
                 catch (UnauthorizedAccessException e)
                 {
@@ -250,7 +253,7 @@ namespace PosLibs.ECRLibrary.Service
             foreach (string comPort in comPorts)
             {
                 string portcom = "COM" + comPort;
-                serial = new SerialPort(portcom, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
+                 serial = new SerialPort(portcom, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
                                                    ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
                 try
                 {
@@ -282,6 +285,7 @@ namespace PosLibs.ECRLibrary.Service
                 }
                 catch (IOException io)
                 {
+                    Console.WriteLine("Connection Problem" + io);
                     listener.onFailure("Try Again", 1005);
                 }
 
@@ -354,18 +358,29 @@ namespace PosLibs.ECRLibrary.Service
         /// <returns></returns>
         public string receiveCOMTxnrep()
         {
-
-            byte[] buffer = new byte[6000];
-            serial.ReadTimeout = 180000;
-            int bytesRead = serial.BaseStream.Read(buffer, 0, buffer.Length);
-            Log.Information("com response receive timeout:" +180000);
-            string responseString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-            if (serial.IsOpen)
+            string responseString = string.Empty;
+            try
             {
+                byte[] buffer = new byte[6000];
+                serial.ReadTimeout = 180000;
+                int bytesRead = serial.BaseStream.Read(buffer, 0, buffer.Length);
+                Log.Information("com response receive timeout:" + 180000);
+                responseString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                if (serial.IsOpen)
+                {
+                    serial.Close();
+                }
+                
+            }
+            catch(InvalidOperationException ex)
+            {
+                Console.WriteLine(ex.ToString());
                 serial.Close();
+                serial.Dispose();
+                Thread.Sleep(1000);
+                isComDeviceConnected(configdata.commPortNumber);
             }
             return responseString;
-
         }
         /// <summary>
         /// this method used to show list of  devices those are connected with com and wifi 
