@@ -143,6 +143,7 @@ namespace PosLibs.ECRLibrary.Service
         /// <returns></returns>
         public Boolean isComDeviceConnected(int comPort)
         {
+
             bool responseInteger = false;
             var disconnect = doCOMDisconnection();
             if (disconnect == 0)
