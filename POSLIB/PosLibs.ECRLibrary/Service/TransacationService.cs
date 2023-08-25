@@ -207,6 +207,7 @@ namespace PosLibs.ECRLibrary.Service
                             Console.WriteLine("Transaction Not Found");
                         }
                     }
+
                 }
             }
             catch (IOException e)

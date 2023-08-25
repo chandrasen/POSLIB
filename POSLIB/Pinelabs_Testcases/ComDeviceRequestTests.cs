@@ -10,6 +10,7 @@ namespace Pinelabs_Testcases
     public class ComDeviceRequestTests
     {
         [Fact]
+
         public void TestComDeviceRequest_CashierId()
         {
             // Arrange
