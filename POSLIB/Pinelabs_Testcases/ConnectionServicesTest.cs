@@ -24,7 +24,7 @@ namespace Pinelabs_Testcases
 
             ConnectionService conobj = new ConnectionService();
             // Act
-            bool result = conobj.isOnlineConnection(IP, PORT);
+            bool result = conobj.IsOnlineConnection(IP, PORT);
             // Assert
             Assert.True(result);
         }
@@ -38,7 +38,7 @@ namespace Pinelabs_Testcases
             mockConfigData.SetupAllProperties();
             ConnectionService conobj = new ConnectionService();
             // Act
-            bool result = conobj.isOnlineConnection(IP, PORT);
+            bool result = conobj.IsOnlineConnection(IP, PORT);
             // Assert
             Assert.False(result);
         }
@@ -52,7 +52,7 @@ namespace Pinelabs_Testcases
             var mockConnectionService = new Mock<ConnectionService>();
             ConnectionService conobj = mockConnectionService.Object;
             // Act
-            bool result = conobj.isComDeviceConnected(comPort);
+            bool result = conobj.IsComDeviceConnected(comPort);
 
             // Assert
             Assert.True(result);
@@ -66,7 +66,7 @@ namespace Pinelabs_Testcases
             var mockConnectionService = new Mock<ConnectionService>();
             ConnectionService conobj = mockConnectionService.Object;
             // Act
-            bool result = conobj.isComDeviceConnected(comPort);
+            bool result = conobj.IsComDeviceConnected(comPort);
 
             // Assert
             Assert.False(result);
@@ -93,7 +93,7 @@ namespace Pinelabs_Testcases
 
             // Act
             ISet<string> allcomport = conobj.getDeviceManagerComPort();
-            conobj.scanSerialDevice((PosLibs.ECRLibrary.Common.Interface.IScanDeviceListener)listener);
+            conobj.ScanSerialDevice((PosLibs.ECRLibrary.Common.Interface.IScanDeviceListener)listener);
             // Assert
             Assert.Equal(0, allcomport.Count);
         }
@@ -106,7 +106,7 @@ namespace Pinelabs_Testcases
 
             // Act
             ISet<string> allcomport = conobj.getDeviceManagerComPort();
-            conobj.scanSerialDevice((PosLibs.ECRLibrary.Common.Interface.IScanDeviceListener)listener);
+            conobj.ScanSerialDevice((PosLibs.ECRLibrary.Common.Interface.IScanDeviceListener)listener);
             // Assert
             Assert.Equal(2, allcomport.Count);
         }
@@ -170,7 +170,7 @@ namespace Pinelabs_Testcases
             string requestData = "=\u0010ZR2XPT6yU\u0012\u000e\u0012\u001b\u001d`+7Re?BQa~\u0006\u001egD\u0017O6W\u001b\tc\u0001\u001b\u001dfBTAAUJE\0) L\u0013|\u0010\u0005st\0\u0002|\rt\u0006v\u0003}\0u\u0003\t\u0002t\u0003\0\u0002w\u0005\r\u0004zuu\u0006\u0003u\u0001\aww\u0005\u0001s\at\u0005~\0z\0p\u0003\b\u0002u\u0003\0\u0003\u0005\u0003\b\u0003\u0001t\a\artq\u0006\0vs\0\u0006r\u0005\u0014j\u0010P@\u0005UT^\t_UU\u0016\n_P.5!H";
 
             // Act
-            bool result = conobj.sendTcpIpTxnData(requestData);
+            bool result = conobj.SendTcpIpTxnData(requestData);
 
             // Assert
             Assert.True(result);
@@ -183,7 +183,7 @@ namespace Pinelabs_Testcases
             string requestData = null;
             
             // Act
-            bool result = conobj.sendTcpIpTxnData(requestData);
+            bool result = conobj.SendTcpIpTxnData(requestData);
 
             // Assert
             Assert.False(result);
@@ -195,7 +195,7 @@ namespace Pinelabs_Testcases
             ConnectionService conobj = new ConnectionService();
             string responseData = null;
             // Act
-            string result = conobj.receiveTcpIpTxnData();
+            string result = conobj.ReceiveTcpIpTxnData();
 
             // Assert
             Assert.Equal(responseData, result);
@@ -275,7 +275,7 @@ namespace Pinelabs_Testcases
             string dataToSend = "Sample data to send"; 
 
             // Act
-            bool result = conobj.sendData(dataToSend);
+            bool result = conobj.SendData(dataToSend);
 
             // Assert
             Assert.True(result);
@@ -289,7 +289,7 @@ namespace Pinelabs_Testcases
             string dataToSend = "Sample data to send"; // Replace this with the actual data you want to test.
 
             // Act
-            bool result = conobj.sendData(dataToSend);
+            bool result = conobj.SendData(dataToSend);
 
             // Assert
             Assert.False(result);

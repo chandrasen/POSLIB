@@ -12,7 +12,8 @@ namespace POSLIB.Model
 
         public const string SALE = "Purchase";
         public const string UPI = "UPI";
-        public const string BRAND_EMI = "BRAND_EMI";
+        public const string UPI_SALE_REQUEST = "UPI Sale Request";
+        public const string BHARAT_QR_SALE_RQUEST = "BHARAT QR Sale request";
         public const string REFUND = "Refund";
         public const string VOID = "Void";
         public const string PRE_AUTH = "Pre_Auth";

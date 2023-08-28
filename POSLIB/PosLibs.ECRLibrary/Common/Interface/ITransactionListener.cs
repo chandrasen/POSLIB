@@ -9,8 +9,8 @@ namespace PosLibs.ECRLibrary.Common.Interface
     public interface ITransactionListener
     {
 
-        void onSuccess(string paymentResponse);
-        void onFailure(string errorMsg, int errorCode);
-        void onNext(string action);
+        void OnSuccess(string paymentResponse);
+        void OnFailure(string errorMsg, int errorCode);
+        void OnNext(string action);
     }
 }

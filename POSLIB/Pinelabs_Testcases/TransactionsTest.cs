@@ -16,7 +16,7 @@ namespace Pinelabs_Testcases
         public void Successful_COM_Transaction()
         {
             // Arrange
-           TransacationService transacation = new TransacationService();
+            TransactionService transacation = new TransactionService();
 
             var transactionListenerMock = new Mock<PosLibs.ECRLibrary.Common.Interface.ITransactionListener>();
             // Act
@@ -26,7 +26,7 @@ namespace Pinelabs_Testcases
             string connectionMode = "COM";
             Assert.True(isConnectivityFallBackAllowed);
             bool result = connectionMode == "COM".ToString();
-            transacation.doTransaction("111", 4001, transactionListenerMock.Object);
+            transacation.DoTransaction("111", 4001, transactionListenerMock.Object);
             
             // Assert
             Assert.True(result);
@@ -36,7 +36,7 @@ namespace Pinelabs_Testcases
         public void COM_Transactionfailed()
         {
             // Arrange
-            TransacationService transacation = new TransacationService();
+            TransactionService transacation = new TransactionService();
 
             var transactionListenerMock = new Mock<ITransactionListener>();
             // Act
@@ -54,12 +54,12 @@ namespace Pinelabs_Testcases
         public void TCPIP_Transactionsuccess()
         {
             // Arrange
-            TransacationService transacation = new TransacationService();
+            TransactionService transacation = new TransactionService();
 
             var transactionListenerMock = new Mock<ITransactionListener>();
             // Act
             bool isConnectivityFallBackAllowed = false;
-            transacation.doTransaction("111", 4001, transactionListenerMock.Object);
+            transacation.DoTransaction("111", 4001, transactionListenerMock.Object);
             string connectionMode = "TCPIP";  
            // Assert.False(isConnectivityFallBackAllowed);
             //bool result = connectionMode == "TCPIP";
@@ -71,7 +71,7 @@ namespace Pinelabs_Testcases
         public void TCPIP_Transactionfailed()
         {
             // Arrange
-            TransacationService transacation = new TransacationService();
+            TransactionService transacation = new TransactionService();
 
             var transactionListenerMock = new Mock<ITransactionListener>();
             // Act
@@ -88,11 +88,11 @@ namespace Pinelabs_Testcases
         public void Successful_COM_Transaction_WhenFallbackallowedTrue()
         {
             // Arrange
-            TransacationService transacation = new TransacationService();
+            TransactionService transacation = new TransactionService();
 
             var transactionListenerMock = new Mock<ITransactionListener>();
             // Act
-            transacation.doTransaction("111", 4001, transactionListenerMock.Object);
+            transacation.DoTransaction("111", 4001, transactionListenerMock.Object);
             bool isConnectivityFallBackAllowed = true;
            // ConfigData configdata = new ConfigData();
            // Assert.True(isConnectivityFallBackAllowed);
@@ -105,18 +105,18 @@ namespace Pinelabs_Testcases
         public void Successful_TCPIP_Transaction_When_FallbackallowedTrue()
         {
             // Arrange
-            TransacationService transacation = new TransacationService();
+            TransactionService transacation = new TransactionService();
             var transactionListenerMock = new Mock<PosLibs.ECRLibrary.Common.Interface.ITransactionListener>();
             // Act
             string IP = "192.168.5.160";
             int PORT = 6666;
             ConnectionService conobj = new ConnectionService();
-            bool result11 = conobj.isOnlineConnection(IP, PORT);
+            bool result11 = conobj.IsOnlineConnection(IP, PORT);
             bool isConnectivityFallBackAllowed = true;
             string connectionMode = "TCPIP";
             Assert.True(isConnectivityFallBackAllowed);
             bool result = connectionMode == "TCPIP".ToString();
-            transacation.doTransaction("111", 4001, transactionListenerMock.Object);
+            transacation.DoTransaction("111", 4001, transactionListenerMock.Object);
             // Assert
             Assert.True(result);
         }
@@ -125,7 +125,7 @@ namespace Pinelabs_Testcases
         public void TCPIP_Transactionfailed_When_FallbackallowedTrue()
         {
             // Arrange
-            TransacationService transacation = new TransacationService();
+            TransactionService transacation = new TransactionService();
             var transactionListenerMock = new Mock<PosLibs.ECRLibrary.Common.Interface.ITransactionListener>();
             // Act
             string IP = "192.161.1.161";
@@ -136,7 +136,7 @@ namespace Pinelabs_Testcases
             string connectionMode = "";
             Assert.True(isConnectivityFallBackAllowed);
             bool result = (connectionMode == "");
-            transacation.doTransaction("111", 4001, transactionListenerMock.Object);
+            transacation.DoTransaction("111", 4001, transactionListenerMock.Object);
             // Assert
             Assert.False(result);
         }

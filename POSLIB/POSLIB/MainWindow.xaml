@@ -124,7 +124,7 @@
                     <ComboBoxItem Content="End Session"></ComboBoxItem>
                     <ComboBoxItem Content="Purchase"></ComboBoxItem>
                     <ComboBoxItem Content="UPI"></ComboBoxItem>
-                    <ComboBoxItem Content="Brand EMI"></ComboBoxItem>
+                    <ComboBoxItem Content="UPI Sale Request"></ComboBoxItem>
                     <ComboBoxItem Content="Authorization"></ComboBoxItem>
                     <ComboBoxItem Content="Authorization Extension"></ComboBoxItem>
                     <ComboBoxItem Content="Authorization Void"></ComboBoxItem>
@@ -318,8 +318,8 @@
         <Button  x:Name="btnDisConnect"  Visibility="Hidden" Content="Disconnect" IsEnabled="False" Grid.Column="1" HorizontalAlignment="Left" Margin="252,0,0,0" VerticalAlignment="Top" Width="92" Foreground="Black" FontWeight="Bold" FontSize="15" Background="#f0a6a1" Height="36" Click="DisConnect" Grid.Row="1"/>
         <ComboBox Grid.Column="1" x:Name="SELECTTRANSTYPE" HorizontalAlignment="Left" Margin="48,494,0,0" VerticalAlignment="Top" Width="358" Height="26" RenderTransformOrigin="0.092,0.521" Grid.Row="1">
             <ComboBoxItem Content="Purchase"></ComboBoxItem>
-            <ComboBoxItem Content="UPI"></ComboBoxItem>
-            <ComboBoxItem Content="Brand EMI"></ComboBoxItem>
+            <ComboBoxItem Content="BHARAT QR Sale request"></ComboBoxItem>
+            <ComboBoxItem Content="UPI Sale Request"></ComboBoxItem>
         </ComboBox>
         <Button Grid.Column="1" Content="Process" HorizontalAlignment="Left" Margin="411,494,0,0" Grid.Row="1" VerticalAlignment="Top" Height="26" Width="179" FontSize="14" FontFamily="Segoe UI Black" Click="ProcessBtn"/>
         <TextBox Grid.Column="1" x:Name="Requestsend" HorizontalAlignment="Left" Margin="46,310,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="544" Height="38" RenderTransformOrigin="0.521,1.538"/>
@@ -385,6 +385,7 @@
             <TextBox x:Name="TCPSerialNO" HorizontalAlignment="Left" Margin="398,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Segoe UI Semibold" FontSize="14"/>
             <TextBox x:Name="TCPIPIP" HorizontalAlignment="Left" Margin="398,67,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Segoe UI Semibold" FontSize="14"/>
             <TextBox x:Name="TCPPORT" HorizontalAlignment="Left" Margin="122,69,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
+            <Label x:Name="TCPHeartBtn"  Content="INACTIVE" HorizontalAlignment="Left" Margin="480,16,0,0" VerticalAlignment="Top" Width="65" Background="#FF0A840C" FontFamily="Arial Black" Foreground="White" FontSize="10"/>
         </Grid>
         <Grid x:Name="TCPIPGrid1" Grid.ColumnSpan="2"  Visibility="Hidden"   Grid.Row="1" Margin="28,70,679,466">
             <Rectangle HorizontalAlignment="Left" Height="88" Margin="19,10,0,0" Stroke="Black" VerticalAlignment="Top" Width="544"/>
@@ -396,9 +397,10 @@
             <TextBox x:Name="COMSerialPort1" HorizontalAlignment="Left" Margin="122,45,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
             <TextBox x:Name="COMDeviceID1" HorizontalAlignment="Left" Margin="398,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Segoe UI Semibold" FontSize="14"/>
             <TextBox x:Name="COMSerialNO"  HorizontalAlignment="Left" Margin="122,69,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="217" FontFamily="Bahnschrift SemiBold" Height="21"/>
+            <Label x:Name="COMlabel" Content="INACTIVE" HorizontalAlignment="Left" Margin="471,15,0,0" VerticalAlignment="Top" Width="65" Height="24" Foreground="White" Background="#FF15822B" FontFamily="Arial Black" FontSize="10"/>
         </Grid>
         <Grid x:Name="COMGrid" Grid.ColumnSpan="2" Grid.Row="1"   Visibility="Visible" Margin="37,183,679,331">
-            <Rectangle HorizontalAlignment="Left" Height="86" Stroke="Black" VerticalAlignment="Top" Width="544" Margin="10,0,0,0"/>
+            <Rectangle HorizontalAlignment="Left" Height="86" Stroke="Black" VerticalAlignment="Top" Width="544" Margin="13,2,0,0"/>
             <Label Content="Priority 2" HorizontalAlignment="Left" Margin="13,5,0,0" VerticalAlignment="Top" Width="88" FontFamily="Arial Black" FontSize="14"/>
             <TextBox x:Name="COMlbl" HorizontalAlignment="Left" Margin="114,5,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="61" Height="26" FontSize="14" FontFamily="Arial Black"/>
             <Label Content="Device ID" HorizontalAlignment="Left" Margin="16,32,0,0" VerticalAlignment="Top" Width="72" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
@@ -407,8 +409,9 @@
             <TextBox x:Name="COMSerialPort" HorizontalAlignment="Left" Margin="114,60,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="223" FontFamily="Bahnschrift SemiBold"/>
             <Label Content="Serial No" HorizontalAlignment="Left" Margin="315,30,0,0" VerticalAlignment="Top" Width="79" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
             <TextBox x:Name="COMSrialNO" HorizontalAlignment="Left" Margin="394,34,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
+            <Label x:Name="COMlabel1" Content="INACTIVE" HorizontalAlignment="Left" Margin="468,7,0,0" VerticalAlignment="Top" Width="65" Height="24" Foreground="White" Background="#FF15822B" FontFamily="Arial Black" FontSize="10"/>
         </Grid>
-        <Grid x:Name="COMGrid1" Grid.ColumnSpan="2" Visibility="Hidden" Grid.Row="1" Margin="37,183,679,331">
+        <Grid x:Name="COMGrid1" Grid.ColumnSpan="2" Visibility="Hidden"  Grid.Row="1" Margin="37,183,679,331">
             <Rectangle HorizontalAlignment="Left" Height="86" Stroke="Black" VerticalAlignment="Top" Width="544" Margin="10,0,0,0"/>
             <Label Content="Priority 2" HorizontalAlignment="Left" Margin="13,5,0,0" VerticalAlignment="Top" Width="88" FontFamily="Arial Black" FontSize="14"/>
             <TextBox x:Name="COMlbl1" HorizontalAlignment="Left" Margin="114,5,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="61" Height="26" FontSize="14" FontFamily="Arial Black"/>
@@ -420,6 +423,7 @@
             <TextBox  x:Name="TCPSrialNO1" HorizontalAlignment="Left" Margin="394,34,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
             <Label Content="Port" HorizontalAlignment="Left" Margin="317,54,0,0" VerticalAlignment="Top" Width="59" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
             <TextBox x:Name="TCPIPPORT" HorizontalAlignment="Left" Margin="394,61,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Bahnschrift SemiBold"/>
+            <Label x:Name="TCPHeartBtn1" Content="INACTIVE" HorizontalAlignment="Left" Margin="473,5,0,0" VerticalAlignment="Top" Width="65" Height="24" Foreground="White" Background="#FF15822B" FontFamily="Arial Black" FontSize="10"/>
         </Grid>
         <Button  x:Name="savebtn" Visibility="Hidden" Grid.Column="1" Content="Save" HorizontalAlignment="Left" Margin="453,42,0,0" Grid.Row="1" VerticalAlignment="Top" Width="95" FontSize="14" FontFamily="Bahnschrift SemiBold" Click="savebtn_Click" Background="#FF2F8E15" Foreground="White"/>
         <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="63" Margin="46,3,0,0" Stroke="Black" VerticalAlignment="Top" Width="544" RenderTransformOrigin="0.308,0.452" Grid.Row="1"/>
@@ -427,7 +431,7 @@
         <ComboBox  IsEnabled="False" Grid.Column="1" x:Name="LogLevel"  HorizontalAlignment="Left" Margin="1196,82,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120">
             <ComboBoxItem Content="warning"></ComboBoxItem>
             <ComboBoxItem Content="debug"></ComboBoxItem>
-            <ComboBoxItem Content="information" IsSelected="true"> </ComboBoxItem>
+            <ComboBoxItem Content="information" IsSelected="true"></ComboBoxItem>
         </ComboBox>
         <Label Grid.Column="1" Content="Connection TimeOut" HorizontalAlignment="Left" Margin="689,22,0,0" Grid.Row="1" VerticalAlignment="Top" Width="147" FontFamily="Arial Black"/>
         <TextBox Grid.Column="1"  IsEnabled="False" x:Name="ConnectionTimeOut" HorizontalAlignment="Left" Margin="836,23,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="93" Height="23" RenderTransformOrigin="0.527,0.697" FontFamily="Bahnschrift SemiBold"/>
@@ -442,6 +446,8 @@
             </Label.RenderTransform>
         </Label>
         <TextBox Grid.Column="1" IsEnabled="False" x:Name="retrivalCount" HorizontalAlignment="Left" Margin="1043,25,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="77" Height="21" FontFamily="Arial Black"/>
+        <Button Grid.Column="1" Content="Button" HorizontalAlignment="Left" Margin="933,199,0,0" Grid.Row="1" VerticalAlignment="Top" Width="87"/>
+        <Button  x:Name="ComBtn" Grid.Column="1" Content="INACTIVE" HorizontalAlignment="Left" Margin="934,348,0,0" Grid.Row="1" VerticalAlignment="Top" Width="86" FontFamily="Arial Black" Background="#FF228A0D" Foreground="White"/>
 
 
 

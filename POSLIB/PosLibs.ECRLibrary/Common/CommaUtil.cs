@@ -152,7 +152,7 @@ namespace PosLibs.ECRLibrary.Common
             try
             {
                 dynamic parsedJson = JsonConvert.DeserializeObject(inputJson);
-                string responseBody = parsedJson.responseBody;
+                string responseBody = parsedJson.responseBody ?? string.Empty;
 
                 // Remove non-hexadecimal characters
                 string hexValue = Regex.Replace(responseBody, "[^0-9a-fA-F]", "");
@@ -192,7 +192,7 @@ namespace PosLibs.ECRLibrary.Common
             return bytes;
         }
 
-        public static string convertHexdecimaltotransactionReponse(string transactionResponse)
+        public static string ConvertHexdecimalToTransactionResponse(string transactionResponse)
         {
             string decreresponse = XorEncryption.EncryptDecrypt(transactionResponse);
             string decreptresponse = CommaUtil.ExtractHexValue(decreresponse);

@@ -17,6 +17,7 @@ namespace PosLibs.ECRLibrary.Common
         public const string NO_DEVICE_FOUND = "No Device Found";
         public const string TIME_OUT_EXC = "Time Out Exception";
         public const string IO_EXC_MSG = "IOException";
+        public const string GENERAL_EXCEPTION ="1008";
 
         public const int SOCK_EXCEPTION = 1001;
         public const int NO_DEV_FOUND = 1002;
@@ -26,6 +27,12 @@ namespace PosLibs.ECRLibrary.Common
         public const int IOEXCEPTION = 1006;
 
         public const string FILE_PATH = "C:\\PinLabs\\Configure.json";
+
+
+        public const string COMHEALTHACTIVE = "100";
+        public const string COMHEALTHINACTIVE = "200";
+        public const string TCPIPHEALTHACTIVE = "400";
+        public const string TCPIPHEALTHINACTIVE = "300";
 
 
 
