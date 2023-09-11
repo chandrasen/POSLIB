@@ -43,9 +43,10 @@ namespace PosLibs.ECRLibrary.Common
         public string tcpIpDeviceId { get; set; }
         public string tcpIpSerialNumber { get; set; }
         public string comDeviceId { get; set; }
-        public bool isComHeartActive { get; set; }
+        public int isComHeartActive { get; set; }
         public string LogPath { get; set; }
         public string loglevel { get; set; }
+        public bool isAppidle { get; set; }
 
     }
 }

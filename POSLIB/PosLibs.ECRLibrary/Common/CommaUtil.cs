@@ -12,27 +12,10 @@ using Serilog;
 
 namespace PosLibs.ECRLibrary.Common
 {
-    public class CommaUtil : ICommaUtil
+    public static class CommaUtil 
     {
-        protected CommaUtil() { }
 
         //IP Address Validaiton
-        public  bool CheckIPAddress(string IP)
-        {
-            try
-            {
-                if (!IPAddress.TryParse(IP, out IPAddress? parsedIPAddress) || parsedIPAddress == null)
-                    return false;
-                string[] octets = IP.Split('.');
-                if (octets.Length != 4)
-                    return false;
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Invalid IP Exception");
-            }
-            return true;
-        }
 
         /// <summary>
         /// this method replace the requesbody with csv data
@@ -153,12 +136,8 @@ namespace PosLibs.ECRLibrary.Common
             {
                 dynamic parsedJson = JsonConvert.DeserializeObject(inputJson);
                 string responseBody = parsedJson.responseBody ?? string.Empty;
-
-                // Remove non-hexadecimal characters
                 string hexValue = Regex.Replace(responseBody, "[^0-9a-fA-F]", "");
-
-             string hexresult =   HexToString(hexValue);
-
+                string hexresult =   HexToString(hexValue);
                 return hexresult;
             }
             catch

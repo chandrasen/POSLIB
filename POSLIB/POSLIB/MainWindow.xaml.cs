@@ -35,6 +35,8 @@ using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using System.Reflection.Metadata;
 using POSLIB.Model;
+using System.Windows.Media;
+using Serilog;
 
 namespace POSLIB
 {
@@ -45,8 +47,8 @@ namespace POSLIB
     public partial class MainWindow : Window
     {
 
-       // private Properties.Settings settings = Properties.Settings.Default;
-      
+        // private Properties.Settings settings = Properties.Settings.Default;
+
 
         string TerminalId = string.Empty;
         int status = 0;
@@ -115,6 +117,7 @@ namespace POSLIB
         static int countCB = 0;
         public string tcpdeviceID = string.Empty;
         public string comdeviceID = string.Empty;
+       
 
 
         static string deviceName = string.Empty;
@@ -137,34 +140,100 @@ namespace POSLIB
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-        
+
         public MainWindow()
         {
+            
             InitializeComponent();
             DataContext = this;
             GetCOMPort();
-            showData();
-            Autodiscover();
             TerminalConnectionCheckerW();
-
-
-
+            createLogFile();
+            showData();
+            loadUserSettings();
+            Log.Information("-:Application Start:-");
         }
+        private void loadUserSettings()
+        {
+            Filepath.Text = Properties.Settings.Default.Path;
+            NoDay.Text = Properties.Settings.Default.RetainDays;
+            LogLevel.Text = Properties.Settings.Default.LogLevel;
 
-        //public void Heatbeat()
-        //{
-        //    bool checkstatus = fetchData.isComHeartActive;
-        //    if (checkstatus)
-        //    {
-        //        ComBtn.Content = "ACTIVE";
-        //    }
-        //    else
-        //    {
-        //        ComBtn.Content = "INACTIVE";
-        //    }
+            if (Properties.Settings.Default.Priority != "")
+            {
+                comboBox.Text = Properties.Settings.Default.Priority;
+            }
 
-        //}
+            if (Properties.Settings.Default.ConnectionFallback == "True")
+            {
+                connectivityFallbackCheckBox.IsChecked = true;
+            }
 
+            else
+            {
+                connectivityFallbackCheckBox.IsChecked = false;
+            }
+
+            if (Properties.Settings.Default.LogOption == "True")
+            {
+                isEnabledlog.IsChecked = true;
+            }
+            else
+            {
+                isEnabledlog.IsChecked = false;
+            }
+        }
+        public void createLogFile()
+        {
+            string logPath = ComConstants.logFilepath;
+
+            if (!Directory.Exists(ComConstants.logFilepath))
+            {
+                Directory.CreateDirectory(logPath);
+            }
+           // Filepath.Text = logPath;
+            string loglevelval = LogLevel.Text;
+            switch (loglevelval.ToLower()) // Convert input to lowercase for case-insensitivity
+            {
+                case "warning":
+                    loglevel = "1";
+                    break;
+                case "debug":
+                    loglevel = "2";
+                    break;
+                case "information":
+                    loglevel = "3";
+                    break;
+                default:
+                    break;
+            }
+            Dispatcher.Invoke(() =>
+            {
+                islogAllowed = isEnabledlog.IsChecked == true;
+
+            });
+            if (islogAllowed)
+            {
+                if (Filepath.Text != "")
+                {
+                    filepath = Filepath.Text;
+                    if (!Directory.Exists(Path.GetDirectoryName(filepath)))
+                    {
+                        MessageBox.Show("Invalid file path. Please enter a valid file path.");
+                        return;
+                    }
+                }
+                LogFile.SetLogOptions(int.Parse(loglevel), islogAllowed, filepath, noOfDayValue);
+            }
+            else
+            {
+                filepath = "C:\\POSLIBS";
+                if (Directory.Exists(Path.GetDirectoryName(filepath)))
+                {
+                    LogFile.SetLogOptions(int.Parse(loglevel), islogAllowed, filepath, noOfDayValue);
+                }
+            }
+        }
         public void showData()
         {
             fetchData = obj.GetConfigData();
@@ -176,12 +245,12 @@ namespace POSLIB
             comfullname.Text = fetchData.comfullName;
             comserialNo.Text = fetchData.comserialNumber;
             TCPIPIP.Text = fetchData.tcpIpPort;
-            Filepath.Text = fetchData.LogPath;
+            Filepath.Text = Filepath.Text;
             TCPPORT.Text = fetchData.tcpIpaddress;
             TCPSerialNO.Text = fetchData.tcpIpSerialNumber;
             CashierID.Text = fetchData.CashierID;
             CashireName.Text = fetchData.CashierName;
-           
+
             for (int i = 0; i < fetchData?.communicationPriorityList?.Length; i++)
             {
                 if (fetchData.communicationPriorityList[i] == "TCP/IP")
@@ -223,7 +292,7 @@ namespace POSLIB
                 }
             }
 
-            
+
         }
 
         static string errorMsg = "";
@@ -264,7 +333,7 @@ namespace POSLIB
             string[] ports = SerialPort.GetPortNames();
             try
             {
-               
+
                 string query = "SELECT * FROM Win32_SerialPort";
                 ManagementObjectSearcher searcher = new ManagementObjectSearcher(query);
                 foreach (ManagementObject device in searcher.Get())
@@ -328,18 +397,33 @@ namespace POSLIB
         static bool statusSerialConn = false;
         DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
         public Timer connectionCheckTimer;
-        public void TerminalConnectionCheckerW()
+        private static DateTime lastActivityTime = DateTime.Now;
+        private static DispatcherTimer idleTimer;
+        private const int IdleThresholdMilliseconds = 15000;
+     
+       public void TerminalConnectionCheckerW()
         {
-            connectionCheckTimer = new Timer(ConnectionCheckTimer_Tick, null, TimeSpan.FromSeconds(05), TimeSpan.FromSeconds(05));
+                connectionCheckTimer = new Timer(ConnectionCheckTimer_Tick, null, TimeSpan.FromSeconds(0),
+                TimeSpan.FromSeconds(20));   
         }
         private void ConnectionCheckTimer_Tick(object state)
         {
-            CheckTerminalConnectionW();
-            
+                isAppIdle();
         }
-        public void CheckTerminalConnectionW()
+        public void isAppIdle()
         {
-            checkTcpIpHeatBeat();
+            ConfigData value = obj.GetConfigData();
+            if (value != null)
+            {
+                if (value.isAppidle)
+                {
+                    checkComHeatBeat();
+                    checkTcpIpHeatBeat();
+                }
+            }
+        }
+        public void checkComHeatBeat()
+        {
             string checkstatus = obj.CheckCOMHeartBeat();
             int statusCode = int.Parse(checkstatus);
             switch (statusCode)
@@ -347,12 +431,34 @@ namespace POSLIB
                 case 100:
                     Dispatcher.Invoke(() => COMlabel.Content = "ACTIVE");
                     Dispatcher.Invoke(() => COMlabel1.Content = "ACTIVE");
-                    Dispatcher.Invoke(() => ComBtn.Content = "ACTIVE");
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0x15, 0x82, 0x2B); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        COMlabel1.Background = brush;
+                    });
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0x15, 0x82, 0x2B); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        COMlabel.Background = brush;
+                    });
                     break;
                 case 200:
                     Dispatcher.Invoke(() => COMlabel.Content = "INACTIVE");
                     Dispatcher.Invoke(() => COMlabel1.Content = "INACTIVE");
-                    Dispatcher.Invoke(() => ComBtn.Content = "INACTIVE");
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0xCA, 0x25, 0x0A); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        COMlabel1.Background = brush;
+                    });
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0xCA, 0x25, 0x0A); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        COMlabel.Background = brush;
+                    });
                     break;
                 default:
                     // Handle any other status code
@@ -360,39 +466,48 @@ namespace POSLIB
 
             }
 
-            //if (checkstatus)
-            //{
-            //    Dispatcher.Invoke(() => COMlabel.Content = "ACTIVE");
-            //    Dispatcher.Invoke(() => COMlabel1.Content = "ACTIVE");
-            //    Dispatcher.Invoke(() => ComBtn.Content = "ACTIVE");
-            //}
-            //else
-            //{
-            //    Dispatcher.Invoke(() => COMlabel.Content = "INACTIVE");
-            //    Dispatcher.Invoke(() => COMlabel1.Content = "INACTIVE");
-            //    Dispatcher.Invoke(() => ComBtn.Content = "INACTIVE");
-            //}
-            
-
-      }
+        }
         public void checkTcpIpHeatBeat()
         {
-           string checkstatus = obj.CheckTcpIpHeartBeat();
+            string checkstatus = obj.CheckTcpIpHeartBeat();
             int statusCode = int.Parse(checkstatus);
             switch (statusCode)
             {
                 case 300:
                     Dispatcher.Invoke(() => TCPHeartBtn.Content = "INACTIVE");
                     Dispatcher.Invoke(() => TCPHeartBtn1.Content = "INACTIVE");
-                    //Dispatcher.Invoke(() => ComBtn.Content = "ACTIVE");
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0xCA, 0x25, 0x0A); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        TCPHeartBtn.Background = brush;
+                    });
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0xCA, 0x25, 0x0A); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        TCPHeartBtn1.Background = brush;
+                    });
+
                     break;
                 case 400:
                     Dispatcher.Invoke(() => TCPHeartBtn.Content = "ACTIVE");
                     Dispatcher.Invoke(() => TCPHeartBtn1.Content = "ACTIVE");
-                    //Dispatcher.Invoke(() => ComBtn.Content = "INACTIVE");
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0x15, 0x82, 0x2B); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        TCPHeartBtn.Background = brush;
+                    });
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0x15, 0x82, 0x2B); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        TCPHeartBtn1.Background = brush;
+                    });
                     break;
                 default:
-                    // Handle any other status code
+
                     break;
 
             }
@@ -440,8 +555,7 @@ namespace POSLIB
 
             worker.RunWorkerAsync();
 
-            obj.AutoConnect();
-            obj.TerminalConnectionChecker();
+            //obj.AutoConnect();
         }
 
         private void ScanOnlineDevices()
@@ -449,6 +563,7 @@ namespace POSLIB
 
             worker = new BackgroundWorker();
             worker.WorkerReportsProgress = true;
+            TcpIpList.ItemsSource = comdata;
             worker.DoWork += work_onlinedevices_scan;
             worker.ProgressChanged += worker_ProgressChanged;
 
@@ -471,6 +586,8 @@ namespace POSLIB
         }
         ConnectionService obj = new ConnectionService();
         TransactionService trxobj = new TransactionService();
+
+        ConnectionListener comListener = new ConnectionListener();
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
 
@@ -480,7 +597,7 @@ namespace POSLIB
                 if (!status)
                 {
                     MessageBox.Show("Serial Cable Disconncected, Please connect serial cable");
-                    resultDisconnect = obj.doCOMDisconnection();
+                    //resultDisconnect = obj.doCOMDisconnection();
                     statusSerialConn = false;
                     dispatcherTimer.Tick -= new EventHandler(dispatcherTimer_Tick);
                     dispatcherTimer.Stop();
@@ -506,7 +623,7 @@ namespace POSLIB
                         // ResponseRecived.Text = "";
                         TRANSTYPEL.IsEnabled = false;
                         CASHBACKL.IsEnabled = false;
-                    
+
                         AMOUNTT.IsEnabled = false;
                         RRNL.IsEnabled = false;
                         RRNT.IsEnabled = false;
@@ -557,7 +674,7 @@ namespace POSLIB
             else if (!statusSerialConn)
             {
 
-                var result = obj.IsComDeviceConnected(int.Parse(IPortCom));
+               // var result = obj.IsComDeviceConnected(int.Parse(IPortCom), comListener);
 
                 bool status = obj.checkComConn();
                 if (status)
@@ -590,12 +707,10 @@ namespace POSLIB
             }
         }
 
-
         void work_onlinedevices_scan(object sender, DoWorkEventArgs e)
         {
             bool checkNullValidation = true;
             ConnectionService obj = new ConnectionService();
-
 
             (sender as BackgroundWorker).ReportProgress(0);
             try
@@ -608,13 +723,12 @@ namespace POSLIB
                     serialdevice.Clear();
                     serialdevicelist.Clear();
                 });
-              
+                  fetchData= obj.GetConfigData();
+                fetchData.isAppidle = false;
+                obj.setConfiguration(fetchData);
                 obj.scanOnlineDevice(deviceslisnter);
                 obj.ScanSerialDevice(deviceslisnter);
-
-                Thread.Sleep(20000);
-
-
+                 Thread.Sleep(15000);
                 if (serialdevice.Count <= 0)
                 {
                     (sender as BackgroundWorker).ReportProgress(40);
@@ -684,7 +798,7 @@ namespace POSLIB
         static string requestbody = "";
         void work_onlineTrans_scan(object sender, DoWorkEventArgs e)
         {
-           
+
             bool checkNullValidation = true;
 
             ConnectionService obj = new ConnectionService();
@@ -703,13 +817,33 @@ namespace POSLIB
                         {
                             transactionType = "5120";
                         }
-                        else if(transTypeSelectedPos.ToString()== TxnConstant.BHARAT_QR_SALE_RQUEST)
+                        else if (transTypeSelectedPos.ToString() == TxnConstant.BHARAT_QR_SALE_RQUEST)
                         {
                             transactionType = "5123";
                         }
-                        else if(transTypeSelectedPos.ToString()==TxnConstant.REFUND)
+                        else if (transTypeSelectedPos.ToString() == TxnConstant.REFUND)
                         {
                             transactionType = "4002";
+                        }
+                        else if (transTypeSelectedPos.ToString() == TxnConstant.SALE_COMPLETE)
+                        {
+                            transactionType = "4008";
+                        }
+                        else if (transTypeSelectedPos.ToString() == TxnConstant.VOID)
+                        {
+                            transactionType = "4006";
+                        }
+                        else if (transTypeSelectedPos.ToString() == TxnConstant.TIP_ADJUST)
+                        {
+                            transactionType = "4015";
+                        }
+                        else if (transTypeSelectedPos.ToString() == TxnConstant.ADJUST)
+                        {
+                            transactionType = "4005";
+                        }
+                        else if (transTypeSelectedPos.ToString() == TxnConstant.SETTLEMENT)
+                        {
+                            transactionType = "6001";
                         }
 
 
@@ -738,7 +872,14 @@ namespace POSLIB
                         trxobj.DoTransaction(afterreplace, int.Parse(transactionType), transactionDrive);
                         Application.Current.Dispatcher.Invoke(() =>
                         {
-                            ResponseReceive.Text = resp;
+                            if (resp != "")
+                            {
+                                ResponseReceive.Text = resp;
+                            }
+                            else
+                            {
+                                ResponseReceive.Text = comListener.errormessage;
+                            }
                             Requestsend.Text = RemoveNewlines(trxobj._transactionRequestBody);
                         });
 
@@ -944,7 +1085,7 @@ namespace POSLIB
                 ProgBarL.Visibility = Visibility.Hidden;
                 ProgBar.Visibility = Visibility.Hidden;
                 fullScreen.IsEnabled = true;
-                
+
                 btnConnect.IsEnabled = true;
                 ProgBar.IsIndeterminate = false;
             }
@@ -1019,7 +1160,7 @@ namespace POSLIB
                     bmi.BeginInit();
                     bmi.UriSource = new Uri("img\\connectedIcon.png", UriKind.Relative);
                     bmi.EndInit();
-                   // ConnectImg.Stretch = Stretch.Fill;
+                    // ConnectImg.Stretch = Stretch.Fill;
                     //ConnectImg.Source = bmi;
                     ConnectL.Content = "Connected";
                     rdbCom.IsEnabled = false;
@@ -1367,7 +1508,7 @@ namespace POSLIB
                     (sender as BackgroundWorker).ReportProgress(2);
                 }
             }
-            
+
             if (transTypeSelected.ToString() == "UPI")
             {
                 if (TerminalId != "")
@@ -1380,7 +1521,7 @@ namespace POSLIB
                             messageShow("Amount Should not empty");
                             (sender as BackgroundWorker).ReportProgress(2);
                         }
-                       
+
                         else if (ECRREFtext == string.Empty)
                         {
                             checkNullValidation = false;
@@ -4645,7 +4786,7 @@ namespace POSLIB
                     TRANSTYPE.IsEnabled = false;
                     TRANSTYPEL.IsEnabled = false;
                     CASHBACKL.IsEnabled = false;
-                   
+
                     AMOUNTT.IsEnabled = false;
                     RRNL.IsEnabled = false;
                     RRNT.IsEnabled = false;
@@ -4891,7 +5032,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-             
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -4920,7 +5061,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-               
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -4940,7 +5081,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-               
+
             }
             if (type == "End Session")
             {
@@ -4949,7 +5090,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -4969,7 +5110,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-              
+
             }
 
             if (type == "Purchase")
@@ -4981,7 +5122,7 @@ namespace POSLIB
                 amountDefaultVal();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-              
+
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5014,7 +5155,7 @@ namespace POSLIB
                 amountDefaultVal();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                
+
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5081,7 +5222,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                
+
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = true;
                 RRNT.IsEnabled = true;
@@ -5113,7 +5254,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-               
+
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5144,7 +5285,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-               
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = true;
                 RRNT.IsEnabled = true;
@@ -5176,7 +5317,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-               
+
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = true;
                 RRNT.IsEnabled = true;
@@ -5207,7 +5348,7 @@ namespace POSLIB
                 amountDefaultVal();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                
+
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = true;
                 RRNT.IsEnabled = true;
@@ -5238,7 +5379,7 @@ namespace POSLIB
                 amountDefaultVal();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-               
+
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = true;
                 RRNT.IsEnabled = true;
@@ -5270,7 +5411,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                
+
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5301,7 +5442,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-               
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5332,7 +5473,7 @@ namespace POSLIB
                 countAmount = 0;
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-              
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5353,7 +5494,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                
+
             }
             if (type == "Bill Payment")
             {
@@ -5363,7 +5504,7 @@ namespace POSLIB
                 amountDefaultVal();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-               
+
                 AMOUNTT.IsEnabled = true;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5394,7 +5535,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-               
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5417,7 +5558,7 @@ namespace POSLIB
                 myBrowser.Navigate((Uri)null);
                 int refNumber = int.Parse(txtEcrref.Text) - 1;
                 prvsECRNumberT.Text = refNumber.ToString("D6");
-                
+
             }
             if (type == "Full Download")
             {
@@ -5426,7 +5567,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5445,7 +5586,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = true;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                
+
             }
             if (type == "Partial Download")
             {
@@ -5454,7 +5595,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5473,7 +5614,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = true;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                
+
             }
             if (type == "Set Settings")
             {
@@ -5482,7 +5623,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-                
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5503,7 +5644,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                
+
                 VendorIDT.Select(VendorIDT.Text.Length, 0);
                 VendorIDT.Focus();
             }
@@ -5514,7 +5655,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-             
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5535,7 +5676,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                
+
             }
             if (type == "Running Total")
             {
@@ -5544,7 +5685,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-         
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5565,7 +5706,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                
+
             }
             if (type == "Snapshot Total")
             {
@@ -5574,7 +5715,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-              
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5595,7 +5736,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-              
+
             }
             if (type == "Print Summary Report")
             {
@@ -5604,7 +5745,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-               
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5625,7 +5766,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-                
+
             }
             if (type == "Check Status")
             {
@@ -5634,7 +5775,7 @@ namespace POSLIB
                 clearField();
                 CASHBACKT.IsEnabled = false;
                 CASHBACKL.IsEnabled = false;
-             
+
                 AMOUNTT.IsEnabled = false;
                 RRNL.IsEnabled = false;
                 RRNT.IsEnabled = false;
@@ -5655,7 +5796,7 @@ namespace POSLIB
                 prvsECRNumberT.IsEnabled = false;
                 prvsECRNumberL.IsEnabled = false;
                 myBrowser.Navigate((Uri)null);
-              
+
             }
         }
         private void Clear(object sender, RoutedEventArgs e)
@@ -8338,13 +8479,13 @@ namespace POSLIB
                 // Store the IP address and port number in the textboxes
                 //txtIpAddress.Text = item.posIP;
                 //txtPort.Text = item.posPort.ToString();
-               
 
 
 
-              if (items.connectionMode == "TCP/IP")
+
+                if (items.connectionMode == "TCP/IP")
                 {
-                    
+
                     serialNo.Text = items.SerialNo;
                     tcpip.Text = items.deviceIp;
                     tcpport.Text = items.devicePort;
@@ -8352,11 +8493,11 @@ namespace POSLIB
                     data.tcpIpDeviceId = items.deviceId;
                     data.comDeviceId = data.comDeviceId;
 
-                    
+
                 }
                 else
                 {
-                    
+
                     comserialNo.Text = items.SerialNo;
                     comfullname.Text = items.COM;
                     comdeviceID = items.deviceId;
@@ -8411,7 +8552,7 @@ namespace POSLIB
                         intvalue += c;
                     }
                 }
-                isOnlineDevice = obj.IsComDeviceConnected(int.Parse(intvalue));
+                isOnlineDevice = obj.CheckComStatus(int.Parse(intvalue), comListener);
                 if (isOnlineDevice == true)
                 {
                     btnDisConnect.IsEnabled = true;
@@ -8453,7 +8594,7 @@ namespace POSLIB
 
         string loglevel = string.Empty;
         bool islogAllowed;
-        int noOfDayValue=0;
+        int noOfDayValue = 1;
         string filepath = string.Empty;
         String priority1;
         String priority2;
@@ -8462,54 +8603,12 @@ namespace POSLIB
             bool isFallbackAllowed = false;
             string firstPriority = "";
             string secondPriority = "";
-            string loglevelval = LogLevel.Text;
-            switch (loglevelval.ToLower()) // Convert input to lowercase for case-insensitivity
-            {
-                case "warning":
-                    loglevel = "1";
-                    break;
-                case "debug":
-                    loglevel = "2";
-                    break;
-                case "information":
-                    loglevel = "3";
-                    break;
-                default:
-                    break;
-            }
-            Dispatcher.Invoke(() =>
-            {
-                islogAllowed = isEnabledlog.IsChecked == true;
-               
-            });
-            if (islogAllowed)
-            {
-                if (Filepath.Text != "")
-                {
-                    filepath = Filepath.Text;
-                    if (!Directory.Exists(Path.GetDirectoryName(filepath)))
-                    {
-                        MessageBox.Show("Invalid file path. Please enter a valid file path.");
-                        return;
-                    }
-                }
-                LogFile.SetLogOptions(int.Parse(loglevel), islogAllowed, filepath, noOfDayValue);
-            }
+            
+            
             Dispatcher.Invoke(() =>
             {
                 isFallbackAllowed = connectivityFallbackCheckBox.IsChecked == true;
             });
-
-            if (Filepath.Text != "")
-            {
-                filepath = Filepath.Text;
-                if (!Directory.Exists(Path.GetDirectoryName(filepath)))
-                {
-                    MessageBox.Show("Folder does not exist.");
-                    return;
-                }
-            }
-
 
             ComboBoxItem selectedComboBoxItem = comboBox.SelectedItem as ComboBoxItem;
 
@@ -8548,7 +8647,7 @@ namespace POSLIB
                     COMGrid.Visibility = Visibility.Hidden;
                     COMGrid1.Visibility = Visibility.Visible;
                     COMDeviceID1.Text = savecomserialno;
-                    COMSerialPort1.Text =comdeviceID ;
+                    COMSerialPort1.Text = comdeviceID;
                     COMSerialNO.Text = savecomport;
                     TCPIPIP1.Text = savetcpIp;
                     TCPSrialNO1.Text = savetcpserialno;
@@ -8558,15 +8657,16 @@ namespace POSLIB
                 }
                 string[] connectionPriorityMode = new string[] { firstPriority, secondPriority };
                 fetchData = obj.GetConfigData();
+                fetchData.isAppidle = true;
                 fetchData.commPortNumber = fetchData.commPortNumber;
-                
+
                 fetchData.communicationPriorityList = connectionPriorityMode;
-                for(int i = 0; i < fetchData.communicationPriorityList.Length; i++)
+                for (int i = 0; i < fetchData.communicationPriorityList.Length; i++)
                 {
                     fetchData.connectionMode = fetchData.communicationPriorityList[i];
                     break;
                 }
-                fetchData.comfullName = comfullname.Text; 
+                fetchData.comfullName = comfullname.Text;
                 fetchData.comserialNumber = comserialNo.Text;
                 fetchData.comDeviceId = fetchData.comDeviceId;
                 fetchData.tcpIpaddress = tcpip.Text;
@@ -8582,9 +8682,40 @@ namespace POSLIB
                 fetchData.connectionTimeOut = ConnectionTimeOut.Text;
                 fetchData.LogPath = filepath;
                 fetchData.loglevel = loglevel;
+
+                saveUsersettings();
                 obj.setConfiguration(fetchData);
                 showData();
+
+                
                 MessageBox.Show("Settings saved successfully.", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
+                clearTcpIPGrid();
+
+            }
+        }
+        private void clearTcpIPGrid()
+        {
+            TcpIpList.ItemsSource = null;
+            TcpIpList.Visibility = Visibility.Hidden;
+        }
+
+        private void saveUsersettings()
+        {
+            try
+            {
+                Properties.Settings.Default.ConnectionFallback = connectivityFallbackCheckBox.IsChecked.ToString();
+                Properties.Settings.Default.LogOption = isEnabledlog.IsChecked.ToString();
+                Properties.Settings.Default.Path = Filepath.Text;
+                Properties.Settings.Default.RetainDays = NoDay.Text;
+                Properties.Settings.Default.LogLevel = LogLevel.Text;
+                Properties.Settings.Default.Priority = comboBox.Text;
+
+                Properties.Settings.Default.Save();
+
+            }
+            catch (Exception ex)
+            {
+
             }
         }
 
@@ -8643,7 +8774,7 @@ namespace POSLIB
             OnlineTrans();
         }
 
-     
+
 
         private void CheckBox_Checked_1(object sender, RoutedEventArgs e)
         {
@@ -8651,15 +8782,15 @@ namespace POSLIB
             NoDay.IsEnabled = true;
             broswing.IsEnabled = true;
             Filepath.IsEnabled = true;
-            noOfDayValue = int.Parse(NoDay.Text);
-           
-            
+           // noOfDayValue = int.Parse(NoDay.Text);
+
+
             //if (!int.TryParse(NoOfday, out noOfDayValue))
             //{
             //    MessageBox.Show("Invalid value for NoOfday. Please enter a valid integer.");
             //    return;
             //}
-               
+
         }
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
@@ -8679,24 +8810,23 @@ namespace POSLIB
                     intvalue += c;
                 }
             }
-            isOnlineDevice = obj.IsComDeviceConnected(int.Parse(intvalue));
+            isOnlineDevice = obj.CheckComStatus(int.Parse(intvalue), comListener);
             if (isOnlineDevice == true)
             {
-                
+
                 savecomport = comfullname.Text;
                 savecomserialno = comserialNo.Text;
-               
-                
+
+
                 enter.IsEnabled = true;
                 AMOUNTT.IsEnabled = true;
                 ConnectL.Content = "Connected";
-                MessageBox.Show("COM Connection Successfull");
+                MessageBox.Show(comListener.successmessage);
             }
             else
             {
-                MessageBox.Show("Problem Connecting with Terminal");
+                MessageBox.Show(comListener.errormessage);
             }
-
         }
         private void Button_Click_4(object sender, RoutedEventArgs e)
         {
@@ -8715,7 +8845,7 @@ namespace POSLIB
                 MessageBox.Show("Port number cannot be more than 6 characters long", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            isOnlineDevice = obj.IsOnlineTest(tcpip.Text, int.Parse(tcpport.Text));
+            isOnlineDevice = obj.IsOnlineTest(tcpip.Text, int.Parse(tcpport.Text), comListener);
             if (isOnlineDevice)
             {
                 enter.IsEnabled = true;
@@ -8727,7 +8857,11 @@ namespace POSLIB
                 savetcpserialno = serialNo.Text;
                 MessageBox.Show("TCP IP Connection Successful");
             }
-           
+            else
+            {
+                MessageBox.Show(comListener.errormessage);
+            }
+
         }
         private void Button_Click_5(object sender, RoutedEventArgs e)
         {
@@ -8738,7 +8872,7 @@ namespace POSLIB
             };
             if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                string selectedFolderPath = dialog.FileName;               
+                string selectedFolderPath = dialog.FileName;
                 Filepath.Text = selectedFolderPath;
             }
         }
@@ -8755,19 +8889,13 @@ namespace POSLIB
             CashierID.IsEnabled = false;
             CashireName.IsEnabled = false;
             EditBtn.Visibility = Visibility.Visible;
-            
+
             fetchData.CashierID = CashierID.Text;
             fetchData.CashierName = CashireName.Text;
             obj.setConfiguration(fetchData);
         }
 
-        private void isEnabledlog_Unchecked(object sender, RoutedEventArgs e)
-        {
-            NoDay.IsEnabled = false;
-            LogLevel.IsEnabled = false;
-            Filepath.IsEnabled = false;
-            broswing.IsEnabled = false;
-        }
+
 
         private void CashierID_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
@@ -8779,14 +8907,14 @@ namespace POSLIB
         {
             if (!char.IsDigit(e.Text, e.Text.Length - 1))
             {
-                e.Handled = true; 
+                e.Handled = true;
             }
             else
             {
                 string newText = tcpport.Text + e.Text;
                 if (newText.Length > 4)
                 {
-                    e.Handled = true; 
+                    e.Handled = true;
                     MessageBox.Show("Port number should be 4 digits.");
                 }
             }
@@ -8796,6 +8924,14 @@ namespace POSLIB
         {
             ConnectionTimeOut.IsEnabled = true;
             retrivalCount.IsEnabled = true;
+        }
+
+        private void isEnabledlog_Unchecked_1(object sender, RoutedEventArgs e)
+        {
+            broswing.IsEnabled = false;
+            NoDay.IsEnabled = false;
+            LogLevel.IsEnabled = false;
+            Filepath.IsEnabled = false;
         }
     }
 }

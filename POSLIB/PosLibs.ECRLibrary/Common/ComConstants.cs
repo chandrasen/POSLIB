@@ -15,5 +15,6 @@ namespace PosLibs.ECRLibrary.Common
         public const int DATABITSCOM = 8;
         public const int STOPBITSCOM = 1;
         public const int PORT = 6666;
+        public const string logFilepath = @"C:\POSLIBS";
     }
 }

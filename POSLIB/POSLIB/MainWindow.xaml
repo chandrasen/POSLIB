@@ -320,17 +320,23 @@
             <ComboBoxItem Content="Purchase"></ComboBoxItem>
             <ComboBoxItem Content="BHARAT QR Sale request"></ComboBoxItem>
             <ComboBoxItem Content="UPI Sale Request"></ComboBoxItem>
+            <ComboBoxItem Content="Refund"></ComboBoxItem>
+            <ComboBoxItem Content="Tip Adjust"></ComboBoxItem>
+            <ComboBoxItem Content="Adjust Transaction"></ComboBoxItem>
+            <ComboBoxItem Content="Void Transaction"></ComboBoxItem>
+            <ComboBoxItem Content="Sale Complete"></ComboBoxItem>
+            <ComboBoxItem Content="Settlement"></ComboBoxItem>
         </ComboBox>
         <Button Grid.Column="1" Content="Process" HorizontalAlignment="Left" Margin="411,494,0,0" Grid.Row="1" VerticalAlignment="Top" Height="26" Width="179" FontSize="14" FontFamily="Segoe UI Black" Click="ProcessBtn"/>
         <TextBox Grid.Column="1" x:Name="Requestsend" HorizontalAlignment="Left" Margin="46,310,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="544" Height="38" RenderTransformOrigin="0.521,1.538"/>
         <TextBox x:Name="ResponseReceive" Grid.Column="1" HorizontalAlignment="Left" Margin="46,353,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="544" Height="100"/>
 
-        <TextBox x:Name="Filepath" Grid.Column="1" IsEnabled="False" HorizontalAlignment="Left" Margin="708,75,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="147" Height="30" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
+        <TextBox x:Name="Filepath"  Grid.Column="1" IsEnabled="False" HorizontalAlignment="Left" Margin="708,75,0,0" Grid.Row="1" TextWrapping="Wrap" Text="C:\POSLIBS" VerticalAlignment="Top" Width="147" Height="30" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
         <Label Grid.Column="1" Content="Path" HorizontalAlignment="Left" Margin="665,78,0,0" Grid.Row="1" VerticalAlignment="Top" Height="27" Width="38" FontSize="14" FontFamily="Bahnschrift SemiBold" RenderTransformOrigin="1.296,0.968"/>
         <Label Grid.Column="1" Content="No.of Days To Retain Log" HorizontalAlignment="Left" Margin="892,76,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="0.659,0.926" Height="32" Width="146" FontSize="14" FontFamily="Segoe UI Semibold"/>
         <TextBox  IsEnabled="False" x:Name="NoDay" Text="2"  Grid.Column="1"  KeyDown="AMOUNTT_KeyDown" HorizontalAlignment="Left" Margin="1038,81,0,0" Grid.Row="1" TextWrapping="Wrap"  VerticalAlignment="Top" Width="78" Height="24"/>
         <Label Grid.Column="1" Content="Log Level" HorizontalAlignment="Left" Margin="1121,79,0,0" Grid.Row="1" VerticalAlignment="Top" RenderTransformOrigin="0.317,0.502" FontFamily="Segoe UI Semibold" FontSize="14"/>
-        <CheckBox x:Name="isEnabledlog" Grid.Column="1" Content="Log Option" HorizontalAlignment="Left" Margin="673,51,0,0" Grid.Row="1" VerticalAlignment="Top" Checked="CheckBox_Checked_1" FontSize="14" FontFamily="Arial Black" Height="18" Width="126"/>
+        <CheckBox x:Name="isEnabledlog" Grid.Column="1" Content="Log Option" Unchecked="isEnabledlog_Unchecked_1" HorizontalAlignment="Left" Margin="673,51,0,0" Grid.Row="1" VerticalAlignment="Top" Checked="CheckBox_Checked_1" FontSize="14" FontFamily="Arial Black" Height="18" Width="126"/>
 
         <Label Grid.Column="1" Content="Connected Devices" HorizontalAlignment="Left" Margin="717,149,0,0" Grid.Row="1" VerticalAlignment="Top" Width="228" FontFamily="Arial Black" FontSize="14"/>
         <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="150" Margin="673,187,0,0" Grid.Row="1" Stroke="Black" VerticalAlignment="Top" Width="365"/>
@@ -373,7 +379,7 @@
         <Label  x:Name="CHiddenPort" Visibility="Hidden" Grid.Column="1" Content="Port" HorizontalAlignment="Left" Margin="331,220,0,0" Grid.Row="1" VerticalAlignment="Top" FontSize="14" FontFamily="Bahnschrift SemiBold" Width="62"/>
         <TextBox x:Name="CHidenTextBox" Visibility="Hidden" Grid.Column="1" HorizontalAlignment="Left" Margin="424,221,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="24" FontSize="14" FontFamily="Bahnschrift SemiCondensed"/>
         <Button Grid.Column="1" Content="...." IsEnabled="False" x:Name="broswing" HorizontalAlignment="Left" Margin="851,73,0,0" Grid.Row="1" VerticalAlignment="Top" Height="32" Width="44" FontSize="16" FontFamily="Arial Black" Click="Button_Click_5" BorderBrush="White"/>
-        <Grid x:Name="TCPIPGrid" Visibility="Visible" Grid.ColumnSpan="2" Grid.Row="1" Margin="28,70,679,466">
+        <Grid x:Name="TCPIPGrid" Visibility="Visible" IsEnabled="False" Grid.ColumnSpan="2" Grid.Row="1" Margin="28,70,679,466">
             <Rectangle HorizontalAlignment="Left" Height="88" Margin="19,10,0,0" Stroke="Black" VerticalAlignment="Top" Width="544"/>
             <Label Content="Priority 1" HorizontalAlignment="Left" Margin="19,13,0,0" VerticalAlignment="Top" Width="88" FontSize="14" FontFamily="Arial Black" Height="29"/>
             <TextBox x:Name="TCPlbl" HorizontalAlignment="Left" Margin="122,16,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="58" Height="23" FontSize="14" FontFamily="Arial Black"/>
@@ -385,9 +391,9 @@
             <TextBox x:Name="TCPSerialNO" HorizontalAlignment="Left" Margin="398,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Segoe UI Semibold" FontSize="14"/>
             <TextBox x:Name="TCPIPIP" HorizontalAlignment="Left" Margin="398,67,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Segoe UI Semibold" FontSize="14"/>
             <TextBox x:Name="TCPPORT" HorizontalAlignment="Left" Margin="122,69,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
-            <Label x:Name="TCPHeartBtn"  Content="INACTIVE" HorizontalAlignment="Left" Margin="480,16,0,0" VerticalAlignment="Top" Width="65" Background="#FF0A840C" FontFamily="Arial Black" Foreground="White" FontSize="10"/>
+            <Label x:Name="TCPHeartBtn"  Content="INACTIVE" HorizontalAlignment="Left" Margin="491,13,0,0" VerticalAlignment="Top" Width="63" Background="#FFD00C0C" FontFamily="Arial Black" Foreground="White" FontSize="10"/>
         </Grid>
-        <Grid x:Name="TCPIPGrid1" Grid.ColumnSpan="2"  Visibility="Hidden"   Grid.Row="1" Margin="28,70,679,466">
+        <Grid x:Name="TCPIPGrid1" Grid.ColumnSpan="2" IsEnabled="False" Visibility="Hidden"   Grid.Row="1" Margin="28,70,679,466">
             <Rectangle HorizontalAlignment="Left" Height="88" Margin="19,10,0,0" Stroke="Black" VerticalAlignment="Top" Width="544"/>
             <Label Content="Priority 1" HorizontalAlignment="Left" Margin="19,13,0,0" VerticalAlignment="Top" Width="88" FontSize="14" FontFamily="Arial Black" Height="29"/>
             <TextBox  x:Name="TCPlbl1" HorizontalAlignment="Left" Margin="122,16,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="58" Height="23" FontSize="14" FontFamily="Arial Black"/>
@@ -399,7 +405,7 @@
             <TextBox x:Name="COMSerialNO"  HorizontalAlignment="Left" Margin="122,69,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="217" FontFamily="Bahnschrift SemiBold" Height="21"/>
             <Label x:Name="COMlabel" Content="INACTIVE" HorizontalAlignment="Left" Margin="471,15,0,0" VerticalAlignment="Top" Width="65" Height="24" Foreground="White" Background="#FF15822B" FontFamily="Arial Black" FontSize="10"/>
         </Grid>
-        <Grid x:Name="COMGrid" Grid.ColumnSpan="2" Grid.Row="1"   Visibility="Visible" Margin="37,183,679,331">
+        <Grid x:Name="COMGrid" Grid.ColumnSpan="2" Grid.Row="1" IsEnabled="False"  Visibility="Visible" Margin="37,183,679,331">
             <Rectangle HorizontalAlignment="Left" Height="86" Stroke="Black" VerticalAlignment="Top" Width="544" Margin="13,2,0,0"/>
             <Label Content="Priority 2" HorizontalAlignment="Left" Margin="13,5,0,0" VerticalAlignment="Top" Width="88" FontFamily="Arial Black" FontSize="14"/>
             <TextBox x:Name="COMlbl" HorizontalAlignment="Left" Margin="114,5,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="61" Height="26" FontSize="14" FontFamily="Arial Black"/>
@@ -409,9 +415,9 @@
             <TextBox x:Name="COMSerialPort" HorizontalAlignment="Left" Margin="114,60,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="223" FontFamily="Bahnschrift SemiBold"/>
             <Label Content="Serial No" HorizontalAlignment="Left" Margin="315,30,0,0" VerticalAlignment="Top" Width="79" FontFamily="Bahnschrift SemiBold" FontSize="14"/>
             <TextBox x:Name="COMSrialNO" HorizontalAlignment="Left" Margin="394,34,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
-            <Label x:Name="COMlabel1" Content="INACTIVE" HorizontalAlignment="Left" Margin="468,7,0,0" VerticalAlignment="Top" Width="65" Height="24" Foreground="White" Background="#FF15822B" FontFamily="Arial Black" FontSize="10"/>
+            <Label x:Name="COMlabel1" Content="INACTIVE" HorizontalAlignment="Left" Margin="485,4,0,0" VerticalAlignment="Top" Width="63" Height="24" Foreground="White" Background="#FFCA250A" FontFamily="Arial Black" FontSize="10"/>
         </Grid>
-        <Grid x:Name="COMGrid1" Grid.ColumnSpan="2" Visibility="Hidden"  Grid.Row="1" Margin="37,183,679,331">
+        <Grid x:Name="COMGrid1" Grid.ColumnSpan="2" Visibility="Hidden"  IsEnabled="False" Grid.Row="1" Margin="37,183,679,331">
             <Rectangle HorizontalAlignment="Left" Height="86" Stroke="Black" VerticalAlignment="Top" Width="544" Margin="10,0,0,0"/>
             <Label Content="Priority 2" HorizontalAlignment="Left" Margin="13,5,0,0" VerticalAlignment="Top" Width="88" FontFamily="Arial Black" FontSize="14"/>
             <TextBox x:Name="COMlbl1" HorizontalAlignment="Left" Margin="114,5,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="61" Height="26" FontSize="14" FontFamily="Arial Black"/>
@@ -446,8 +452,6 @@
             </Label.RenderTransform>
         </Label>
         <TextBox Grid.Column="1" IsEnabled="False" x:Name="retrivalCount" HorizontalAlignment="Left" Margin="1043,25,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="77" Height="21" FontFamily="Arial Black"/>
-        <Button Grid.Column="1" Content="Button" HorizontalAlignment="Left" Margin="933,199,0,0" Grid.Row="1" VerticalAlignment="Top" Width="87"/>
-        <Button  x:Name="ComBtn" Grid.Column="1" Content="INACTIVE" HorizontalAlignment="Left" Margin="934,348,0,0" Grid.Row="1" VerticalAlignment="Top" Width="86" FontFamily="Arial Black" Background="#FF228A0D" Foreground="White"/>
 
 
 

@@ -4,7 +4,7 @@ using PosLibs.ECRLibrary.Common;
 
 namespace PosLibs.ECRLibrary.Logger
 {
-    public class LogFile
+    public static class LogFile
     {
 
 
@@ -17,36 +17,51 @@ namespace PosLibs.ECRLibrary.Logger
         /// <param name="dayToRetainLogs"></param>
         public static void SetLogOptions(int logLevel, bool isLogsEnabled, string logPath, int daysToRetainLogs)
         {
+            Log.Debug("Enter SetLogOptions method");
             if (!isLogsEnabled)
-                return;
-
-            Log.Information("Inside SetLogOptions method");
-
-            if (!Directory.Exists(logPath))
             {
-                try
+                if (Directory.Exists(logPath))
                 {
-                    Directory.CreateDirectory(logPath);
+                    try
+                    {
+                        Directory.CreateDirectory(logPath);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(PosLibConstant.FILE_NOT_FOUND);
+                        Log.Error($"Error creating log directory: {e.Message}");
+                        return;
+                    }
                 }
-                catch (Exception e)
+
+            }
+            else
+            {
+                if (!Directory.Exists(logPath))
                 {
-                    Log.Error(PinLabsEcrConstant.FILE_NOT_FOUND);
-                    Log.Error($"Error creating log directory: {e.Message}");
-                    return;
+                    try
+                    {
+                        Directory.CreateDirectory(logPath);
+                        Log.Information("log path created:-" + logPath);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(PosLibConstant.FILE_NOT_FOUND);
+                        Log.Error($"Error creating log directory: {e.Message}");
+                        return;
+                    }
                 }
             }
 
             string fileName = $"poslib.log";
             string filePath = Path.Combine(logPath, fileName);
-
-            Log.Information($"filename: {fileName}");
             Log.Information($"filepath: {filePath}");
-
             LogEventLevel logEventLevel = GetLogLevel(logLevel);
+            Log.Information("Log Level:" + logEventLevel.ToString());
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Is(logEventLevel)
-                .WriteTo.File(filePath, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.File(filePath, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}]  {Message}{NewLine} {Exception}")
                 .CreateLogger();
 
             try

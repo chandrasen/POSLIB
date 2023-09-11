@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 
 namespace PosLibs.ECRLibrary.Model
 {
+
     public class ComDeviceRequest
     {
         public ComDeviceRequest() 
         {
-            cashierId = string.Empty;
-            msgType = string.Empty;
-            RFU1 = string.Empty;
+            cashierId = "";
+            msgType = "";
+            RFU1 = "";
         }
         public string cashierId { get; set; }
         public  string msgType { get; set; }
