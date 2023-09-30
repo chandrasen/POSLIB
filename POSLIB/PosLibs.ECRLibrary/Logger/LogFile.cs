@@ -4,9 +4,9 @@ using PosLibs.ECRLibrary.Common;
 
 namespace PosLibs.ECRLibrary.Logger
 {
-    public class LogFile
+    public static class LogFile
     {
-    
+
 
         /// <summary>
         /// This method is used to set log level and log details
@@ -15,91 +15,89 @@ namespace PosLibs.ECRLibrary.Logger
         /// <param name="isLogsEnabled"></param>
         /// <param name="logPath"></param>
         /// <param name="dayToRetainLogs"></param>
-        public static void SetLogOptions(int logLevel, bool isLogsEnabled, string logPath, int dayToRetainLogs)
+        public static void SetLogOptions(int logLevel, bool isLogsEnabled, string logPath, int daysToRetainLogs)
         {
-            Log.Information("Inside SetLogOptions method");
-
-            DirectoryInfo logDirectory = null;
-            if (isLogsEnabled)
+            Log.Debug("Enter SetLogOptions method");
+            if (!isLogsEnabled)
             {
-                try
+                if (Directory.Exists(logPath))
                 {
-                    logDirectory = new DirectoryInfo(logPath);
-                    if (!logDirectory.Exists)
-                    {
-                        logDirectory.Create();
-                    }
-                }
-                catch (ArgumentException e)
-                {
-                    Log.Error(PinLabsEcrConstant.FILE_NOT_FOUND);
-
-                }
-
-                if (logDirectory != null)
-                {
-                    // Rest of the code related to log file operations
-                    string fileName = $"poslib.log";
-                    string filePath = Path.Combine(logPath, fileName);
-
-                    Log.Information($"filename: {fileName}");
-                    Log.Information($"filepath: {filePath}");
-
-                    // Set log level
-                    LogEventLevel logEventLevel = GetLogLevel(logLevel);
-                    Log.Logger = new LoggerConfiguration()
-                        .MinimumLevel.Is(logEventLevel)
-                        .WriteTo.File(filePath, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-                        .CreateLogger();
-
                     try
                     {
-                        // Set log file retention period
-                        DateTime expirationDate = DateTime.Now.AddDays(-dayToRetainLogs);
-                        FileInfo[] logFiles = logDirectory.GetFiles("poslib*.log");
-
-                        foreach (FileInfo file in logFiles)
-                        {
-                            DateTime lastModified = file.LastWriteTime;
-
-                            if (lastModified < expirationDate)
-                            {
-                                file.Delete();
-                            }
-
-                            Log.Information("Logs Generated successfully: " + file);
-                        }
+                        Directory.CreateDirectory(logPath);
                     }
-                    catch (IOException e)
+                    catch (Exception e)
                     {
-                        Log.Error("Error | Failed to create log file | SetLogOptions method: " + e.Message);
+                        Log.Error(PosLibConstant.FILE_NOT_FOUND);
+                        Log.Error($"Error creating log directory: {e.Message}");
+                        return;
+                    }
+                }
+
+            }
+            else
+            {
+                if (!Directory.Exists(logPath))
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(logPath);
+                        Log.Information("log path created:-" + logPath);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(PosLibConstant.FILE_NOT_FOUND);
+                        Log.Error($"Error creating log directory: {e.Message}");
+                        return;
                     }
                 }
             }
-        }
 
+            string fileName = $"poslib.log";
+            string filePath = Path.Combine(logPath, fileName);
+            Log.Information($"filepath: {filePath}");
+            LogEventLevel logEventLevel = GetLogLevel(logLevel);
+            Log.Information("Log Level:" + logEventLevel.ToString());
 
-        // The level for logs
-        private static LogEventLevel GetLogLevel(int logLevel)
-        {
-            switch (logLevel)
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Is(logEventLevel)
+                .WriteTo.File(filePath, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}]  {Message}{NewLine} {Exception}")
+                .CreateLogger();
+
+            try
             {
-                case 0:
-                    return LogEventLevel.Fatal;
-                case 1:
-                    return LogEventLevel.Error;
-                case 2:
-                    return LogEventLevel.Warning;
-                case 3:
-                    return LogEventLevel.Information;
-                case 4:
-                    return LogEventLevel.Debug;
-                case 5:
-                    return LogEventLevel.Verbose;
-                default:
-                    return LogEventLevel.Information;
+                DateTime expirationDate = DateTime.Now.AddDays(-daysToRetainLogs);
+                DirectoryInfo logDirectory = new DirectoryInfo(logPath);
+
+                foreach (FileInfo file in logDirectory.GetFiles("poslib*.log"))
+                {
+                    if (file.LastWriteTime < expirationDate)
+                    {
+                        file.Delete();
+                        Log.Information("Logs Deleted successfully: " + file);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error("Error | Failed to manage log files: " + e.Message);
             }
         }
+
+        private static LogEventLevel GetLogLevel(int logLevel)
+        {
+            return logLevel switch
+            {
+                0 => LogEventLevel.Fatal,
+                1 => LogEventLevel.Error,
+                2 => LogEventLevel.Warning,
+                3 => LogEventLevel.Information,
+                4 => LogEventLevel.Debug,
+                5 => LogEventLevel.Verbose,
+                _ => LogEventLevel.Information
+            };
+        }
+
     }
 }
 

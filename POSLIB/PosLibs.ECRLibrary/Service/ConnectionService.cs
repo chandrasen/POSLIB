@@ -1,82 +1,40 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Configuration;
-using System.IO;
+﻿
 using System.IO.Ports;
-using System.Linq;
 using System.Management;
-using System.Text.RegularExpressions;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.Security.Cryptography.Xml;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
-using Microsoft.VisualBasic;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using PosLibs.ECRLibrary.Common;
 using PosLibs.ECRLibrary.Model;
-using System.Text.Json;
 using Serilog;
-using Serilog.Events;
-using System.Security.Cryptography.X509Certificates;
-using Xceed.Wpf.Toolkit;
-using System.CodeDom;
-using System.Runtime.CompilerServices;
 using PosLibs.ECRLibrary.Common.Interface;
+using System.Net.NetworkInformation;
+using System.Runtime.CompilerServices;
 
 namespace PosLibs.ECRLibrary.Service
 {
     public class ConnectionService
     {
-        public ConnectionService() { }
+       
+        public ConnectionService() {
+        }
         private static Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        private static SerialPort serial = new SerialPort();
+        public static SerialPort serial = new SerialPort();
         private string PortCom = string.Empty;
-        private string myIP=string.Empty;
         private IScanDeviceListener? listener;
+        public IConnectionListener _connlistener = new ConnectionListener();
         public readonly static bool isConnectivityFallbackAllowed;
         readonly List<DeviceList> deviceLists = new List<DeviceList>();
         private string fullcomportName = string.Empty;
         ConfigData configdata = new ConfigData();
-        public bool checkComConn()
-        {
-            bool status = serial.IsOpen;
-            return status;
+        private bool isConnected = false;
 
-        }
-        private const string PortSettingsFilePath = PinLabsEcrConstant.FILE_PATH;
-
-
-        /// <summary>
-        /// fetch connection details data like tcp/ip,com number,connectionMode,pariritoy list
-        /// </summary>
-        /// <returns></returns>
-        public ConfigData? getConfigData()
-        {
-
-            if (File.Exists(PortSettingsFilePath))
-            {
-                string json = File.ReadAllText(PortSettingsFilePath);
-                configdata = JsonConvert.DeserializeObject<ConfigData>(json);
-                if (configdata != null)
-                {
-                    return configdata;
-                }
-            }
-            return configdata;
-        }
-        /// <summary>
-        /// set all the connection 
-        /// </summary>
-        /// <param name="configData"></param>
+        private const string PortSettingsFilePath = PosLibConstant.FILE_PATH;
+        private string ReadSettingsFilePath = "C:\\POSLIBS\\Configure.json";
         public void setConfiguration(ConfigData configData)
         {
+            Log.Debug("Enter setConfiguration()");
             ConfigData portSettings = new ConfigData
             {
                 tcpIp = configData.tcpIp,
@@ -96,84 +54,124 @@ namespace PosLibs.ECRLibrary.Service
                 tcpIpDeviceId = configData.tcpIpDeviceId,
                 tcpIpSerialNumber = configData.tcpIpSerialNumber,
                 comDeviceId = configData.comDeviceId,
-
-                
-
-            
+                LogPath = configData.LogPath,
+                loglevel = configData.loglevel,
+                isComHeartActive = configData.isComHeartActive,
+                isAppidle = configdata.isAppidle,
             };
-            string json = JsonConvert.SerializeObject(portSettings);
-
-            File.WriteAllText(PortSettingsFilePath, json);
-        }
-        /// <summary>
-        /// This method is used to autoconnectivity when system short down and agian start its automatically connected with privious connection
-        /// </summary>
-        /// <returns></returns>
-        public Boolean AutoConnect()
-        {
-            Boolean value = false;
-            ConfigData? fetchData = getConfigData();
-            if (fetchData != null)
+            if (!Directory.Exists(PortSettingsFilePath))
             {
-                if (fetchData.connectionMode == PinLabsEcrConstant.TCPIP)
+                Directory.CreateDirectory(PortSettingsFilePath);
+            }
+            string fileName = PosLibConstant.FILE_NAME;
+            string filePath = Path.Combine(PortSettingsFilePath, fileName);
+            ReadSettingsFilePath = filePath;
+            string json = JsonConvert.SerializeObject(configData);
+            try
+            {
+                File.WriteAllText(filePath, json);
+            }
+            catch(FileLoadException ex)
+            {
+                Log.Error("FileLoad Exception" + ex);
+                Console.WriteLine(ex.Message);
+            }
+        }
+        public ConfigData? GetConfigData()
+        {
+            Log.Debug("Enter GetConfigData()");
+
+            if (File.Exists(ReadSettingsFilePath))
+            {
+                string json = File.ReadAllText(ReadSettingsFilePath);
+                configdata = JsonConvert.DeserializeObject<ConfigData>(json);
+                if (configdata != null)
                 {
-                    string tcpip = fetchData.tcpIp.ToString();
-                    int tcpport = fetchData.tcpPort;
-                    value = isOnlineConnection(tcpip, tcpport);
+                    return configdata;
                 }
-                else if (fetchData.connectionMode == PinLabsEcrConstant.COM)
+            }
+            return configdata;
+        }
+        public string CheckTcpIpHeartBeat()
+        {
+            Log.Debug("Enter CheckTcpIpHeartBeat()");
+            bool isTerminalReachable;
+            while (true)
+            {
+                if (configdata.tcpIp != "")
                 {
-                    int commport = fetchData.commPortNumber;
-                    value = isComDeviceConnected(commport);
+                    isTerminalReachable = IsHostReachable(configdata.tcpIp);
+                    if (isTerminalReachable)
+                    {
+                        return PosLibConstant.TCPIPHEALTHACTIVE;
+                    }
+                    else
+                    {
+                        return PosLibConstant.TCPIPHEALTHINACTIVE;
+                    }
+                }
+                else
+                { 
+                    return PosLibConstant.TCPIPHEALTHINACTIVE;
+                }
+            }
+        }
+        private bool IsHostReachable(string hostIP)
+        {
+            if (configdata.isAppidle)
+            {
+                Log.Information("IsAppidle" + configdata.isAppidle);
+                try
+                {
+                    using (Ping ping = new Ping())
+                    {
+                        PingReply reply = ping.Send(hostIP, 1000);
+                        return reply.Status == IPStatus.Success;
+                    }
+                }
+                catch (PingException)
+                {
+                    return false;
+                }
+            }
+            Log.Information("IsAppidle:-" + configdata.isAppidle);
+            return false;
+        }
+        public string CheckCOMHeartBeat()
+        {
+            if (configdata.isAppidle)
+            {
+                bool status = CheckBothConnection();
+                if (status)
+                {
+                    return PosLibConstant.COMHEALTHACTIVE;
                 }
                 else
                 {
-                    Log.Error("AutoConnect Fail");
+                    return PosLibConstant.COMHEALTHINACTIVE;
                 }
-
             }
-            return value;
+            return PosLibConstant.COMHEALTHINACTIVE;
         }
-        /// <summary>
-        /// this method used to connect the pax device though serial com port
-        /// </summary>
-        /// <param name="comPort"></param>
-        /// <returns></returns>
-        public Boolean isComDeviceConnected(int comPort)
+        public bool CheckBothConnection()
         {
-            bool responseInteger = false;
-            var disconnect = doCOMDisconnection();
-            if (disconnect == 0)
+            if (configdata.commPortNumber != 0 && configdata.isComHeartActive == configdata.commPortNumber)
             {
-                string portNumber = "COM" + comPort.ToString();
-                serial = new SerialPort(portNumber, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
-                                                   ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
-                try
+                if (CheckComStatus(configdata.commPortNumber, _connlistener))
                 {
-                    serial.Open();
-                    responseInteger = true;
-                    configdata = getConfigData();
-                    if (configdata != null)
-                    {
-                        configdata.commPortNumber = comPort;
-                        this.configdata.tcpIp = configdata.tcpIp;
-                        this.configdata.tcpPort = configdata.tcpPort;
-                        configdata.connectionMode = PinLabsEcrConstant.COM;
-                        setConfiguration(configdata);
-                    }
-                }
-                catch (IOException e)
-                {
-                    Console.WriteLine("Problem connecting to host");
-                    Console.WriteLine(e.ToString());
-                    serial.Close();
-                }
-                catch (UnauthorizedAccessException e)
-                {
-                    Console.WriteLine("Unauthorized Access Exception"+e);
+                    return true;
                 }
             }
-            return responseInteger;
+            return false;
+        }
+        public bool checkComConn()
+        {
+            if (serial != null)
+            {
+                return serial.IsOpen;
+            }
+            return false;
+
         }
         public T? jsonParser<T>(string json)
         {
@@ -189,16 +187,9 @@ namespace PosLibs.ECRLibrary.Service
             }
             return res;
         }
-        /// <summary>
-        /// through third party API this method fetch all the COM port those are connected in system
-        /// </summary>
-        /// <param name="port"></param>
-        /// <returns></returns>
         public string checkComport(string port)
         {
-            ISet<string> comallport = new HashSet<string>();
-            string fullcomportName = "";
-            comallport = getDeviceManagerComPort();
+            ISet<string> comallport = getDeviceManagerComPort();
             if (comallport != null)
             {
                 foreach (string portString in comallport)
@@ -214,162 +205,370 @@ namespace PosLibs.ECRLibrary.Service
             }
             return fullcomportName;
         }
-        /// <summary>
-        /// this method is used to fetch all the com port from POS bride
-        /// </summary>
-        /// <param name="scanDeviceListener"></param>
-        public void scanSerialDevice(IScanDeviceListener scanDeviceListener)
+        public void ScanSerialDevice(IScanDeviceListener scanDeviceListener)
         {
-            Log.Information("Inside scanSerialDevice method");
+            Log.Debug("Enter scanSerialDevice method");
             this.listener = scanDeviceListener;
-            string responseString = "";
-            string comreq = getComDeviceRequest();
-            ISet<string> allcomport = new HashSet<string>();
-            allcomport = getDeviceManagerComPort();
-            if (allcomport.Count == 0)
+            ISet<string> allUSBcomport = getDeviceManagerComPort();
+            ISet<string> validComports = FilterValidComports(allUSBcomport);
+
+            if (validComports.Count == 0)
             {
                 listener.onFailure("Please Connect Terminal/USB Error", 1005);
-
+                return;
             }
-            string[] comPorts = new string[allcomport.Count];
-
-            if (serial.IsOpen)
+            string[] comPorts = GetComPorts(validComports);
+            foreach (string comPort in comPorts)
             {
-                serial.Close();
+                try
+                {
+                    string portcom = "COM" + comPort;
+                    InitializeSerialPort(portcom);
+                    if (SendSerialDiscoveryData(GetComDeviceRequest()))
+                    {
+                        string responseString = SerialrevData();
+                        Log.Information("Receive COM Discovery Response:" + responseString);
+                        fullcomportName = checkComport(portcom);
+                        PortCom = fullcomportName;
+
+                        if (!string.IsNullOrEmpty(responseString))
+                        {
+                            AddToDeviceList(responseString);
+                        }
+                    }
+                }
+                catch (SocketException se)
+                {
+                    Log.Error(ExceptionConst.SOCKETEXCEPTION + se);
+                }
+                catch (TimeoutException ex)
+                {
+                    HandleTimeoutException(ex);
+                    Log.Error(ExceptionConst.TIMEOUTEXCEPTION + ex);
+                }
+                catch (IOException io)
+                {
+                    HandleIOException(io);
+                    Log.Error(ExceptionConst.IOEXCEPTION + io);
+                }
+                catch (InvalidOperationException e)
+                {
+                    HandleInvalidOperationException(e);
+                    Log.Error(ExceptionConst.INVALIDOPERATIONEXCEPTION + e);
+                }
+                finally
+                {
+                    if (serial.IsOpen)
+                    {
+                        serial.Close();
+                    }
+                    serial.Dispose();
+                    Thread.Sleep(1000);
+                }
             }
+
+            if (deviceLists != null && deviceLists.Count > 0)
+            {
+                listener.onSuccess(deviceLists);
+                Log.Information("Scan Serial Discovery Done");
+            }
+        }
+        private ISet<string> FilterValidComports(ISet<string> allUSBcomport)
+        {
+            HashSet<string> domainWords = new HashSet<string> { "Daemon" };
+            ISet<string> validComports = new HashSet<string>();
+            foreach (string comport in allUSBcomport)
+            {
+                if (!domainWords.Any(domainWord => comport.Contains(domainWord)))
+                {
+                    validComports.Add(comport);
+                }
+            }
+            return validComports;
+        }
+        private string[] GetComPorts(ISet<string> validComports)
+        {
+            string[] comPorts = new string[validComports.Count];
             int i = 0;
-            foreach (string portString in allcomport)
+
+            foreach (string portString in validComports)
             {
                 string comPort = portString.Substring(portString.IndexOf("COM") + 3, portString.Length - portString.IndexOf("COM") - 4);
                 comPorts[i++] = comPort;
             }
 
-            byte[] dataBytes = Encoding.UTF8.GetBytes(comreq);
-            foreach (string comPort in comPorts)
-            {
-                string portcom = "COM" + comPort;
-                serial = new SerialPort(portcom, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
-                                                   ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
-                try
-                {
-                    sendData(comreq);
-                    responseString = serialrevData();
-                    if (sendData(comreq))
-                    {
-                        responseString = serialrevData();
-
-                    }
-                    fullcomportName = checkComport(portcom);
-                    PortCom = fullcomportName;
-                    if (responseString != "")
-                    {
-                        addToDeviceList(responseString);
-                    }
-                    serial.Close();
-
-                }
-                catch (SocketException se)
-                {
-                    Console.WriteLine("Connection Problem");
-
-                }
-                catch (TimeoutException ex)
-                {
-                    listener.onFailure("No Device Found", 1002);
-                }
-                catch (IOException io)
-                {
-                    listener.onFailure("Try Again", 1005);
-                }
-
-                catch (InvalidOperationException e)
-                {
-                    listener.onFailure("IOException", 1001);
-                }
-            }
-
-            if (listener != null)
-            {
-                if (deviceLists != null && deviceLists.Count > 0)
-                {
-
-                    listener.onSuccess(deviceLists);
-
-                }
-            }
+            return comPorts;
         }
-
-        /// <summary>
-        /// send the COM Request data to POS Bride
-        /// </summary>
-        /// <param name="res"></param>
-        /// <returns></returns>
-        public bool sendData(string res)
+        private void InitializeSerialPort(string portcom)
         {
             if (serial.IsOpen)
             {
                 serial.Close();
+                serial.Dispose();
+            }
+            serial = new SerialPort(portcom, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
+                                                  ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
+        }
+        private void HandleTimeoutException(TimeoutException ex)
+        {
+            serial.Close();
+            serial.Dispose();
+            Console.WriteLine("Connection Problem" + ex);
+            listener.onFailure("No Device Found", 1002);
+        }
+        private void HandleIOException(IOException io)
+        {
+            serial.Close();
+            serial.Dispose();
+            configdata.isAppidle = true;
+            setConfiguration(configdata);
+            Console.WriteLine("Connection Problem" + io);
+            listener.onFailure("Try Again", 1005);
+        }
+        private void HandleInvalidOperationException(InvalidOperationException e)
+        {
+            Console.WriteLine("InvalidOperationException" + e);
+            listener.onFailure("IOException", 1001);
+        }       
+        public bool SendSerialDiscoveryData(string res)
+        {
+            if (serial.IsOpen)
+            {
+                serial.Close();
+                serial.Dispose();
             }
             byte[] dataBytes = Encoding.UTF8.GetBytes(res);
             serial.Open();
+            serial.WriteTimeout = 3000;
             serial.Write(dataBytes, 0, dataBytes.Length);
-
-           Thread.Sleep(1000);
+            Log.Information("Send Com discovery req successfully");
             return true;
         }
-
-        /// <summary>
-        /// send the COM Txn request to pos bride
-        /// </summary>
-        /// <param name="res"></param>
-        /// <returns></returns>
-        public bool sendCOMTXNData(string res)
+        public string SerialrevData()
         {
-
-            byte[] dataBytes = Encoding.UTF8.GetBytes(res);
-            serial.Write(dataBytes, 0, dataBytes.Length);
-
-            System.Threading.Thread.Sleep(1000);
-            return true;
-        }
-        /// <summary>
-        /// receive the com details
-        /// </summary>
-        /// <returns></returns>
-        public string serialrevData()
-        {
-            byte[] buffer = new byte[500];
-            serial.ReadTimeout = 5000;
+            configdata.isAppidle = false;
+            byte[] buffer = new byte[5000];
+            Thread.Sleep(6000);
             int bytesRead = serial.BaseStream.Read(buffer, 0, buffer.Length);
             string responseString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
+            serial.Close();
             return responseString;
         }
-        /// <summary>
-        /// this method used to receive the COM Txn response
-        /// </summary>
-        /// <returns></returns>
-        public string receiveCOMTxnrep()
+        public Boolean IsComDeviceConnected(int comPort, IConnectionListener icomlistener)
         {
+            _connlistener = icomlistener;
+            bool responseInteger = false;
+            var disconnect = doCOMDisconnection();
+            if (serial != null)
+            {
+                serial.Close();
+                serial.Dispose();
+            }
+            if (disconnect == 0)
+            {
+                string portNumber = "COM" + comPort.ToString();
+                serial = new SerialPort(portNumber, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
+                                                   ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
+                try
+                {
+                    if (serial.IsOpen)
+                    {
+                        serial.Close();
+                    }
+                    serial.Open();
+                    responseInteger = true;
+                    configdata = GetConfigData();
+                    if (configdata != null)
+                    {
+                        configdata.commPortNumber = comPort;
+                        this.configdata.tcpIp = configdata.tcpIp;
+                        this.configdata.tcpPort = configdata.tcpPort;
+                        configdata.isComHeartActive = comPort;
+                        setConfiguration(configdata);
+                        _connlistener.OnSuccess(PosLibConstant.COMCONNECTION_SUCCESS);
+                    }
+                }
+                catch (IOException e)
+                {
+                    configdata.isAppidle = true;
+                    setConfiguration(configdata);
+                    _connlistener.OnFailure(PosLibConstant.COMFAIELD_ERROR);
+                    Console.WriteLine("Problem connecting to host");
+                    Console.WriteLine(e.ToString());
+                    serial.Close();
+                    serial.Dispose();
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    serial.Close();
+                    serial.Dispose();
+                    configdata.isAppidle = true;
+                    setConfiguration(configdata);
+                    _connlistener.OnFailure(PosLibConstant.COMFAIELD_ERROR);
+                    Console.WriteLine("Unauthorized Access Exception" + e);
+                }
+            }
+            return responseInteger;
+        }
+        public bool ComTransactionProcess(int comPort)
+        {
+            Log.Debug("enter comtransactionprocess()");
+            bool responseInteger = false;
+            var disconnect = doCOMDisconnection();
+            if (serial != null)
+            {
+                serial.Close();
+                serial.Dispose();
+            }
+            if (disconnect == 0)
+            {
+                int maxRetries = int.Parse(configdata.retrivalcount);
+                int connectionTimeoutMillis = int.Parse(configdata.connectionTimeOut);
+                string portNumber = "COM" + comPort.ToString();
+                Log.Information("connected com port: " + portNumber);
+                serial = new SerialPort(portNumber, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
+                                                   ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
+                for (int retry = 1; retry <= maxRetries; retry++)
+                {
+                    try
+                    {
+                        if (serial.IsOpen)
+                        {
+                            serial.Close();
+                        }
+                        serial.Open();
+                        responseInteger = true;
+                        break;
+                    }
+                    catch (IOException e)
+                    {
+                        if (retry < maxRetries)
+                        {
+                            Console.WriteLine($"Retry {retry} failed. Waiting for 30 seconds before retrying.");
+                            Log.Information($"Retry {retry} failed. Waiting for 30 seconds before retrying.");
+                            Thread.Sleep(connectionTimeoutMillis * 1000);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Max retries ({maxRetries}) reached. Unable to establish a connection.");
+                            serial.Close();
+                            serial.Dispose();
+                        }
+                    }
+                    catch (UnauthorizedAccessException e)
+                    {
+                        if (retry < maxRetries)
+                        {
+                            Console.WriteLine($"Retry {retry} failed. Waiting for 30 seconds before retrying.");
+                            Thread.Sleep(connectionTimeoutMillis*1000);
+                        }
+                        else
+                        {
+                            Log.Information($"Max retries ({maxRetries}) reached. Unable to establish a connection.");
+                            serial.Close();
+                            serial.Dispose();
+                        }
+                        Console.WriteLine("Unauthorized Access Exception" + e);
 
-            byte[] buffer = new byte[500];
-            serial.ReadTimeout = 40000;
-            int bytesRead = serial.BaseStream.Read(buffer, 0, buffer.Length);
-            Log.Information("com response receive timeout:-" + 40000);
-            string responseString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-            Log.Information("receive com txn response:" + responseString);
+                    }
+                }
+            }
+            return responseInteger;
+        }
+        public Boolean CheckComStatus(int comPort,IConnectionListener icomlistener)
+        {
+            Log.Debug("Enter CheckComStatus method");
+            _connlistener = icomlistener;
+            bool responseInteger = false;
+            var disconnect = doCOMDisconnection();
+            if (serial != null)
+            {
+                serial.Close();
+                serial.Dispose();
+            }
+            if (disconnect == 0)
+            {
+                string portNumber = "COM" + comPort.ToString();
+                serial = new SerialPort(portNumber, int.Parse(ComConstants.BAUDRATECOM), (Parity)Enum.Parse(typeof(Parity), ComConstants.PARITYCOM),
+                                                   ComConstants.DATABITSCOM, (StopBits)Enum.Parse(typeof(StopBits), ComConstants.STOPBITSCOM.ToString()));
+                try
+                {
+                    if (serial.IsOpen)
+                    {
+                        serial.Close();
+                    }
+                    serial.Open();
+                    responseInteger = true;
+                    configdata = GetConfigData();
+                    if (configdata != null)
+                    {
+                        configdata.commPortNumber = comPort;
+                        this.configdata.tcpIp = configdata.tcpIp;
+                        this.configdata.tcpPort = configdata.tcpPort;
+                        configdata.isComHeartActive = comPort;
+                        setConfiguration(configdata);
+                        _connlistener.OnSuccess(PosLibConstant.COMCONNECTION_SUCCESS);
+                    }
+                }
+                catch (IOException e)
+                {
+                    _connlistener.OnFailure(PosLibConstant.COMFAIELD_ERROR);
+                    Console.WriteLine("Problem connecting to host");
+                    Console.WriteLine(e.ToString());
+                    serial.Close();
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                      serial.Close();
+                      serial.Dispose();
+                    _connlistener.OnFailure(PosLibConstant.COMFAIELD_ERROR);
+                    Console.WriteLine("Unauthorized Access Exception" + e);
+                }
+                finally
+                {
+                    serial.Close();
+                    serial.Dispose();
+                }
+            }
+            return responseInteger;
+        }
+        public bool SendCOMTxnReq(string req)
+        {
             if (serial.IsOpen)
             {
                 serial.Close();
+                serial.Dispose();
+            }
+            byte[] dataBytes = Encoding.UTF8.GetBytes(req);
+            serial.Open();
+            serial.WriteTimeout = 5000;
+            serial.Write(dataBytes, 0, dataBytes.Length);
+            return true;
+        }
+        public string ReceiveCOMTxnrep()
+        {
+            string responseString = string.Empty;
+            try
+            {
+                byte[] buffer = new byte[6000];
+                int bytesRead = serial.BaseStream.Read(buffer, 0, buffer.Length);
+                responseString = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            finally
+            {
+                if (serial.IsOpen)
+                {
+                    serial.Close();
+                }
+                serial.Close();
             }
             return responseString;
-
         }
-        /// <summary>
-        /// this method used to show list of  devices those are connected with com and wifi 
-        /// </summary>
-        /// <param name="recivebuff"></param>
-        public void addToDeviceList(string recivebuff)
+        public void AddToDeviceList(string recivebuff)
         {
             try
             {
@@ -386,11 +585,11 @@ namespace PosLibs.ECRLibrary.Service
                     deviceList.msgType = terminalConnectivity.msgType;
                     if (deviceList.msgType == 1)
                     {
-                        deviceList.connectionMode = PinLabsEcrConstant.TCPIP;
+                        deviceList.connectionMode = PosLibConstant.TCPIP;
                     }
                     else
                     {
-                        deviceList.connectionMode = PinLabsEcrConstant.COM;
+                        deviceList.connectionMode = PosLibConstant.COM;
                     }
                     deviceList.SerialNo = terminalConnectivity.slNo;
                     deviceList.COM = PortCom;
@@ -403,24 +602,22 @@ namespace PosLibs.ECRLibrary.Service
                 Console.WriteLine("JsonReaderException " + ex);
             }
         }
-        //com connection request Data
-        public string getComDeviceRequest()
+        public string GetComDeviceRequest()
         {
             ComDeviceRequest req = new ComDeviceRequest
             {
-                cashierId = "12345678",
-                msgType = "2",
+                cashierId = CommonConst.cashierID,
+                msgType = CommonConst.msgType1_2,
                 RFU1 = ""
             };
             string jsonrequest = JsonConvert.SerializeObject(req);
+            Log.Information("Send UDP Request for COM :" + jsonrequest);
             return jsonrequest;
         }
         public ISet<string> getDeviceManagerComPort()
         {
             ISet<String> allComport = new HashSet<string>();
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%'");
-
-
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(CommonConst.ManagementObjectSearcher);
             foreach (ManagementBaseObject obj in searcher.Get())
             {
                 string caption = obj["Caption"].ToString();
@@ -428,21 +625,17 @@ namespace PosLibs.ECRLibrary.Service
             }
             return allComport;
         }
-        /// <summary>
-        /// this method boardcast a message including locally ip and port number ,  pos bride accept board cast message and send device ip and port number to ECR 
-        /// </summary>
-        /// <param name="scanDeviceListener"></param>
         public void scanOnlineDevice(IScanDeviceListener scanDeviceListener)
         {
-            Log.Information("Inside scanOnline Device mehtod");
+            Log.Debug("Entering scanOnline Device mehtod");
             this.listener = scanDeviceListener;
             var client = new UdpClient();
             client.EnableBroadcast = true;
             IPEndPoint broadcastEndpoint = new IPEndPoint(IPAddress.Broadcast, 8888);
-
             try
             {
                 string strHostName = "";
+                string myIP = string.Empty;
                 strHostName = System.Net.Dns.GetHostName();
 
                 IPHostEntry ipEntry = System.Net.Dns.GetHostEntry(strHostName);
@@ -454,13 +647,14 @@ namespace PosLibs.ECRLibrary.Service
 
                 EcrTcpipRequest posData = new EcrTcpipRequest
                 {
-                    cashierId = "12345678",
-                    msgType = "1",
+                    cashierId = CommonConst.cashierID,
+                    msgType = CommonConst.msgType1_1,
                     ecrIP = myIP,
-                    ecrPort = "6666",
+                    ecrPort = CommonConst.ecrPort,
                     RFU1 = ""
-                };
+                }; 
                 string json = JsonConvert.SerializeObject(posData);
+                Log.Information("Send UDP Request For TCP IP: " + json);
                 var message = Encoding.ASCII.GetBytes(json);
                 client.Send(message, message.Length, broadcastEndpoint);
                 if (client.Client.Connected)
@@ -473,24 +667,23 @@ namespace PosLibs.ECRLibrary.Service
             {
                 if (listener != null)
                 {
-                    listener.onFailure(PinLabsEcrConstant.IO_EXC_MSG, PinLabsEcrConstant.IOEXCEPTION);
+                    listener.onFailure(PosLibConstant.IO_EXC_MSG, PosLibConstant.IOEXCEPTION);
                     Log.Error("IOException" + e);
                 }
             }
         }
-        //this method listen all the incoming request form posbride
         private void TcpListen()
         {
             Thread thread = new Thread(Run);
             thread.Priority = ThreadPriority.Normal;
             thread.Start();
         }
-        //inside this method accept all the device those are availabe in same network
         public void Run()
         {
-            TcpListener server = null;
+
+            TcpListener? server = null;
             bool isServerActive;
-            string json = null;
+            string json = string.Empty;
             try
             {
                 string strHostName = "";
@@ -502,21 +695,21 @@ namespace PosLibs.ECRLibrary.Service
                 IPAddress localAddr = IPAddress.Parse(myIP);
                 server = new TcpListener(localAddr, port);
                 server.Start();
-                Timer timer = new Timer(StopServer, null, 10000, Timeout.Infinite);
+                Timer timer = new Timer(StopServer, null, 15000, Timeout.Infinite);
                 isServerActive = server.Server?.IsBound ?? false;
                 while (isServerActive)
                 {
                     TcpClient client = server.AcceptTcpClient();
-
                     NetworkStream stream = client.GetStream();
                     if (isServerActive)
                     {
-                        byte[] buffer = new byte[256];
+                        byte[] buffer = new byte[5000];
+                        stream.ReadTimeout = 5000;
                         int bytesRead = stream.Read(buffer, 0, buffer.Length);
                         json = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                        Log.Information("Accept UDP Response for TCP/IP" + json);
                     }
-                    //add all tcp/ip pax device
-                    addToDeviceList(json);
+                    AddToDeviceList(json);
                 }
             }
             catch (SocketException ex)
@@ -530,7 +723,7 @@ namespace PosLibs.ECRLibrary.Service
             }
             finally
             {
-                server.Stop();
+                server?.Stop();
                 if (listener != null)
                 {
                     if (deviceLists != null && deviceLists.Count > 0)
@@ -539,31 +732,61 @@ namespace PosLibs.ECRLibrary.Service
                     }
                     else
                     {
-                        listener.onFailure("No Device Found Please Check NetWork", PinLabsEcrConstant.NO_DEV_FOUND);
+                        listener.onFailure("No Device Found Please Check NetWork", PosLibConstant.NO_DEV_FOUND);
                     }
                 }
             }
             void StopServer(object state)
             {
                 Log.Debug("Inside Stop Server Method");
-                server.Stop();
-                isServerActive = false;
+                server?.Stop();
                 Log.Information("Server stopped");
             }
         }
-        /// <summary>
-        /// this accept the the IP address and Port number and make a online connection like tcp/ip connection 
-        /// </summary>
-        /// <param name="IP"></param>
-        /// <param name="PORT"></param>
-        /// <returns></returns>
-        public Boolean isOnlineConnection(string IP, int PORT)
+        public Boolean IsOnlineTest(string IP, int PORT, IConnectionListener onlinelistner)
         {
-
-            Log.Debug("Inside IsOnlineConnection method");
+            _connlistener = onlinelistner;
+            Log.Debug("Enter Isonline test method");
             bool responseboolean = false;
-
-
+            IPAddress host = IPAddress.Parse(IP);
+            IPEndPoint hostep = new IPEndPoint(host, PORT);
+            try
+            {
+                int resdisconnect = doTCPIPDisconnection();
+                if (resdisconnect == 0)
+                {
+                    sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    sock.Connect(hostep);
+                    Log.Information("Connected ip:" + IP);
+                    Log.Information("Connected port:" + PORT);
+                    isConnected = true;
+                    _connlistener.OnSuccess(PosLibConstant.TCPIPCONNECTION_SUCCESS);
+                }
+            }
+            catch (SocketException e)
+            {
+                _connlistener.OnFailure(PosLibConstant.TCPIPFAIELD_ERROR);
+                Console.WriteLine("Problem connecting to host");
+                Console.WriteLine(e.ToString());
+                isConnected = false;
+                Log.Information("is tcp/ip connected:" + responseboolean);
+                sock.Close();
+            }
+            if (configdata != null)
+            {
+                configdata.tcpIp = IP;
+                configdata.tcpPort = PORT;
+                configdata.connectionMode = PosLibConstant.TCPIP;
+                this.configdata.commPortNumber = configdata.commPortNumber;
+                setConfiguration(configdata);
+            }
+            return isConnected;
+        }
+        public Boolean ProcessOnlineTransaction(string IP, int PORT)
+        {
+            
+            Log.Debug("Inside Isonline connection method");
+            bool responseboolean = false;
             IPAddress host = IPAddress.Parse(IP);
             IPEndPoint hostep = new IPEndPoint(host, PORT);
             try
@@ -572,44 +795,42 @@ namespace PosLibs.ECRLibrary.Service
                 if (resdisconnect == 0)
                 {
                     int maxRetries = int.Parse(configdata.retrivalcount);
-                    sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                     int connectionTimeoutMillis = int.Parse(configdata.connectionTimeOut);
-                    
+                    sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                     for (int retry = 1; retry <= maxRetries; retry++)
                     {
                         try
                         {
                             IAsyncResult result = sock.BeginConnect(hostep, null, null);
-                            bool success = result.AsyncWaitHandle.WaitOne(connectionTimeoutMillis*1000);
+                            bool success = result.AsyncWaitHandle.WaitOne(connectionTimeoutMillis * 1000);
                             if (success)
                             {
                                 sock.EndConnect(result);
-                                Log.Information("Connected IP:" + IP);
-                                Log.Information("Connexted Port:" + PORT);
-                                Log.Information("Connection Time Out :" + connectionTimeoutMillis*1000);
-                                Log.Information("Connection retry " + maxRetries);
+                                Log.Information("Connected ip:" + IP);
+                                Log.Information("Connected port:" + PORT);
                                 responseboolean = true;
-                                Log.Information("isOnline connected:" + responseboolean);
                                 break;
                             }
                         }
-                        catch(SocketException e)
+                        catch (SocketException e)
                         {
+                            Log.Error("SocketException" + e);
                             if (retry < maxRetries)
                             {
                                 try
                                 {
+                                    Log.Information($"Retry {retry} failed. Waiting for 30 seconds before retrying.");
                                     Thread.Sleep(1000);
                                 }
                                 catch (ThreadInterruptedException ie)
                                 {
-                                    Thread.CurrentThread.Abort();
-                                    Console.WriteLine(ie.ToString());
+                                    Log.Error("ThreadInterruptedException" + ie);
+                                    Thread.CurrentThread.Interrupt();
                                 }
                             }
                             else
                             {
-                                return false;
+                                Log.Information($"Max retries ({maxRetries}) reached. Unable to establish a connection.");
                             }
                         }
                     }
@@ -617,17 +838,17 @@ namespace PosLibs.ECRLibrary.Service
             }
             catch (SocketException e)
             {
+
                 Console.WriteLine("Problem connecting to host");
                 Console.WriteLine(e.ToString());
                 responseboolean = false;
-                Log.Information("isOnline connected:" + responseboolean);
                 sock.Close();
             }
             if (configdata != null)
             {
                 configdata.tcpIp = IP;
                 configdata.tcpPort = PORT;
-                configdata.connectionMode = PinLabsEcrConstant.TCPIP;
+                configdata.connectionMode = PosLibConstant.TCPIP;
                 this.configdata.retrivalcount = configdata.retrivalcount;
                 this.configdata.connectionTimeOut = configdata.connectionTimeOut;
                 this.configdata.commPortNumber = configdata.commPortNumber;
@@ -635,12 +856,7 @@ namespace PosLibs.ECRLibrary.Service
             }
             return responseboolean;
         }
-        /// <summary>
-        /// this method accept the tcp/ip txn request and send to pos bride
-        /// </summary>
-        /// <param name="requestdata"></param>
-        /// <returns></returns>
-        public bool sendTcpIpTxnData(string requestdata)
+        public bool SendTcpIpTxnData(string requestdata)
         {
             bool responseboolen = false;
             if (requestdata != null)
@@ -650,7 +866,6 @@ namespace PosLibs.ECRLibrary.Service
                     byte[] requestData = Encoding.ASCII.GetBytes(requestdata);
                     sock.SendTimeout = 27000;
                     sock.Send(requestData);
-                    Console.WriteLine("Transaction RequestBody:" + requestdata);
                     responseboolen = true;
                     Log.Information("tcp/ip transaction data send successfully");
                 }
@@ -663,27 +878,18 @@ namespace PosLibs.ECRLibrary.Service
             }
             return responseboolen;
         }
-
-        /// <summary>
-        /// This method receive the tcp/ip txn response
-        /// </summary>
-        /// <returns></returns>
-        public string receiveTcpIpTxnData()
+        public string ReceiveTcpIpTxnData()
         {
-            string responseString = "";
-            byte[] responseData = new byte[5000];
-            sock.ReceiveTimeout = 40000;
-            Console.WriteLine("TCP/IP socket Receive Timeout:" + 18000);
-            Log.Information("Txn response receive timeout" + 40000);
+            configdata.isAppidle = false;
+            string value = CheckTcpIpHeartBeat();
+            byte[] responseData = new byte[6000];
+            Thread.Sleep(1000);
             int bytesReceived = sock.Receive(responseData);
-            responseString = Encoding.ASCII.GetString(responseData, 0, bytesReceived);
+            string responseString = Encoding.ASCII.GetString(responseData, 0, bytesReceived);
             Console.WriteLine("Transaction Response:" + responseString);
+            sock.Close();
             return responseString;
         }
-        /// <summary>
-        /// This method work to disconnect the tcp/ip connection
-        /// </summary>
-        /// <returns></returns>
         public int doTCPIPDisconnection()
         {
             int responseInteger = 1;
@@ -700,17 +906,12 @@ namespace PosLibs.ECRLibrary.Service
             }
             return responseInteger;
         }
-        /// <summary>
-        /// this method is disconnect the com connection
-        /// </summary>
-        /// <returns></returns>
         public int doCOMDisconnection()
         {
             int responseInteger = 1;
             try
             {
                 serial.Close();
-                Log.Information("is com port disconnected" + true);
                 responseInteger = 0;
             }
             catch (IOException e)

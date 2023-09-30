@@ -1,231 +1,260 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using PosLibs.ECRLibrary.Common;
 using PosLibs.ECRLibrary.Common.Interface;
 using PosLibs.ECRLibrary.Model;
 using Serilog;
+using System.CodeDom.Compiler;
 
 namespace PosLibs.ECRLibrary.Service
 {
-    public class TransacationService
+    public class TransactionService
     {
-        public TransacationService() { }
-        private ITransactionListener? trasnlistener;
-        public static string transactionrequestbody;
-        ConfigData? configdata = new ConfigData();
-        readonly ConnectionService? conobj = new ConnectionService();
-        /// <summary>
-        /// this mehthod accept the txn requestbody and make full txn request
-        /// </summary>
-        /// <param name="requestbody"></param>
-        /// <returns></returns>
-        public string transactionRequest(string requestbody)
+        private  ITransactionListener? _transactionListener;
+        public IConnectionListener _connlistener=new ConnectionListener();
+        private ConfigData _configData;
+        private readonly ConnectionService _connectionService;
+        public string _transactionRequest;
+        public  string _transactionRequestBody;
+
+
+
+        public TransactionService()
         {
+            _connectionService = new ConnectionService();
+            _transactionRequest = string.Empty;
+            _transactionRequestBody = string.Empty;
+            _configData = new ConfigData();
+           
+        }
+
+        public void DoTransaction(string inputReqBody, int transactionType, ITransactionListener transactionListener)
+        {
+            try
+            {
+                Log.Debug("Inside DoTransaction Method");
+
+                _transactionListener = transactionListener;
+                _configData = _connectionService.GetConfigData() ?? new ConfigData();
+                _configData.isAppidle = false;
+                _connectionService.setConfiguration(_configData);
+                PrepareTransaction(inputReqBody, transactionType);
+
+                if (_configData?.isConnectivityFallBackAllowed == true)
+                {
+                    _configData.isAppidle = false;
+                    _connectionService.setConfiguration(_configData);
+                    ExecuteWithFallbackConnection();
+                    _configData.isAppidle = true;
+                    _connectionService.setConfiguration(_configData);
+                }
+                else
+                {
+                    _configData.isAppidle = false;
+                    _connectionService.setConfiguration(_configData);
+                    ExecuteSingleConnectionMode();
+                }
+            }
+            catch (Exception ex)
+            {
+                HandleTransactionFailure("An error occurred during transaction: " + ex, PosLibConstant.GENERAL_EXCEPTION);
+            }
+            finally
+            {
+                Log.Information("======================================================================================================================================================");
+            }
+        }
+
+        private void PrepareTransaction(string inputReqBody, int transactionType)
+        {
+            Log.Debug("entering execute preparetransaction()");
+            _transactionRequestBody = TransactionRequestBody(inputReqBody, transactionType);
+                 _transactionRequest = TransactionRequest(_transactionRequestBody);
+                 Log.Information("transaction request body : " + _transactionRequestBody);
+        }
+
+        private void ExecuteWithFallbackConnection()
+        {
+            bool transactionSuccessful=false;
+            Log.Debug("entering execute executewithfallbackconnection method");
+            foreach (var communicationType in _configData.communicationPriorityList)
+            {
+                Log.Information("Communication Priority list:" +communicationType);
+                if (communicationType == PosLibConstant.TCPIP || communicationType == PosLibConstant.COM)
+                {
+                     transactionSuccessful = TryExecuteCommunicationType(communicationType);
+                    if (transactionSuccessful)
+                    {
+                        _configData.isAppidle = true;
+                        _connectionService.setConfiguration(_configData);
+                        break;
+                    }
+                }
+            }
+            if (!transactionSuccessful && _transactionListener!=null)
+            {
+                _transactionListener.OnFailure(PosLibConstant.AUTOFALLBACK_TXN_FAIELD_MSG,PosLibConstant.AUTOFALLBACK_TXN_FAIELD);
+            }
+        }
+        private void ExecuteSingleConnectionMode()
+        {
+            Log.Debug("Entering Execute SingleConnectionMode");
+            if (_configData?.connectionMode == PosLibConstant.TCPIP)
+            {
+                Log.Information("Excuted normal tcp/ip Transaction");
+                ExecuteTcpIpTransaction();
+            }
+            else if (_configData?.connectionMode == PosLibConstant.COM)
+            {
+                Log.Information("Executed normal com transaction");
+                ExecuteComTransaction();
+            }
+        }
+        private bool TryExecuteCommunicationType(string communicationType)
+        {
+            Log.Debug("Entering Execute TryExecuteCommunicationType");
+            if (communicationType == PosLibConstant.TCPIP)
+            {
+                Log.Information("Executed tcp/ip autofallback transaction method");
+                return ExecuteTcpIpTransactionWithFallback();
+            }
+            else if (communicationType == PosLibConstant.COM)
+            {
+                Log.Information("Executed com autofallback Transaction method");
+                return ExecuteAutoFallbackComTransaction();
+            }
+            return false;
+        }
+
+        private bool ExecuteTcpIpTransactionWithFallback()
+        {
+            try
+            {
+                if (_connectionService.ProcessOnlineTransaction(_configData.tcpIp, _configData.tcpPort))
+                {
+                    string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
+                    _connectionService.SendTcpIpTxnData(encryptedRequest);
+                    Log.Information("send encrypted tcp/ip auto fallback txn request:" + encryptedRequest);
+                    string responseString = _connectionService.ReceiveTcpIpTxnData();
+                    HandleTransactionResponse(responseString);
+                    return true;
+
+                }
+                else
+                {
+                    Log.Information("autofallback tcp/ip transaction failed");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Log.Error("TCP/IP transaction failed: " + ex);
+            }
+
+            return false;
+        }
+        private bool ExecuteTcpIpTransaction()
+        {
+            try
+            {
+                if (_connectionService.ProcessOnlineTransaction(_configData.tcpIp, _configData.tcpPort))
+                {   
+                    string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
+                    _connectionService.SendTcpIpTxnData(encryptedRequest);
+                    Log.Information("send encrypted TCP IP txn request:" + encryptedRequest);
+                    string responseString = _connectionService.ReceiveTcpIpTxnData();
+                    HandleTransactionResponse(responseString);
+                    _configData.isAppidle = true;
+                    _connectionService.setConfiguration(_configData);
+                    return true;
+                }
+                else
+                {
+                    _configData.isAppidle = true;
+                    _transactionListener?.OnFailure(PosLibConstant.TCPIPFAIELD_TXN_ERROR, PosLibConstant.CON_FAILD_EXCEPTION);
+                }
+            }
+            catch (Exception ex)
+            {
+                _configData.isAppidle = true;
+                _connectionService.setConfiguration(_configData);
+                Log.Error("TCP/IP transaction failed: " + ex);
+            }
+
+            return false;
+        }
+        private bool ExecuteAutoFallbackComTransaction()
+        {
+
+             if (_connectionService.ComTransactionProcess(_configData.commPortNumber))
+                {
+                    string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
+                    _connectionService.SendCOMTxnReq(encryptedRequest);
+                    Log.Information("send encrypted com txn request:" + encryptedRequest);
+                    string responseString = _connectionService.ReceiveCOMTxnrep();
+                    HandleTransactionResponse(responseString);
+                    return true;
+               }
+            else
+            {
+                Log.Information("autofallback com transaction failed");
+            }
+            return false;
+        }
+
+        private bool ExecuteComTransaction()
+        {
+                if (_connectionService.IsComDeviceConnected(_configData.commPortNumber, _connlistener))
+                {
+                    string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
+                    _connectionService.SendCOMTxnReq(encryptedRequest);
+                    Log.Information("send encrypted com txn request:" + encryptedRequest);
+                    string responseString = _connectionService.ReceiveCOMTxnrep();
+                    HandleTransactionResponse(responseString);
+                    _configData.isAppidle = true;
+                    _connectionService.setConfiguration(_configData);
+                    return true;
+                }
+                else
+                {
+                    _transactionListener?.OnFailure(PosLibConstant.COMFAIELD_TXN_ERROR, PosLibConstant.CON_FAILD_EXCEPTION);
+                }
+            return false;
+        }
+        private void HandleTransactionResponse(string responseString)
+        {
+            string decryptedResponse = CommaUtil.ConvertHexdecimalToTransactionResponse(responseString);
+            Log.Information("Received transaction response: " + decryptedResponse);
+            _transactionListener?.OnSuccess(decryptedResponse);
+        }
+        private void HandleTransactionFailure(string errorMessage, string errorCode)
+        {
+            Log.Error("transaction failed: "+errorMessage);
+            _transactionListener?.OnFailure(errorMessage, int.Parse(errorCode));
+        }
+        private  string TransactionRequestBody(string requestbody, int txntype)
+        {
+            return CommaUtil.stringToCsv(txntype, requestbody);
+        }
+        public string TransactionRequest(string requestbody)
+        {
+            Log.Debug("Enter Transaction Request Method");
             TransactionRequest trnrequest = new TransactionRequest();
-            trnrequest.cashierId ="";
-            trnrequest.isDemoMode =false;
+            trnrequest.cashierId = "";
+            trnrequest.isDemoMode = false;
             trnrequest.msgType = 6;
             trnrequest.pType = 1;
             trnrequest.requestBody = requestbody;
             string jsontransrequest = JsonConvert.SerializeObject(trnrequest);
-            transactionrequestbody = jsontransrequest;
+            string newrquestBody = CommaUtil.HexToCsv(requestbody);
+            _transactionRequestBody = newrquestBody;
+            _transactionRequest = CommaUtil.ReplaceRequestBody(jsontransrequest, newrquestBody);
+            Log.Information("whole transaction api" + jsontransrequest);
             return jsontransrequest;
-        }
-        /// <summary>
-        /// this method used inside doTransaction method and make txn requestBody
-        /// </summary>
-        /// <param name="requestbody"></param>
-        /// <param name="txntype"></param>
-        /// <returns></returns>
-        public string transrequestBody(string requestbody, int txntype)
-        {
-            return CommaUtil.stringToCsv(txntype, requestbody);
-        }
-        /// <summary>
-        /// this method accept the txn amount,txn type and send txn request and do transaction using TCP/IP and COM connection
-        /// </summary>
-        /// <param name="inputReqBody"></param>
-        /// <param name="transactionType"></param>
-        /// <param name="transactionListener"></param>
-        public void doTransaction(string inputReqBody, int transactionType, ITransactionListener transactionListener)
-        {
-            Log.Debug("Inside doTransaction Method");
-            this.trasnlistener = transactionListener;
-            string responseString = string.Empty;
-            byte[] buffer = new byte[50000];
-            configdata = conobj.getConfigData();
-            string req = transrequestBody(inputReqBody, transactionType);
-            string transactionRequestbody = transactionRequest(req);
-            string encrypttxnrequst = XorEncryption.EncryptDecrypt(transactionRequestbody);
-            string Decrypted = XorEncryption.EncryptDecrypt(encrypttxnrequst);
-            Log.Information("Txn request:-" + transactionRequestbody);
-            try
-            {
-                Log.Information("isConnectionFollwedBack:" + configdata?.isConnectivityFallBackAllowed);
-                if (configdata?.isConnectivityFallBackAllowed == true)
-                {
-                    bool transactionSuccessful = false;
-                    for (int i = 0; i < configdata?.communicationPriorityList?.Length; i++)
-                    {
-                        Log.Information("communication Priority List " + ":-" + i + " " + configdata?.communicationPriorityList[i]);
-                        if (configdata?.communicationPriorityList[i] == PinLabsEcrConstant.TCPIP || configdata?.communicationPriorityList[i] == PinLabsEcrConstant.COM)
-                        {
-                            try
-                            {
-                                if (configdata?.communicationPriorityList[i] == PinLabsEcrConstant.TCPIP)
-                                {
-                                    try
-                                    {
-                                        if (conobj.isOnlineConnection(configdata.tcpIp, configdata.tcpPort))
-                                        {
-                                            conobj.sendTcpIpTxnData(encrypttxnrequst);
-                                            responseString = conobj.receiveTcpIpTxnData();
-                                            Log.Information("received tcp/ip auto fallback txn:" + responseString);
-                                            transactionSuccessful = true;
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine("TcpId");
-                                        }
-                                    }
-                                    catch (SocketException e)
-                                    {
-                                        transactionSuccessful = false;
-                                        Log.Information("Txn failed Due to TCP/IP Connection " + e);
-                                    }
-                                    catch (ObjectDisposedException ex)
-                                    {
-                                        Console.Write("Please check TCP/IP Connection" + ex);
-                                        transactionListener?.onFailure("Please check TCP/IP connection", PinLabsEcrConstant.CON_FAILD_EXCEPTION);
-                                    }
-
-                                    Console.WriteLine("Transaction Successful:" + transactionSuccessful);
-                                }
-                                else if (configdata?.communicationPriorityList[i] == PinLabsEcrConstant.COM)
-                                {
-                                    Console.WriteLine("Selected Priorit:-" + configdata?.communicationPriorityList[i]);
-                                    try
-                                    {
-                                        if (conobj.isComDeviceConnected(configdata.commPortNumber))
-                                        {
-                                            conobj.sendData(encrypttxnrequst);
-                                            Array.Clear(buffer, 0, buffer.Length);
-                                            responseString = conobj.receiveCOMTxnrep();
-                                            Log.Information("received auto connection COM Transaction Response:" + responseString);
-                                            Console.WriteLine("COM Transaction Response:" + responseString);
-                                            transactionSuccessful = true;
-                                        }
-                                    }
-                                    catch (SocketException)
-                                    {
-                                        transactionSuccessful = false;
-                                    }
-                                    catch (InvalidOperationException)
-                                    {
-                                        transactionSuccessful = false;
-                                    }
-                                    catch (IOException e)
-                                    {
-                                        Log.Error(PinLabsEcrConstant.IO_EXC_MSG, e);
-                                        transactionSuccessful = false;
-                                    }
-                                }
-                            }
-                            catch (SocketException)
-                            {
-                                transactionSuccessful = false;
-                            }
-
-                            if (transactionSuccessful)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    if (configdata?.connectionMode == PinLabsEcrConstant.TCPIP)
-                    {
-                        bool isSend = true;
-                        try
-                        {
-
-                            isSend = conobj.sendTcpIpTxnData(encrypttxnrequst);
-                            if (isSend)
-                            {
-                                Console.WriteLine("Selected ConnectionMode" + configdata?.connectionMode);
-                                Log.Information("Selected ConnectionMode:-" + configdata?.connectionMode);
-                                responseString = conobj.receiveTcpIpTxnData();
-                                Log.Information("TCP/IP connection Txn Response:" + responseString);
-                            }
-                            else
-                            {
-                                Console.Write("Please check TCP/IP Connection");
-                                Log.Warning("Please check TCP/IP Connection");
-                                transactionListener?.onFailure("Please check TCP/IP connection", PinLabsEcrConstant.TXN_FAILD);
-                            }
-                        }
-                        catch (ObjectDisposedException ex)
-                        {
-                            Console.Write("Please check TCP/IP Connection" + ex);
-                            Log.Error("Please check TCP/IP connection" + PinLabsEcrConstant.TXN_FAILD);
-                            transactionListener?.onFailure("Please check TCP/IP connection", PinLabsEcrConstant.TXN_FAILD);
-                        }
-                    }
-                    else if (configdata?.connectionMode == PinLabsEcrConstant.COM)
-                    {
-                        Log.Information("Selected ConnectionMode:-" + configdata?.connectionMode);
-                        if (conobj.isComDeviceConnected(configdata.commPortNumber))
-                        {
-                            conobj.sendData(encrypttxnrequst);
-                            Array.Clear(buffer, 0, buffer.Length);
-                            responseString = conobj.receiveCOMTxnrep();
-                            Log.Information("received com txn response:" + responseString);
-                            Console.WriteLine("COM Transaction Response:" + responseString);
-
-                        }
-                        else
-                        {
-                            Console.WriteLine("Transaction Not Found");
-                        }
-                    }
-                }
-            }
-            catch (IOException e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-            catch (TimeoutException)
-            {
-                Log.Error("Transaction Timeout");
-                transactionListener?.onFailure("Transaction TimeOut", PinLabsEcrConstant.TIME_OUT_EXCEPTION);
-            }
-            catch (SocketException e)
-            {
-                Log.Error("Due to Socket Exception Transaction Failed"+e);
-                trasnlistener?.onFailure("Transaction Failed", PinLabsEcrConstant.SOCK_EXCEPTION);
-            }
-
-            if (trasnlistener != null)
-            {
-                string decreresponse = XorEncryption.EncryptDecrypt(responseString);
-
-                transactionListener?.onSuccess(decreresponse);
-            }
-            else
-            {
-                if (transactionListener != null)
-                {
-                    trasnlistener?.onFailure("Transaction Failed", PinLabsEcrConstant.TXN_FAILD);
-                }
-            }
         }
 
     }
+
+
+
+
 }
