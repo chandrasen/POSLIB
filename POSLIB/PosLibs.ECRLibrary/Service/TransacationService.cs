@@ -3,23 +3,26 @@ using PosLibs.ECRLibrary.Common;
 using PosLibs.ECRLibrary.Common.Interface;
 using PosLibs.ECRLibrary.Model;
 using Serilog;
+using System;
 using System.CodeDom.Compiler;
+using System.IO.Ports;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 
 namespace PosLibs.ECRLibrary.Service
 {
     public class TransactionService
     {
+
         private  ITransactionListener? _transactionListener;
-        public IConnectionListener _connlistener=new ConnectionListener();
         private ConfigData _configData;
         private readonly ConnectionService _connectionService;
-        public string _transactionRequest;
-        public  string _transactionRequestBody;
-
-
-
+        private string _transactionRequest;
+        private  string _transactionRequestBody;
         public TransactionService()
         {
+            Log.Information("Transcation Service");
             _connectionService = new ConnectionService();
             _transactionRequest = string.Empty;
             _transactionRequestBody = string.Empty;
@@ -32,7 +35,7 @@ namespace PosLibs.ECRLibrary.Service
             try
             {
                 Log.Debug("Inside DoTransaction Method");
-
+                Log.Information("Entering doTrnsaction method");
                 _transactionListener = transactionListener;
                 _configData = _connectionService.GetConfigData() ?? new ConfigData();
                 _configData.isAppidle = false;
@@ -41,26 +44,31 @@ namespace PosLibs.ECRLibrary.Service
 
                 if (_configData?.isConnectivityFallBackAllowed == true)
                 {
+                    Log.Information("Auto fallback transaction process :" + _configData.isConnectivityFallBackAllowed);
                     _configData.isAppidle = false;
                     _connectionService.setConfiguration(_configData);
                     ExecuteWithFallbackConnection();
-                    _configData.isAppidle = true;
-                    _connectionService.setConfiguration(_configData);
                 }
                 else
                 {
-                    _configData.isAppidle = false;
-                    _connectionService.setConfiguration(_configData);
+                    if (_configData != null)
+                    {
+                        _configData.isAppidle = false;
+                        _connectionService.setConfiguration(_configData);
+                    }
                     ExecuteSingleConnectionMode();
                 }
             }
             catch (Exception ex)
             {
-                HandleTransactionFailure("An error occurred during transaction: " + ex, PosLibConstant.GENERAL_EXCEPTION);
+                Console.WriteLine(ex.ToString());
+                HandleTransactionFailure("An error occurred during transaction: ", PosLibConstant.GENERAL_EXCEPTION);
+                _configData.isAppidle = true;
+                _connectionService.setConfiguration(_configData);
             }
             finally
             {
-                Log.Information("======================================================================================================================================================");
+                Log.Information("Exiting Transaction Service");
             }
         }
 
@@ -68,8 +76,7 @@ namespace PosLibs.ECRLibrary.Service
         {
             Log.Debug("entering execute preparetransaction()");
             _transactionRequestBody = TransactionRequestBody(inputReqBody, transactionType);
-                 _transactionRequest = TransactionRequest(_transactionRequestBody);
-                 Log.Information("transaction request body : " + _transactionRequestBody);
+            _transactionRequest = TransactionRequest(_transactionRequestBody);
         }
 
         private void ExecuteWithFallbackConnection()
@@ -92,6 +99,7 @@ namespace PosLibs.ECRLibrary.Service
             }
             if (!transactionSuccessful && _transactionListener!=null)
             {
+                Log.Information("Transaction failed");
                 _transactionListener.OnFailure(PosLibConstant.AUTOFALLBACK_TXN_FAIELD_MSG,PosLibConstant.AUTOFALLBACK_TXN_FAIELD);
             }
         }
@@ -129,25 +137,21 @@ namespace PosLibs.ECRLibrary.Service
         {
             try
             {
-                if (_connectionService.ProcessOnlineTransaction(_configData.tcpIp, _configData.tcpPort))
+                if (_connectionService.ProcessOnlineConnection(_configData.tcpIp, _configData.tcpPort))
                 {
                     string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
                     _connectionService.SendTcpIpTxnData(encryptedRequest);
-                    Log.Information("send encrypted tcp/ip auto fallback txn request:" + encryptedRequest);
+                    Log.Information("Autofallback json tcp/ip txn request:" + _transactionRequest);
+                    Log.Information("send encrypted tcp/ip txn request:" + encryptedRequest);
                     string responseString = _connectionService.ReceiveTcpIpTxnData();
                     HandleTransactionResponse(responseString);
                     return true;
-
                 }
-                else
-                {
-                    Log.Information("autofallback tcp/ip transaction failed");
-                }
-
             }
             catch (Exception ex)
             {
-                Log.Error("TCP/IP transaction failed: " + ex);
+                Console.WriteLine(ex.StackTrace);
+                return false;
             }
 
             return false;
@@ -156,11 +160,12 @@ namespace PosLibs.ECRLibrary.Service
         {
             try
             {
-                if (_connectionService.ProcessOnlineTransaction(_configData.tcpIp, _configData.tcpPort))
-                {   
+                if (_connectionService.ProcessOnlineConnection(_configData.tcpIp, _configData.tcpPort))
+                {
                     string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
                     _connectionService.SendTcpIpTxnData(encryptedRequest);
-                    Log.Information("send encrypted TCP IP txn request:" + encryptedRequest);
+                    Log.Information("tcp/ip json txn request:" + _transactionRequest);
+                    Log.Information("send encrypted tcp/ip txn request:" + encryptedRequest);
                     string responseString = _connectionService.ReceiveTcpIpTxnData();
                     HandleTransactionResponse(responseString);
                     _configData.isAppidle = true;
@@ -169,24 +174,27 @@ namespace PosLibs.ECRLibrary.Service
                 }
                 else
                 {
+                   
+                    _transactionListener?.OnFailure(PosLibConstant.TCPIPFAIELD_TXN_ERROR, PosLibConstant.TXN_FAILD_EXCEPTION);
                     _configData.isAppidle = true;
-                    _transactionListener?.OnFailure(PosLibConstant.TCPIPFAIELD_TXN_ERROR, PosLibConstant.CON_FAILD_EXCEPTION);
+                    _connectionService.setConfiguration(_configData);
                 }
             }
             catch (Exception ex)
             {
                 _configData.isAppidle = true;
+                _transactionListener?.OnFailure(PosLibConstant.TCPIPFAIELD_TXN_ERROR, PosLibConstant.TXN_FAILD_EXCEPTION);
                 _connectionService.setConfiguration(_configData);
-                Log.Error("TCP/IP transaction failed: " + ex);
+                Console.WriteLine(ex.ToString());
+                Log.Error("TCP/IP transaction failed: ");
             }
-
             return false;
         }
         private bool ExecuteAutoFallbackComTransaction()
         {
-
              if (_connectionService.ComTransactionProcess(_configData.commPortNumber))
                 {
+                    Log.Information("AutoFallback json COM transaction request : " + _transactionRequest);
                     string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
                     _connectionService.SendCOMTxnReq(encryptedRequest);
                     Log.Information("send encrypted com txn request:" + encryptedRequest);
@@ -194,18 +202,15 @@ namespace PosLibs.ECRLibrary.Service
                     HandleTransactionResponse(responseString);
                     return true;
                }
-            else
-            {
-                Log.Information("autofallback com transaction failed");
-            }
             return false;
         }
 
         private bool ExecuteComTransaction()
         {
-                if (_connectionService.IsComDeviceConnected(_configData.commPortNumber, _connlistener))
+                if (_connectionService.ComTransactionProcess(_configData.commPortNumber))
                 {
-                    string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
+                     Log.Information("COM transaction json request : " + _transactionRequest);
+                     string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
                     _connectionService.SendCOMTxnReq(encryptedRequest);
                     Log.Information("send encrypted com txn request:" + encryptedRequest);
                     string responseString = _connectionService.ReceiveCOMTxnrep();
@@ -216,8 +221,10 @@ namespace PosLibs.ECRLibrary.Service
                 }
                 else
                 {
-                    _transactionListener?.OnFailure(PosLibConstant.COMFAIELD_TXN_ERROR, PosLibConstant.CON_FAILD_EXCEPTION);
-                }
+                _transactionListener?.OnFailure(PosLibConstant.COMFAIELD_TXN_ERROR, PosLibConstant.COM_FAILD_EXCEPTION);
+                _configData.isAppidle = true;
+                _connectionService.setConfiguration(_configData);
+            }
             return false;
         }
         private void HandleTransactionResponse(string responseString)
@@ -228,7 +235,7 @@ namespace PosLibs.ECRLibrary.Service
         }
         private void HandleTransactionFailure(string errorMessage, string errorCode)
         {
-            Log.Error("transaction failed: "+errorMessage);
+            Log.Error(ExceptionConst.TRANSACTIONFAIL+errorMessage);
             _transactionListener?.OnFailure(errorMessage, int.Parse(errorCode));
         }
         private  string TransactionRequestBody(string requestbody, int txntype)
@@ -248,13 +255,9 @@ namespace PosLibs.ECRLibrary.Service
             string newrquestBody = CommaUtil.HexToCsv(requestbody);
             _transactionRequestBody = newrquestBody;
             _transactionRequest = CommaUtil.ReplaceRequestBody(jsontransrequest, newrquestBody);
-            Log.Information("whole transaction api" + jsontransrequest);
             return jsontransrequest;
         }
-
+      
     }
-
-
-
 
 }

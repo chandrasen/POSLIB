@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:POSLIB"
         mc:Ignorable="d"
-    Title="PineLabs POSLIB v1.4"  Height="742" Width="1400" Background="#F5F5F5">
+    Title="PineLabs POSLIB v2.0"  Height="742" Width="1400" Background="#F5F5F5">
     <Grid x:Name="fullScreen" Margin="10,58,0,-6" IsEnabled="True">
         <Grid.ColumnDefinitions >
             <ColumnDefinition Width="auto"/>
@@ -47,7 +47,7 @@
                         </Grid.RowDefinitions>
                         <Label  x:Name="lblIpAddress" Content="IP Address"  HorizontalAlignment="Left" Margin="4,9,0,0" VerticalAlignment="Top" Width="70"/>
                         <Label x:Name="lblPort" Content="IP Port" Grid.Column="2" HorizontalAlignment="Left" Margin="7,9,0,0" VerticalAlignment="Top" Width="58" RenderTransformOrigin="0.483,0.615"/>
-                        <TextBox x:Name="txtIpAddress" IsEnabled="true"  SelectionChanged="IPTextChanged"  Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="5,14,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Width="130" TextChanged="txtIpAddress_TextChanged"/>
+                        <TextBox x:Name="txtIpAddress" IsEnabled="true"  SelectionChanged="IPTextChanged"  Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="5,14,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Width="130"/>
                         <TextBox x:Name="txtPort" PreviewTextInput="PORTTextBox" IsEnabled="true" SelectionChanged="PortTextChanged" Grid.Column="2" HorizontalAlignment="Left" Height="23" Margin="82,14,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Width="130" Grid.ColumnSpan="2"/>
                     </Grid>
                 </GroupBox>
@@ -160,7 +160,7 @@
         <Label Visibility="Collapsed" Content="Buffer Received" FontWeight="Bold" HorizontalAlignment="Left" Margin="4,551,0,0" Grid.Row="1" VerticalAlignment="Top" Width="110" Grid.ColumnSpan="2" RenderTransformOrigin="0.482,1.427"/>
         <TextBox Visibility="Hidden" x:Name="BUFFERRECEIVED" IsReadOnly="True" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" HorizontalAlignment="Left" Height="62" Margin="0,577,0,0" Grid.Row="1" TextWrapping="Wrap"  VerticalAlignment="Top" Width="464" Grid.ColumnSpan="2"/>
         <Label x:Name="CASHBACKL"  Content="Cash Back" Visibility="Hidden" FontWeight="Bold" Grid.Column="1" HorizontalAlignment="Left" Margin="163,254,0,0" Grid.Row="1" VerticalAlignment="Top" Width="98"/>
-        <TextBox x:Name="CASHBACKT"  HorizontalContentAlignment="Right" PreviewKeyDown="CASHBACKT_PreviewKeyDown"  KeyDown="CASHBACKT_KeyDown" SelectionChanged="CashbackTextChanged" Visibility="Hidden" IsEnabled="False" Grid.Column="1" PreviewTextInput="CashbackValidationTextBox" HorizontalAlignment="Left" Height="25" Margin="162,285,0,0" Grid.Row="1" TextWrapping="Wrap"  VerticalAlignment="Top" Width="140" TextChanged="CASHBACKT_TextChanged_1"/>
+        <TextBox x:Name="CASHBACKT"  HorizontalContentAlignment="Right" PreviewKeyDown="CASHBACKT_PreviewKeyDown"  KeyDown="CASHBACKT_KeyDown" SelectionChanged="CashbackTextChanged" Visibility="Hidden" IsEnabled="False" Grid.Column="1" PreviewTextInput="CashbackValidationTextBox" HorizontalAlignment="Left" Height="25" Margin="162,285,0,0" Grid.Row="1" TextWrapping="Wrap"  VerticalAlignment="Top" Width="140"/>
         <GroupBox x:Name="Numbers"  Visibility="Hidden" HorizontalAlignment="Left" Height="179" Margin="872,434,0,0" Grid.Row="1" VerticalAlignment="Top" Width="360" Grid.ColumnSpan="2">
             <Grid Margin="0,0,-2,0" Height="178">
                 <Grid.ColumnDefinitions>
@@ -305,7 +305,7 @@
             </Grid>
         </GroupBox>
         <Button x:Name="Scan_online_device"  Grid.Column="1" Content="Scan Devices" HorizontalAlignment="Left" Margin="892,120,0,0" Grid.Row="1" VerticalAlignment="Top" Width="146" Height="29" Background="White" Click="Button_Click" FontSize="14" FontFamily="Arial Black" />
-        <CheckBox x:Name="connectivityFallbackCheckBox"   Content="Connection Fallback Allowed" Grid.Column="1"  HorizontalAlignment="Left" Margin="673,2,0,0" Grid.Row="1" VerticalAlignment="Top" Height="28" Width="256" FontSize="14" FontFamily="Arial Black" Checked="connectivityFallbackCheckBox_Checked"/>
+        <CheckBox x:Name="connectivityFallbackCheckBox"   Content="Connection Fallback Allowed" Grid.Column="1"  HorizontalAlignment="Left" Margin="673,2,0,0" Grid.Row="1" VerticalAlignment="Top" Height="28" Width="256" FontSize="14" FontFamily="Arial Black"/>
         <Label x:Name="Priority"  Grid.Column="1" Content="Priority-1" HorizontalAlignment="Left" Margin="934,23,0,0" VerticalAlignment="Top" Width="74" Height="30" FontSize="14" Grid.RowSpan="2"/>
 
         <ComboBox Grid.Column="1"  x:Name="comboBox" SelectionChanged="Priority1_SelectionChanged" SelectedIndex="0" HorizontalAlignment="Left" Margin="1013,24,0,0" VerticalAlignment="Top" Width="111" Height="26" Grid.RowSpan="2">
@@ -316,7 +316,8 @@
 
         <Button Grid.Column="1" x:Name="btnSave"  Content="Save Settings" HorizontalAlignment="Left" Margin="953,505,0,0" Grid.Row="1" VerticalAlignment="Top" Height="54" Width="140" FontSize="14" Background="#FF316D1C" Foreground="White" Click="SaveSettings" RenderTransformOrigin="0.508,0.796"/>
         <Button  x:Name="btnDisConnect"  Visibility="Hidden" Content="Disconnect" IsEnabled="False" Grid.Column="1" HorizontalAlignment="Left" Margin="252,0,0,0" VerticalAlignment="Top" Width="92" Foreground="Black" FontWeight="Bold" FontSize="15" Background="#f0a6a1" Height="36" Click="DisConnect" Grid.Row="1"/>
-        <ComboBox Grid.Column="1" x:Name="SELECTTRANSTYPE" HorizontalAlignment="Left" Margin="48,494,0,0" VerticalAlignment="Top" Width="358" Height="26" RenderTransformOrigin="0.092,0.521" Grid.Row="1">
+        <ComboBox x:Name="SELECTTRANSTYPE" Grid.Column="1" SelectedIndex="0" HorizontalAlignment="Left" Margin="48,494,0,0" VerticalAlignment="Top" Width="358" Height="26" RenderTransformOrigin="0.092,0.521" Grid.Row="1">
+            <ComboBoxItem  IsSelected="True" Content="------------- Transaction type ---------"></ComboBoxItem>
             <ComboBoxItem Content="Purchase"></ComboBoxItem>
             <ComboBoxItem Content="BHARAT QR Sale request"></ComboBoxItem>
             <ComboBoxItem Content="UPI Sale Request"></ComboBoxItem>
@@ -326,10 +327,36 @@
             <ComboBoxItem Content="Void Transaction"></ComboBoxItem>
             <ComboBoxItem Content="Sale Complete"></ComboBoxItem>
             <ComboBoxItem Content="Settlement"></ComboBoxItem>
+            <ComboBoxItem Content="Brand EMI Transaction"></ComboBoxItem>
+            <ComboBoxItem Content="Bank EMI Transaction"></ComboBoxItem>
+            <ComboBoxItem Content="Cash Only"></ComboBoxItem>
+            <ComboBoxItem Content="Payback void"></ComboBoxItem>
+            <ComboBoxItem Content="Payback Earn"></ComboBoxItem>
+            <ComboBoxItem Content="Sale with cash"></ComboBoxItem>
+            <ComboBoxItem Content="Pre Auth Transaction"></ComboBoxItem>
+            <ComboBoxItem Content="WalletPay"></ComboBoxItem>
+            <ComboBoxItem Content="WalletLoad"></ComboBoxItem>
+            <ComboBoxItem Content="WalletVoid"></ComboBoxItem>
+            <ComboBoxItem Content="Twid Sale"></ComboBoxItem>
+            <ComboBoxItem Content="Twid Get Status"></ComboBoxItem>
+            <ComboBoxItem Content="Twid Void"></ComboBoxItem>
+            <ComboBoxItem Content="EMI as Single Txn Type for Brand and Bank EMI" ></ComboBoxItem>
+            <ComboBoxItem Content="Sale With/Without Instant Discount"></ComboBoxItem>
+            <ComboBoxItem Content="QC Redemption"></ComboBoxItem>
+            <ComboBoxItem Content="AmazonPay Barcode"></ComboBoxItem>
+            <ComboBoxItem Content="Sale – Cardless Bank EMI(ICICI, HDFC and Federal Bank)"></ComboBoxItem>
+            <ComboBoxItem Content="Sale – Cardless Brand EMI"></ComboBoxItem>
+            <ComboBoxItem Content="Void –Cardless Bank and Brand EMI (Federal Bank)"></ComboBoxItem>
+            <ComboBoxItem Content="Giftiicon – Gift Code"></ComboBoxItem>
+            <ComboBoxItem Content="HDFC Flexipay - POS (Pay Later)"></ComboBoxItem>
+            <ComboBoxItem Content="Magic Pin Sale"></ComboBoxItem>
+            <ComboBoxItem Content="Magic PIN Void"></ComboBoxItem>
+            <ComboBoxItem Content="Zest MoNAy - Invoice Sale"></ComboBoxItem>
+            <ComboBoxItem Content="Zest MoNAy – Product Sale"></ComboBoxItem>
+            <ComboBoxItem Content="Zest MoNAy – Void"></ComboBoxItem>
         </ComboBox>
-        <Button Grid.Column="1" Content="Process" HorizontalAlignment="Left" Margin="411,494,0,0" Grid.Row="1" VerticalAlignment="Top" Height="26" Width="179" FontSize="14" FontFamily="Segoe UI Black" Click="ProcessBtn"/>
-        <TextBox Grid.Column="1" x:Name="Requestsend" HorizontalAlignment="Left" Margin="46,310,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="544" Height="38" RenderTransformOrigin="0.521,1.538"/>
-        <TextBox x:Name="ResponseReceive" Grid.Column="1" HorizontalAlignment="Left" Margin="46,353,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="544" Height="100"/>
+        <Button Grid.Column="1" x:Name="Btnprocess" Content="Process" HorizontalAlignment="Left" Margin="411,494,0,0" Grid.Row="1" VerticalAlignment="Top" Height="26" Width="179" FontSize="14" FontFamily="Segoe UI Black" Click="ProcessBtn"/>
+        <TextBox x:Name="ResponseReceive" Grid.Column="1" HorizontalAlignment="Left" Margin="46,310,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="544" Height="143"/>
 
         <TextBox x:Name="Filepath"  Grid.Column="1" IsEnabled="False" HorizontalAlignment="Left" Margin="708,75,0,0" Grid.Row="1" TextWrapping="Wrap" Text="C:\POSLIBS" VerticalAlignment="Top" Width="147" Height="30" FontSize="14" FontFamily="Bahnschrift SemiBold"/>
         <Label Grid.Column="1" Content="Path" HorizontalAlignment="Left" Margin="665,78,0,0" Grid.Row="1" VerticalAlignment="Top" Height="27" Width="38" FontSize="14" FontFamily="Bahnschrift SemiBold" RenderTransformOrigin="1.296,0.968"/>
@@ -356,7 +383,7 @@
         <TextBox  IsEnabled="False"  Grid.Column="1" x:Name="comserialNo" HorizontalAlignment="Left" Margin="689,406,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="94" Height="28" FontSize="14"/>
         <TextBox  IsEnabled="False"  Grid.Column="1" x:Name="comfullname" HorizontalAlignment="Left" Margin="794,406,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="203" Height="28" FontSize="11"/>
         <Button x:Name="COMConnetBtn" Grid.Column="1" Content="Test" HorizontalAlignment="Left" Margin="934,448,0,0" Grid.Row="1" VerticalAlignment="Top" Height="24" Width="86" FontFamily="Bahnschrift SemiBold" FontSize="14" RenderTransformOrigin="0.366,1.298" Click="Button_Click_2" Background="#FF117109" Foreground="White"/>
-        <Label Grid.Column="1" Content="Availabe Devices" HorizontalAlignment="Left" Margin="1070,149,0,0" Grid.Row="1" VerticalAlignment="Top" Width="212" FontSize="14" FontFamily="Arial Black" RenderTransformOrigin="0.52,1.716"/>
+        <Label Grid.Column="1" Content="Available Devices" HorizontalAlignment="Left" Margin="1070,149,0,0" Grid.Row="1" VerticalAlignment="Top" Width="212" FontSize="14" FontFamily="Arial Black" RenderTransformOrigin="0.52,1.716"/>
         <Label Content="POS CONTROLLER" HorizontalAlignment="Left" Margin="215,0,0,0" VerticalAlignment="Center" Grid.ColumnSpan="2" Height="30" Width="178" FontSize="16" FontFamily="Arial Black"/>
         <Label Grid.Column="1" Content="Cashier ID" HorizontalAlignment="Left" Margin="52,4,0,0" Grid.Row="1" VerticalAlignment="Top" Height="25" Width="102" FontFamily="Bahnschrift SemiBold" FontSize="16"/>
         <Label Grid.Column="1" Content="Cashier Name" HorizontalAlignment="Left" Margin="52,31,0,0" Grid.Row="1" VerticalAlignment="Top" Height="24" Width="120" FontSize="16" FontFamily="Bahnschrift SemiBold"/>
@@ -435,13 +462,13 @@
         <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="63" Margin="46,3,0,0" Stroke="Black" VerticalAlignment="Top" Width="544" RenderTransformOrigin="0.308,0.452" Grid.Row="1"/>
         <Rectangle Grid.Column="1" HorizontalAlignment="Left" Height="297" Margin="1043,187,0,0" Grid.Row="1" Stroke="Black" VerticalAlignment="Top" Width="227"/>
         <ComboBox  IsEnabled="False" Grid.Column="1" x:Name="LogLevel"  HorizontalAlignment="Left" Margin="1196,82,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120">
-            <ComboBoxItem Content="warning"></ComboBoxItem>
+            <ComboBoxItem Content="error"></ComboBoxItem>
             <ComboBoxItem Content="debug"></ComboBoxItem>
-            <ComboBoxItem Content="information" IsSelected="true"></ComboBoxItem>
+            <ComboBoxItem Content="information"></ComboBoxItem>
         </ComboBox>
         <Label Grid.Column="1" Content="Connection TimeOut" HorizontalAlignment="Left" Margin="689,22,0,0" Grid.Row="1" VerticalAlignment="Top" Width="147" FontFamily="Arial Black"/>
-        <TextBox Grid.Column="1"  IsEnabled="False" x:Name="ConnectionTimeOut" HorizontalAlignment="Left" Margin="836,23,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="93" Height="23" RenderTransformOrigin="0.527,0.697" FontFamily="Bahnschrift SemiBold"/>
-        <Label Grid.Column="1" Content="Retry Time" HorizontalAlignment="Left" Margin="933,22,0,0" Grid.Row="1" VerticalAlignment="Top" Width="100" FontFamily="Arial Black" RenderTransformOrigin="0.5,0.5">
+        <TextBox Grid.Column="1"  IsEnabled="True" x:Name="ConnectionTimeOut" HorizontalAlignment="Left" Margin="836,23,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="93" Height="23" RenderTransformOrigin="0.527,0.697" FontFamily="Bahnschrift SemiBold"/>
+        <Label Grid.Column="1" Content="Retry Count" HorizontalAlignment="Left" Margin="933,22,0,0" Grid.Row="1" VerticalAlignment="Top" Width="100" FontFamily="Arial Black" RenderTransformOrigin="0.5,0.5">
             <Label.RenderTransform>
                 <TransformGroup>
                     <ScaleTransform/>
@@ -451,7 +478,7 @@
                 </TransformGroup>
             </Label.RenderTransform>
         </Label>
-        <TextBox Grid.Column="1" IsEnabled="False" x:Name="retrivalCount" HorizontalAlignment="Left" Margin="1043,25,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="77" Height="21" FontFamily="Arial Black"/>
+        <TextBox Grid.Column="1" IsEnabled="True" x:Name="retrivalCount" HorizontalAlignment="Left" Margin="1043,25,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="77" Height="21" FontFamily="Arial Black"/>
 
 
 

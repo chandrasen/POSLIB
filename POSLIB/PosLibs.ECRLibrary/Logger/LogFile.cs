@@ -1,6 +1,7 @@
 ﻿using Serilog.Events;
 using Serilog;
 using PosLibs.ECRLibrary.Common;
+using Serilog.Core;
 
 namespace PosLibs.ECRLibrary.Logger
 {
@@ -52,17 +53,47 @@ namespace PosLibs.ECRLibrary.Logger
                     }
                 }
             }
+           
 
-            string fileName = $"poslib.log";
+            string currentDate = DateTime.Now.ToString("yyyy/MM/dd");
+            string fileName = $"poslib_{currentDate}.log";
             string filePath = Path.Combine(logPath, fileName);
             Log.Information($"filepath: {filePath}");
             LogEventLevel logEventLevel = GetLogLevel(logLevel);
             Log.Information("Log Level:" + logEventLevel.ToString());
 
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Is(logEventLevel)
-                .WriteTo.File(filePath, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}]  {Message}{NewLine} {Exception}")
+            Log.CloseAndFlush();
+
+            if (logLevel == 1)
+            {
+                Log.Logger = new LoggerConfiguration()
+                .WriteTo.File(filePath, outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}]  [{Level:u3}] [{SourceContext}]  {Message} {NewLine} {Exception}")
+                .Filter.ByIncludingOnly(isOnlyErrorLevel)
                 .CreateLogger();
+            }
+            else if (logLevel == 3)
+            {
+                Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.File(filePath, outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}]  [{Level:u3}] [{SourceContext}]  {Message} {NewLine} {Exception}")
+                .CreateLogger();
+            }
+            else if (logLevel == 4)
+            {
+                Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Is(logEventLevel)
+                .WriteTo.File(filePath, outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}]  [{Level:u3}] [{SourceContext}]  {Message} {NewLine} {Exception}")
+                .CreateLogger();
+            }
+
+            else
+            {
+                var ls = new LoggingLevelSwitch();
+                ls.MinimumLevel = ((LogEventLevel)1 + (int)LogEventLevel.Fatal);
+                Log.Logger = new LoggerConfiguration()
+                    .MinimumLevel.ControlledBy(ls)
+                    .CreateLogger();
+            }
 
             try
             {
@@ -84,6 +115,41 @@ namespace PosLibs.ECRLibrary.Logger
             }
         }
 
+        private static bool isOnlyErrorLevel(LogEvent @event)
+        {
+            return @event.Level == LogEventLevel.Error;
+        }
+
+        public static bool deleteFileifNeeded(string logPath, string expirationDate)
+        {
+            bool isDeleted = false;
+            try
+            {
+
+                string fileName = $"poslib.log";
+                string filePath = Path.Combine(logPath, fileName);
+
+                DirectoryInfo logDirectory = new DirectoryInfo(logPath);
+
+                foreach (FileInfo file in logDirectory.GetFiles("poslib*.log"))
+                {
+                    if (DateTime.Now.Date > DateTime.Parse(expirationDate))
+                    {
+                        Log.CloseAndFlush();
+                        file.Delete();
+                        Log.Information("Logs Deleted successfully: " + file);
+                        isDeleted = true;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error("Error | Failed to manage log files: " + e.Message);
+            }
+
+            return isDeleted;
+        }
+
         private static LogEventLevel GetLogLevel(int logLevel)
         {
             return logLevel switch
@@ -97,7 +163,6 @@ namespace PosLibs.ECRLibrary.Logger
                 _ => LogEventLevel.Information
             };
         }
-
     }
 }
 

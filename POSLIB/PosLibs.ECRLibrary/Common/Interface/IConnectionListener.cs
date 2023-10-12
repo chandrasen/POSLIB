@@ -8,7 +8,7 @@ namespace PosLibs.ECRLibrary.Common.Interface
 {
     public interface IConnectionListener
     {
-        void OnFailure(string message);
-        void OnSuccess(string message);
+        void OnFailure(string message,string errorcode);
+        void OnSuccess(string message,string errorcode);
     }
 }
