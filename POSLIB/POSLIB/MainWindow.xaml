@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:POSLIB"
         mc:Ignorable="d"
-    Title="PineLabs POSLIB v2.0"  Height="742" Width="1400" Background="#F5F5F5">
+    Title="PineLabs POSLIB v1.1"  Height="742" Width="1400" Background="#F5F5F5">
     <Grid x:Name="fullScreen" Margin="10,58,0,-6" IsEnabled="True">
         <Grid.ColumnDefinitions >
             <ColumnDefinition Width="auto"/>

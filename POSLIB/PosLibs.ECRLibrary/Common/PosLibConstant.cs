@@ -27,7 +27,7 @@ namespace PosLibs.ECRLibrary.Common
         public const string COMCONNECTION_SUCCESS = "COM Connected Successfully";
 
         public const int SOCK_EXCEPTION = 1001;
-        public const int NO_DEV_FOUND = 1002;
+        public const int NO_DEV_FOUND = 1004;
         public const int TIME_OUT_EXCEPTION = 1003;
         public const int TXN_FAILD_EXCEPTION = 2906;
         public const int COM_FAILD_EXCEPTION = 2909;
@@ -42,10 +42,12 @@ namespace PosLibs.ECRLibrary.Common
         public const string FILE_NAME = $"Configure.json";
 
 
-        public const string COMHEALTHACTIVE = "100";
-        public const string COMHEALTHINACTIVE = "200";
-        public const string TCPIPHEALTHACTIVE = "400";
-        public const string TCPIPHEALTHINACTIVE = "300";
+        public const string COMHEALTHACTIVE = "2000";
+        public const string COMHEALTHINACTIVE = "2001";
+        public const string COMHEALTHNULLVALUE = "2003";
+        public const string TCPIPHEALTHACTIVE = "1000";
+        public const string TCPIPHEALTHINACTIVE = "1001";
+        public const string TCPIPHEALTHNULLVALUE = "1002";
 
         public const string TCPIPERRORCODESUCESS = "1000";
         public const string TCPIPERRORCODEFAIL = "1001";

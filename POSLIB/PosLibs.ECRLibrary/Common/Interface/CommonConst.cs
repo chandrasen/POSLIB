@@ -16,6 +16,6 @@ namespace PosLibs.ECRLibrary.Common.Interface
         public const string msgType1_7 = "7";
         public const string pType = "1";
         public const string ecrPort = "6666";
-        public const string ManagementObjectSearcher = "SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(PAX%'";
+        public const string ManagementObjectSearcher = "SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%'";
     }
 }

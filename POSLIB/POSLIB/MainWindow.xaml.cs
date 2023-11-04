@@ -145,7 +145,7 @@ namespace POSLIB
 
         public MainWindow()
         {
-
+            
             InitializeComponent();
             DataContext = this;
             GetCOMPort();
@@ -156,7 +156,7 @@ namespace POSLIB
             showData();
             Log.Information("-:Application Start:-");
         }
-
+      
         private void deleteFileifNeeded()
         {
 
@@ -283,7 +283,13 @@ namespace POSLIB
 
         public void showData()
         {
-            fetchData = obj.GetConfigData();
+            ConfigData fetchData = new ConfigData();
+            int result = obj.getConfiguration(out fetchData);
+            if (fetchData.isAppidle == false)
+            {
+                fetchData.isAppidle = true;
+                obj.setConfiguration(fetchData);
+            }
 
             tcpip.Text = fetchData.tcpIpaddress;
             tcpport.Text = fetchData.tcpIpPort;
@@ -441,7 +447,6 @@ namespace POSLIB
 
         public void TerminalConnectionCheckerW()
         {
-            ConfigData value = obj.GetConfigData();
                 connectionCheckTimer = new Timer(ConnectionCheckTimer_Tick, null, TimeSpan.FromSeconds(0),
                 TimeSpan.FromSeconds(30));
         }
@@ -452,7 +457,8 @@ namespace POSLIB
         }
         public void isAppIdle()
         {
-            ConfigData value = obj.GetConfigData();
+            ConfigData value = new ConfigData();
+            int  result = obj.getConfiguration(out value);
             if (value != null)
             {
                 if (value.isAppidle)
@@ -464,13 +470,29 @@ namespace POSLIB
                 }
             }
         }
+        public static int statusCode = 0;
+        public class TransactionDriveHeart : ComEventListener
+        {
+            public void OnFailure(string errorMsg)
+            {
+                statusCode = int.Parse(errorMsg);
+
+
+
+            }
+            public void OnSuccess(string paymentResponse)
+            {
+                statusCode = int.Parse(paymentResponse);
+            }
+
+        }
         public void checkComHeatBeat()
         {
-            string checkstatus = obj.CheckCOMHeartBeat();
-            int statusCode = int.Parse(checkstatus);
+            TransactionDriveHeart tcplistner = new TransactionDriveHeart();
+            obj.checkComStatus(tcplistner);
             switch (statusCode)
             {
-                case 100:
+                case 2000:
                     Dispatcher.Invoke(() => COMlabel.Content = "ACTIVE");
                     Dispatcher.Invoke(() => COMlabel1.Content = "ACTIVE");
                     Dispatcher.Invoke(() =>
@@ -486,7 +508,23 @@ namespace POSLIB
                         COMlabel.Background = brush;
                     });
                     break;
-                case 200:
+                case 2001:
+                    Dispatcher.Invoke(() => COMlabel.Content = "INACTIVE");
+                    Dispatcher.Invoke(() => COMlabel1.Content = "INACTIVE");
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0xCA, 0x25, 0x0A); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        COMlabel1.Background = brush;
+                    });
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0xCA, 0x25, 0x0A); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        COMlabel.Background = brush;
+                    });
+                    break;
+                case 2003:
                     Dispatcher.Invoke(() => COMlabel.Content = "INACTIVE");
                     Dispatcher.Invoke(() => COMlabel1.Content = "INACTIVE");
                     Dispatcher.Invoke(() =>
@@ -511,11 +549,12 @@ namespace POSLIB
         }
         public void checkTcpIpHeatBeat()
         {
-            string checkstatus = obj.CheckTcpIpHeartBeat();
-            int statusCode = int.Parse(checkstatus);
+            TransactionDriveHeart tcplistner = new TransactionDriveHeart();
+            obj.checkTcpComStatus(tcplistner);
+            
             switch (statusCode)
             {
-                case 300:
+                case 1001:
                     Dispatcher.Invoke(() => TCPHeartBtn.Content = "INACTIVE");
                     Dispatcher.Invoke(() => TCPHeartBtn1.Content = "INACTIVE");
                     Dispatcher.Invoke(() =>
@@ -532,7 +571,24 @@ namespace POSLIB
                     });
 
                     break;
-                case 400:
+                case 1003:
+                    Dispatcher.Invoke(() => TCPHeartBtn.Content = "INACTIVE");
+                    Dispatcher.Invoke(() => TCPHeartBtn1.Content = "INACTIVE");
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0xCA, 0x25, 0x0A); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        TCPHeartBtn.Background = brush;
+                    });
+                    Dispatcher.Invoke(() =>
+                    {
+                        Color color = Color.FromArgb(0xFF, 0xCA, 0x25, 0x0A); // ARGB values for the color
+                        SolidColorBrush brush = new SolidColorBrush(color);
+                        TCPHeartBtn1.Background = brush;
+                    });
+
+                    break;
+                case 1000:
                     Dispatcher.Invoke(() => TCPHeartBtn.Content = "ACTIVE");
                     Dispatcher.Invoke(() => TCPHeartBtn1.Content = "ACTIVE");
                     Dispatcher.Invoke(() =>
@@ -755,17 +811,19 @@ namespace POSLIB
                     serialdevice.Clear();
                     serialdevicelist.Clear();
                 });
-                fetchData = obj.GetConfigData();
+                ConfigData fetchData = new ConfigData();
+                obj.getConfiguration(out fetchData);
                 fetchData.isAppidle = false;
                 obj.setConfiguration(fetchData);
-                obj.scanOnlineDevice(deviceslisnter);
-                obj.ScanSerialDevice(deviceslisnter);
+                obj.scanOnlinePOSDevice(deviceslisnter);
+                obj.scanSerialDevice(deviceslisnter);
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
                 while (stopwatch.Elapsed.TotalSeconds < 27) // Run for a maximum of 30 seconds
                 {
-                    Thread.Sleep(1000); // Sleep for 1 second
-                   
+                    Thread.Sleep(1000);
+                    // Sleep for 1 second
+
                 }
                 stopwatch.Stop();
                 if (serialdevice.Count <= 0)
@@ -798,7 +856,9 @@ namespace POSLIB
                         serialdevice.Clear();
                         serialdevicelist.Clear();
                         TcpIpList.Visibility = Visibility.Visible;
-
+                        obj.getConfiguration(out fetchData);
+                        fetchData.isAppidle = true;
+                        obj.setConfiguration(fetchData);
 
                     });
                     (sender as BackgroundWorker).ReportProgress(10);
@@ -808,6 +868,9 @@ namespace POSLIB
             catch (SocketException se)
             {
                 (sender as BackgroundWorker).ReportProgress(1);
+                obj.getConfiguration(out fetchData);
+                fetchData.isAppidle = true;
+                obj.setConfiguration(fetchData);
                 MessageBox.Show("A socket error occurred: " + se.Message);
             }
         }
@@ -845,6 +908,12 @@ namespace POSLIB
             {
                 try
                 {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+
+                        ResponseReceive.Text = " ";
+                        resp = " ";
+                    });
                     if (transTypeSelectedPos != null)
                     {
                         if (transTypeSelectedPos.ToString() == TxnConstant.SALE)
@@ -1013,7 +1082,10 @@ namespace POSLIB
                     {
                         requestbody = Amount;
                         string afterreplace = requestbody.Replace("10000", Amount);
-                        trxobj.DoTransaction(afterreplace, int.Parse(transactionType), transactionDrive);
+                        trxobj.doTransaction(afterreplace, int.Parse(transactionType), transactionDrive);
+                        obj.getConfiguration(out fetchData);
+                        fetchData.isAppidle = false;
+                        obj.setConfiguration(fetchData);
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             if (resp != "")
@@ -1022,7 +1094,14 @@ namespace POSLIB
                             }
                             //Requestsend.Text = RemoveNewlines(trxobj._transactionRequestBody);
                             Btnprocess.IsEnabled = true;
+                          
+
                         });
+                        Thread.Sleep(10000);
+                        obj.getConfiguration(out fetchData);
+                        fetchData.isAppidle = true;
+                        obj.setConfiguration(fetchData);
+
 
                     }
                     else
@@ -1056,6 +1135,7 @@ namespace POSLIB
                 (sender as BackgroundWorker).ReportProgress(2);
                 MessageBox.Show("An error occurred: " + ex.Message);
             }
+           
         }
         public string RemoveNewlines(string input)
         {
@@ -1074,7 +1154,7 @@ namespace POSLIB
 
                 ScanLisnter deviceslisnter = new ScanLisnter();
 
-                obj.ScanSerialDevice(deviceslisnter);
+                obj.scanSerialDevice(deviceslisnter);
 
 
                 if (serialdevice.Count <= 0)
@@ -1248,7 +1328,7 @@ namespace POSLIB
                 ProgBarL.Content = "Connecting...";
                 ProgBarL.Visibility = Visibility.Hidden;
                 ProgBar.Visibility = Visibility.Hidden;
-                MessageBox.Show("1002", "No Device Found");
+                MessageBox.Show("1004", "No Device Found");
                 TcpIpList.Visibility = Visibility.Hidden;
                 fullScreen.IsEnabled = true;
                 btnConnect.IsEnabled = true;
@@ -8474,7 +8554,7 @@ namespace POSLIB
             var selectedItem = ((Button)sender).DataContext;
             ComboBoxItem selectedComboBoxItem = comboBox.SelectedItem as ComboBoxItem;
             ConfigData data = new ConfigData();
-            data = obj.GetConfigData();
+             obj.getConfiguration(out data);
             if (selectedItem is DeviceList items)
             {
                 if (items.connectionMode == "TCP/IP")
@@ -8486,6 +8566,7 @@ namespace POSLIB
                     tcpdeviceID = items.deviceId;
                     data.tcpIpDeviceId = items.deviceId;
                     data.comDeviceId = data.comDeviceId;
+                    obj.setConfiguration(data);
                 }
                 else
                 {
@@ -8495,8 +8576,10 @@ namespace POSLIB
                     comdeviceID = items.deviceId;
                     data.tcpIpDeviceId = data.tcpIpDeviceId;
                     data.comDeviceId = items.deviceId;
+                    obj.setConfiguration(data);
+
                 }
-                obj.setConfiguration(data);
+               
             }
         }
 
@@ -8518,7 +8601,7 @@ namespace POSLIB
                         intvalue += c;
                     }
                 }
-                isOnlineDevice = obj.CheckComStatus(int.Parse(intvalue), comListener);
+                isOnlineDevice = obj.testSerialCom(int.Parse(intvalue));
                 if (isOnlineDevice == true)
                 {
                     btnDisConnect.IsEnabled = true;
@@ -8648,46 +8731,60 @@ namespace POSLIB
 
                 }
                 string[] connectionPriorityMode = new string[] { firstPriority, secondPriority };
-                fetchData = obj.GetConfigData();
-                fetchData.isAppidle = true;
-                fetchData.commPortNumber = fetchData.commPortNumber;
+                ConfigData fetchData = new ConfigData();
+                int configData =  obj.getConfiguration(out fetchData);
+                if (configData == 0)
+                {
+                    fetchData.isAppidle = true;
+                    fetchData.commPortNumber = fetchData.commPortNumber;
 
-                fetchData.communicationPriorityList = connectionPriorityMode;
-                for (int i = 0; i < fetchData.communicationPriorityList.Length; i++)
-                {
-                    fetchData.connectionMode = fetchData.communicationPriorityList[i];
-                    break;
+                    fetchData.communicationPriorityList = connectionPriorityMode;
+                    for (int i = 0; i < fetchData.communicationPriorityList.Length; i++)
+                    {
+                        fetchData.connectionMode = fetchData.communicationPriorityList[i];
+                        break;
+                    }
+                    fetchData.comfullName = comfullname.Text;
+                    fetchData.comserialNumber = comserialNo.Text;
+                    
+                    fetchData.comDeviceId = fetchData.comDeviceId;
+                    if (fetchData.comDeviceId == "")
+                    {
+                        fetchData.comDeviceId = comdeviceID;
+                    }
+                    fetchData.tcpIpaddress = tcpip.Text;
+                    fetchData.tcpIpPort = tcpport.Text;
+                    fetchData.tcpIpSerialNumber = serialNo.Text;
+                    
+                    fetchData.tcpIpDeviceId = fetchData.tcpIpDeviceId;
+                    if(fetchData.tcpIpDeviceId=="")
+                    {
+                        fetchData.tcpIpDeviceId = tcpdeviceID;
+                    }
+                    fetchData.tcpIp = fetchData.tcpIp;
+                    fetchData.tcpPort = fetchData.tcpPort;
+                    fetchData.retainDay = NoDay.Text;
+                    fetchData.communicationPriorityList = fetchData.communicationPriorityList;
+                    fetchData.isConnectivityFallBackAllowed = isFallbackAllowed;
+                    fetchData.retry = retrivalCount.Text;
+                    fetchData.retainDay = noOfRetainValue;
+                    string Timeout = ConnectionTimeOut.Text;
+                    if (int.Parse(Timeout) >= 29)
+                    {
+                        ConnectionTimeOut.Text = Timeout;
+                        fetchData.connectionTimeOut = Timeout;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Please Select time out more than or equal to 30 sec", "3000");
+                        ConnectionTimeOut.Text = "30";
+                        ConnectionTimeOut.Focus();
+                        return;
+                    }
+                    fetchData.LogPath = filepath;
+                    fetchData.loglevel = loglevel;
+                    fetchData.logtype = LogLevel.Text;
                 }
-                fetchData.comfullName = comfullname.Text;
-                fetchData.comserialNumber = comserialNo.Text;
-                fetchData.comDeviceId = fetchData.comDeviceId;
-                fetchData.tcpIpaddress = tcpip.Text;
-                fetchData.tcpIpPort = tcpport.Text;
-                fetchData.tcpIpSerialNumber = serialNo.Text;
-                fetchData.tcpIpDeviceId = fetchData.tcpIpDeviceId;
-                fetchData.tcpIp = fetchData.tcpIp;
-                fetchData.tcpPort = fetchData.tcpPort;
-                fetchData.retainDay = NoDay.Text;
-                fetchData.communicationPriorityList = fetchData.communicationPriorityList;
-                fetchData.isConnectivityFallBackAllowed = isFallbackAllowed;
-                fetchData.retry = retrivalCount.Text;
-                fetchData.retainDay = noOfRetainValue;
-                string Timeout= ConnectionTimeOut.Text;
-                ConnectionTimeOut.Text = "30";
-                if (int.Parse(Timeout) >=29)
-                {
-                    fetchData.connectionTimeOut = Timeout;
-                }
-                else
-                {
-                    MessageBox.Show("Please Select time out more than or equal to 30 sec", "2001");
-                    ConnectionTimeOut.Focus();
-                    return;
-                }
-                fetchData.LogPath = filepath;
-                fetchData.loglevel = loglevel;
-                fetchData.logtype = LogLevel.Text;
-
                 if (noOfRetainValue != "")
                 {
                     noOfDayValue = int.Parse(noOfRetainValue);
@@ -8708,7 +8805,7 @@ namespace POSLIB
                         }
                     }
                 }
-                MessageBox.Show("Settings saved successfully.", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Settings saved successfully.", "Confirmation", MessageBoxButton.OK);
                 clearTcpIPGrid();
                 saveUsersettings();
                 obj.setConfiguration(fetchData);
@@ -8801,6 +8898,7 @@ namespace POSLIB
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
         {
+
             if (string.IsNullOrEmpty(comfullname.Text))
             {
                 MessageBox.Show("COM is In Empty.", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -8816,7 +8914,14 @@ namespace POSLIB
                     intvalue += c;
                 }
             }
-            isOnlineDevice = obj.CheckComStatus(int.Parse(intvalue), comListener);
+            if (intvalue.Length > 3)
+            {
+                int number = int.Parse(intvalue);
+
+                int lastDigit = number % 10;
+                intvalue = lastDigit.ToString();
+            }
+            isOnlineDevice = obj.testSerialCom(int.Parse(intvalue));
             if (isOnlineDevice == true)
             {
 
@@ -8825,12 +8930,14 @@ namespace POSLIB
                 enter.IsEnabled = true;
                 AMOUNTT.IsEnabled = true;
                 ConnectL.Content = "Connected";
-                Log.Information(comListener.successmessage);
-                MessageBox.Show(comListener.successmessage,"2000");
+                Log.Information("Connected COM Port: " + "COM" + intvalue);
+                Log.Information("COM connected Successfully","2000");
+                MessageBox.Show("COM connected Successfully","2000");
             }
             else
             {
-                MessageBox.Show(comListener.errormessage,"2001");
+                MessageBox.Show("COM connected failed", "2001");
+                Log.Information("COM connection failed","2001");
                 Btnprocess.IsEnabled = true;
             }
         }
@@ -8851,7 +8958,7 @@ namespace POSLIB
                 MessageBox.Show("Port number cannot be more than 6 characters long", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            isOnlineDevice = obj.IsOnlineTest(tcpip.Text, int.Parse(tcpport.Text), comListener);
+            isOnlineDevice = obj.testTCP(tcpip.Text, int.Parse(tcpport.Text));
             if (isOnlineDevice)
             {
                 enter.IsEnabled = true;
@@ -8868,7 +8975,7 @@ namespace POSLIB
             }
             else
             {
-                MessageBox.Show(comListener.errormessage,"1001");
+                MessageBox.Show("tcp/ip connection fail","1001");
                 Log.Information("tcp/ip connection fail", "1001");
                 Log.Information("is tcp/ip connected:" + "False");
             }

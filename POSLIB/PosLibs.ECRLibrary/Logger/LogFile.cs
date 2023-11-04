@@ -19,22 +19,22 @@ namespace PosLibs.ECRLibrary.Logger
         public static void SetLogOptions(int logLevel, bool isLogsEnabled, string logPath, int daysToRetainLogs)
         {
             Log.Debug("Enter SetLogOptions method");
-            if (!isLogsEnabled)
+
+            if (isLogsEnabled)
             {
-                if (Directory.Exists(logPath))
+                if (!Directory.Exists(logPath))
                 {
                     try
                     {
                         Directory.CreateDirectory(logPath);
+                        Log.Information("Log path created: " + logPath);
                     }
                     catch (Exception e)
                     {
-                        Log.Error(PosLibConstant.FILE_NOT_FOUND);
-                        Log.Error($"Error creating log directory: {e.Message}");
+                        HandleLogError(e);
                         return;
                     }
                 }
-
             }
             else
             {
@@ -43,57 +43,47 @@ namespace PosLibs.ECRLibrary.Logger
                     try
                     {
                         Directory.CreateDirectory(logPath);
-                        Log.Information("log path created:-" + logPath);
                     }
                     catch (Exception e)
                     {
-                        Log.Error(PosLibConstant.FILE_NOT_FOUND);
-                        Log.Error($"Error creating log directory: {e.Message}");
+                        HandleLogError(e);
                         return;
                     }
                 }
             }
-           
 
             string currentDate = DateTime.Now.ToString("yyyy/MM/dd");
             string fileName = $"poslib_{currentDate}.log";
             string filePath = Path.Combine(logPath, fileName);
-            Log.Information($"filepath: {filePath}");
+            Log.Information($"File path: {filePath}");
+
             LogEventLevel logEventLevel = GetLogLevel(logLevel);
-            Log.Information("Log Level:" + logEventLevel.ToString());
+            Log.Information("Log Level: " + logEventLevel.ToString());
 
             Log.CloseAndFlush();
 
+            var loggerConfiguration = new LoggerConfiguration()
+                .WriteTo.File(filePath, outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}]  [{Level:u3}] [{SourceContext}]  {Message} {NewLine} {Exception}");
+
             if (logLevel == 1)
             {
-                Log.Logger = new LoggerConfiguration()
-                .WriteTo.File(filePath, outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}]  [{Level:u3}] [{SourceContext}]  {Message} {NewLine} {Exception}")
-                .Filter.ByIncludingOnly(isOnlyErrorLevel)
-                .CreateLogger();
+                loggerConfiguration.Filter.ByIncludingOnly(isOnlyErrorLevel);
             }
             else if (logLevel == 3)
             {
-                Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
-                .WriteTo.File(filePath, outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}]  [{Level:u3}] [{SourceContext}]  {Message} {NewLine} {Exception}")
-                .CreateLogger();
+                loggerConfiguration.MinimumLevel.Information();
             }
             else if (logLevel == 4)
             {
-                Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Is(logEventLevel)
-                .WriteTo.File(filePath, outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}]  [{Level:u3}] [{SourceContext}]  {Message} {NewLine} {Exception}")
-                .CreateLogger();
+                loggerConfiguration.MinimumLevel.Is(logEventLevel);
             }
-
             else
             {
-                var ls = new LoggingLevelSwitch();
-                ls.MinimumLevel = ((LogEventLevel)1 + (int)LogEventLevel.Fatal);
-                Log.Logger = new LoggerConfiguration()
-                    .MinimumLevel.ControlledBy(ls)
-                    .CreateLogger();
+                var ls = new LoggingLevelSwitch { MinimumLevel = LogEventLevel.Fatal };
+                loggerConfiguration.MinimumLevel.ControlledBy(ls);
             }
+
+            Log.Logger = loggerConfiguration.CreateLogger();
 
             try
             {
@@ -114,6 +104,13 @@ namespace PosLibs.ECRLibrary.Logger
                 Log.Error("Error | Failed to manage log files: " + e.Message);
             }
         }
+
+        private static void HandleLogError(Exception e)
+        {
+            Log.Error(PosLibConstant.FILE_NOT_FOUND);
+            Log.Error($"Error creating log directory: {e.Message}");
+        }
+
 
         private static bool isOnlyErrorLevel(LogEvent @event)
         {

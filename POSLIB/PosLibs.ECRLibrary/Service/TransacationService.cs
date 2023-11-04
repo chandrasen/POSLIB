@@ -16,7 +16,7 @@ namespace PosLibs.ECRLibrary.Service
     {
 
         private  ITransactionListener? _transactionListener;
-        private ConfigData _configData;
+        private ConfigData _configData = new ConfigData();
         private readonly ConnectionService _connectionService;
         private string _transactionRequest;
         private  string _transactionRequestBody;
@@ -30,32 +30,32 @@ namespace PosLibs.ECRLibrary.Service
            
         }
 
-        public void DoTransaction(string inputReqBody, int transactionType, ITransactionListener transactionListener)
+        public void doTransaction(string inputReqBody, int transactionType, ITransactionListener transactionListener)
         {
             try
             {
                 Log.Debug("Inside DoTransaction Method");
                 Log.Information("Entering doTrnsaction method");
                 _transactionListener = transactionListener;
-                _configData = _connectionService.GetConfigData() ?? new ConfigData();
+                _connectionService.getConfiguration(out _configData);
                 _configData.isAppidle = false;
                 _connectionService.setConfiguration(_configData);
                 PrepareTransaction(inputReqBody, transactionType);
+                string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
 
                 if (_configData?.isConnectivityFallBackAllowed == true)
                 {
                     Log.Information("Auto fallback transaction process :" + _configData.isConnectivityFallBackAllowed);
                     _configData.isAppidle = false;
                     _connectionService.setConfiguration(_configData);
+                    Log.Information("Autofallback plain txn request:" + _transactionRequest);
+                    Log.Information("encrypted  request:" + encryptedRequest);
                     ExecuteWithFallbackConnection();
                 }
                 else
                 {
-                    if (_configData != null)
-                    {
-                        _configData.isAppidle = false;
-                        _connectionService.setConfiguration(_configData);
-                    }
+                    Log.Information("plain txn request:" + _transactionRequest);
+                    Log.Information("encrypted  request:" + encryptedRequest);
                     ExecuteSingleConnectionMode();
                 }
             }
@@ -78,7 +78,6 @@ namespace PosLibs.ECRLibrary.Service
             _transactionRequestBody = TransactionRequestBody(inputReqBody, transactionType);
             _transactionRequest = TransactionRequest(_transactionRequestBody);
         }
-
         private void ExecuteWithFallbackConnection()
         {
             bool transactionSuccessful=false;
@@ -101,6 +100,8 @@ namespace PosLibs.ECRLibrary.Service
             {
                 Log.Information("Transaction failed");
                 _transactionListener.OnFailure(PosLibConstant.AUTOFALLBACK_TXN_FAIELD_MSG,PosLibConstant.AUTOFALLBACK_TXN_FAIELD);
+                _configData.isAppidle = true;
+                _connectionService.setConfiguration(_configData);
             }
         }
         private void ExecuteSingleConnectionMode()
@@ -132,7 +133,6 @@ namespace PosLibs.ECRLibrary.Service
             }
             return false;
         }
-
         private bool ExecuteTcpIpTransactionWithFallback()
         {
             try
@@ -141,8 +141,6 @@ namespace PosLibs.ECRLibrary.Service
                 {
                     string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
                     _connectionService.SendTcpIpTxnData(encryptedRequest);
-                    Log.Information("Autofallback json tcp/ip txn request:" + _transactionRequest);
-                    Log.Information("send encrypted tcp/ip txn request:" + encryptedRequest);
                     string responseString = _connectionService.ReceiveTcpIpTxnData();
                     HandleTransactionResponse(responseString);
                     return true;
@@ -164,8 +162,6 @@ namespace PosLibs.ECRLibrary.Service
                 {
                     string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
                     _connectionService.SendTcpIpTxnData(encryptedRequest);
-                    Log.Information("tcp/ip json txn request:" + _transactionRequest);
-                    Log.Information("send encrypted tcp/ip txn request:" + encryptedRequest);
                     string responseString = _connectionService.ReceiveTcpIpTxnData();
                     HandleTransactionResponse(responseString);
                     _configData.isAppidle = true;
@@ -194,10 +190,8 @@ namespace PosLibs.ECRLibrary.Service
         {
              if (_connectionService.ComTransactionProcess(_configData.commPortNumber))
                 {
-                    Log.Information("AutoFallback json COM transaction request : " + _transactionRequest);
                     string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
                     _connectionService.SendCOMTxnReq(encryptedRequest);
-                    Log.Information("send encrypted com txn request:" + encryptedRequest);
                     string responseString = _connectionService.ReceiveCOMTxnrep();
                     HandleTransactionResponse(responseString);
                     return true;
@@ -209,10 +203,8 @@ namespace PosLibs.ECRLibrary.Service
         {
                 if (_connectionService.ComTransactionProcess(_configData.commPortNumber))
                 {
-                     Log.Information("COM transaction json request : " + _transactionRequest);
                      string encryptedRequest = XorEncryption.EncryptDecrypt(_transactionRequest);
                     _connectionService.SendCOMTxnReq(encryptedRequest);
-                    Log.Information("send encrypted com txn request:" + encryptedRequest);
                     string responseString = _connectionService.ReceiveCOMTxnrep();
                     HandleTransactionResponse(responseString);
                     _configData.isAppidle = true;
@@ -229,8 +221,9 @@ namespace PosLibs.ECRLibrary.Service
         }
         private void HandleTransactionResponse(string responseString)
         {
+            Log.Information("Received Encrypted Transaction response: " + responseString);
             string decryptedResponse = CommaUtil.ConvertHexdecimalToTransactionResponse(responseString);
-            Log.Information("Received transaction response: " + decryptedResponse);
+            Log.Information("Decrypted transaction response: " + decryptedResponse);
             _transactionListener?.OnSuccess(decryptedResponse);
         }
         private void HandleTransactionFailure(string errorMessage, string errorCode)
