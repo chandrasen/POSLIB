@@ -39,6 +39,8 @@ using System.Windows.Media;
 using Serilog;
 using System.Diagnostics;
 using System.Net.WebSockets;
+using System.Timers;
+using Timer = System.Threading.Timer;
 
 namespace POSLIB
 {
@@ -147,20 +149,32 @@ namespace POSLIB
         {
             
             InitializeComponent();
+            InitiateTimer();
             DataContext = this;
             GetCOMPort();
             TerminalConnectionCheckerW();
             loadUserSettings();
             createLogFile();
-            deleteFileifNeeded();
             showData();
             Log.Information("-:Application Start:-");
         }
-      
-        private void deleteFileifNeeded()
+
+        private void InitiateTimer()
+        {
+            System.Timers.Timer newTimer = new System.Timers.Timer();
+            newTimer.Elapsed += new ElapsedEventHandler(deleteFileifNeeded);
+            newTimer.Interval = 5000;
+            newTimer.Start();
+        }
+
+        private void deleteFileifNeeded(object source, ElapsedEventArgs e)
         {
 
-            filepath = Filepath.Text;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                filepath = Filepath.Text;
+            });
+
             string expirationDate = Properties.Settings.Default.retentionDate;
 
             if (string.IsNullOrEmpty(expirationDate))
@@ -171,7 +185,10 @@ namespace POSLIB
 
             if (LogFile.deleteFileifNeeded(filepath, expirationDate))
             {
-                Properties.Settings.Default.retentionDate = DateTime.Now.AddDays(double.Parse(NoDay.Text)).ToString();
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Properties.Settings.Default.retentionDate = DateTime.Now.AddDays(double.Parse(NoDay.Text)).ToString();
+                });
             }
             Properties.Settings.Default.Save();
         }
@@ -851,7 +868,11 @@ namespace POSLIB
                         {
                             DeviceList value = new DeviceList();
                             value = serialdevicelist[i];
-                            comdata.Add(value);
+
+                            if (comdata.Any(c => c.deviceIp == value.deviceIp) == false)
+                            {
+                                comdata.Add(value);
+                            }
                         }
                         serialdevice.Clear();
                         serialdevicelist.Clear();

@@ -953,7 +953,7 @@ namespace PosLibs.ECRLibrary.Service
                 Log.Error("Socket Exception");
                 sock.Close();
                 Thread.Sleep(10000);
-                return "abc";
+                return "";
             }
         }
         public int doTCPIPDisconnection()
