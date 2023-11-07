@@ -179,8 +179,11 @@ namespace POSLIB
 
             if (string.IsNullOrEmpty(expirationDate))
             {
-                expirationDate = DateTime.Now.AddDays(double.Parse(NoDay.Text)).ToString();
-                Properties.Settings.Default.retentionDate = expirationDate;
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    expirationDate = DateTime.Now.AddDays(double.Parse(NoDay.Text)).ToString();
+                    Properties.Settings.Default.retentionDate = expirationDate;
+                });
             }
 
             if (LogFile.deleteFileifNeeded(filepath, expirationDate))
@@ -1092,6 +1095,9 @@ namespace POSLIB
                     MessageBox.Show("Please select Txn type");
                 }
                 TransactionDrive transactionDrive = new TransactionDrive();
+                obj.getConfiguration(out fetchData);
+                fetchData.isAppidle = false;
+                obj.setConfiguration(fetchData);
                 if (transactionType != "")
                 {
                     Application.Current.Dispatcher.Invoke(() =>
@@ -1104,9 +1110,6 @@ namespace POSLIB
                         requestbody = Amount;
                         string afterreplace = requestbody.Replace("10000", Amount);
                         trxobj.doTransaction(afterreplace, int.Parse(transactionType), transactionDrive);
-                        obj.getConfiguration(out fetchData);
-                        fetchData.isAppidle = false;
-                        obj.setConfiguration(fetchData);
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             if (resp != "")
@@ -1118,7 +1121,7 @@ namespace POSLIB
                           
 
                         });
-                        Thread.Sleep(10000);
+                        Thread.Sleep(20000);
                         obj.getConfiguration(out fetchData);
                         fetchData.isAppidle = true;
                         obj.setConfiguration(fetchData);

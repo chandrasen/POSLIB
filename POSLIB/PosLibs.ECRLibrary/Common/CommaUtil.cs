@@ -35,7 +35,7 @@ namespace PosLibs.ECRLibrary.Common
             }
             catch
             {
-                return "\"No Response: 2205\"";
+                return "\"received failed: 2204\"";
             }
         }
         //Convert string to Csv format

@@ -540,7 +540,7 @@ namespace PosLibs.ECRLibrary.Service
             {
                 
                 byte[] responseData = new byte[6000];
-                serial.ReadTimeout = PosLibConstant.REVTIMEOUT;
+                serial.ReadTimeout = int.Parse(configdata.connectionTimeOut)*1000;
                 int bytesReceived = serial.Read(responseData, 0, responseData.Length);
                 if (bytesReceived > 0)
                 {
@@ -550,7 +550,7 @@ namespace PosLibs.ECRLibrary.Service
                 else
                 {
                     serial.Close();
-                    return responseString = "No Response: 2205";
+                    return responseString = "received failed: 2204";
                    
                 }
             }
