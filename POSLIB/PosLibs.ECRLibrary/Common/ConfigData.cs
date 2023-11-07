@@ -17,14 +17,17 @@ namespace PosLibs.ECRLibrary.Common
             comfullName = string.Empty;
             comserialNumber = string.Empty;
             tcpIpaddress = string.Empty;
-            retrivalcount = string.Empty;
+            retry = string.Empty;
             connectionTimeOut = string.Empty;
+            retainDay=string.Empty;
             tcpIpPort = string.Empty;
+            logtype = string.Empty;
             tcpIpDeviceId = string.Empty;
             tcpIpSerialNumber = string.Empty;
             comDeviceId = string.Empty;
             LogPath = string.Empty;
             loglevel = string.Empty;
+            deviceHealthCheckSerialNumber = string.Empty;
         }
         public int commPortNumber { get; set; }
         public string tcpIp { get; set; }
@@ -34,7 +37,7 @@ namespace PosLibs.ECRLibrary.Common
         public bool isConnectivityFallBackAllowed { get; set; }
         public string CashierID { get; set; }
         public string CashierName { get; set; }
-        public string retrivalcount { get; set; }
+        public string retry { get; set; }
         public string connectionTimeOut { get; set; }
         public string comfullName { get; set; }
         public string comserialNumber { get; set; }
@@ -43,10 +46,13 @@ namespace PosLibs.ECRLibrary.Common
         public string tcpIpDeviceId { get; set; }
         public string tcpIpSerialNumber { get; set; }
         public string comDeviceId { get; set; }
-        public int isComHeartActive { get; set; }
         public string LogPath { get; set; }
         public string loglevel { get; set; }
         public bool isAppidle { get; set; }
+        public string retainDay { get; set; }
+        public string logtype { get; set; }
+        public string deviceHealthCheckSerialNumber { get; set; }
+        public bool isDeviceNumberMatch { get; set; }
 
     }
 }

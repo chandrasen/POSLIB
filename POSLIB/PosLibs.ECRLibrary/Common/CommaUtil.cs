@@ -35,19 +35,29 @@ namespace PosLibs.ECRLibrary.Common
             }
             catch
             {
-                return "Transaction Failed";
+                return "\"received failed: 2204\"";
             }
         }
         //Convert string to Csv format
         public static string stringToCsv(int txntype,string amount)
         {
             Log.Debug("Inside StringToCsv method");
-            
-            string value = "TX12345678";
-            string fullrequbody = txntype.ToString() + "," +
-                value + "," + amount + "," + "," + "," + "," + "," + "," + ",";
-            string HaxDecimalreqbody=  GetPaymentPacket(fullrequbody);
-            return HaxDecimalreqbody;
+            if (txntype == int.Parse("6001"))
+            {
+                string fullrequbody = txntype.ToString() + "," +
+                     "," + "," + "," + "," + "," + "," + "," + ",";
+                string HaxDecimalreqbody = GetPaymentPacket(fullrequbody);
+                return HaxDecimalreqbody;
+
+            }
+            else {
+
+                string value = "TX12345678";
+                string fullrequbody = txntype.ToString() + "," +
+                    value + "," + amount + "," + "," + "," + "," + "," + "," + ",";
+                string HaxDecimalreqbody = GetPaymentPacket(fullrequbody);
+                return HaxDecimalreqbody;
+            }
         }
 
         //getPaymentPacket method
@@ -81,7 +91,6 @@ namespace PosLibs.ECRLibrary.Common
                 msgBytesExtra[iOffset] = 0xFF;
                 string hexString = BytesToHex(msgBytesExtra);
                 Console.WriteLine(hexString);
-                Log.Information("Txn Request Body HexDecimal String" + hexString);
                 return hexString;
             }
             else
@@ -134,6 +143,7 @@ namespace PosLibs.ECRLibrary.Common
         {
             try
             {
+                Log.Information("Received Response body:" + inputJson);
                 dynamic parsedJson = JsonConvert.DeserializeObject(inputJson);
                 string responseBody = parsedJson.responseBody ?? string.Empty;
                 string hexValue = Regex.Replace(responseBody, "[^0-9a-fA-F]", "");
@@ -142,7 +152,7 @@ namespace PosLibs.ECRLibrary.Common
             }
             catch
             {
-                return "Transaction Failed";
+                return "\"received failed: 2204\""; 
             }
         }
         /// <summary>

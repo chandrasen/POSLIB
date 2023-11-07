@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace PosLibs.ECRLibrary.Common.Interface
 {
-    public interface IConnectionListener
+    public interface ComEventListener
     {
-        void OnFailure(string message,string errorcode);
-        void OnSuccess(string message,string errorcode);
+        void OnFailure(string errorcode);
+        void OnSuccess(string errorcode);
     }
 }
