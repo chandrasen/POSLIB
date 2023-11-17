@@ -5,12 +5,65 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <StartupObject>POSLIB.EntryPoint</StartupObject>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="obj\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <None Remove="obj\**" />
+    <Page Remove="obj\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Remove="img\chatak.png" />
     <None Remove="img\logo.png" />
     <None Remove="img\noun-connect-3557866.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="bin\Debug\net6.0-windows\POSLIB.deps.json" />
+    <Content Include="bin\Debug\net6.0-windows\POSLIB.runtimeconfig.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="bin\Debug\net6.0-windows.zip" />
+    <None Include="bin\Debug\net6.0-windows\Microsoft.Extensions.Configuration.Abstractions.dll" />
+    <None Include="bin\Debug\net6.0-windows\Microsoft.Extensions.Configuration.dll" />
+    <None Include="bin\Debug\net6.0-windows\Microsoft.Extensions.Primitives.dll" />
+    <None Include="bin\Debug\net6.0-windows\Microsoft.Win32.SystemEvents.dll" />
+    <None Include="bin\Debug\net6.0-windows\Microsoft.WindowsAPICodePack.dll" />
+    <None Include="bin\Debug\net6.0-windows\Microsoft.WindowsAPICodePack.Shell.dll" />
+    <None Include="bin\Debug\net6.0-windows\Newtonsoft.Json.dll" />
+    <None Include="bin\Debug\net6.0-windows\POSLIB.dll" />
+    <None Include="bin\Debug\net6.0-windows\POSLIB.dll.config" />
+    <None Include="bin\Debug\net6.0-windows\POSLIB.exe" />
+    <None Include="bin\Debug\net6.0-windows\poslib.log" />
+    <None Include="bin\Debug\net6.0-windows\POSLIB.pdb" />
+    <None Include="bin\Debug\net6.0-windows\PosLibs.ECRLibrary.dll" />
+    <None Include="bin\Debug\net6.0-windows\PosLibs.ECRLibrary.pdb" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\linux-arm64\native\libSystem.IO.Ports.Native.so" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\linux-arm\native\libSystem.IO.Ports.Native.so" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\linux-x64\native\libSystem.IO.Ports.Native.so" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\osx-arm64\native\libSystem.IO.Ports.Native.dylib" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\osx-x64\native\libSystem.IO.Ports.Native.dylib" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\unix\lib\net6.0\System.IO.Ports.dll" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\win\lib\net6.0\Microsoft.Win32.SystemEvents.dll" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\win\lib\net6.0\System.Drawing.Common.dll" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\win\lib\net6.0\System.IO.Ports.dll" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\win\lib\net6.0\System.Management.dll" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll" />
+    <None Include="bin\Debug\net6.0-windows\runtimes\win\lib\net6.0\System.Windows.Extensions.dll" />
+    <None Include="bin\Debug\net6.0-windows\Serilog.dll" />
+    <None Include="bin\Debug\net6.0-windows\Serilog.Sinks.File.dll" />
+    <None Include="bin\Debug\net6.0-windows\System.CodeDom.dll" />
+    <None Include="bin\Debug\net6.0-windows\System.Configuration.ConfigurationManager.dll" />
+    <None Include="bin\Debug\net6.0-windows\System.Drawing.Common.dll" />
+    <None Include="bin\Debug\net6.0-windows\System.IO.Ports.dll" />
+    <None Include="bin\Debug\net6.0-windows\System.Management.dll" />
+    <None Include="bin\Debug\net6.0-windows\System.Security.Cryptography.ProtectedData.dll" />
+    <None Include="bin\Debug\net6.0-windows\System.Security.Permissions.dll" />
+    <None Include="bin\Debug\net6.0-windows\System.Windows.Extensions.dll" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,12 +77,6 @@
     <PackageReference Include="System.IO.Ports" Version="6.0.0" />
     <PackageReference Include="System.Management" Version="7.0.1" />
     <PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="PosLibs.ECRLibrary">
-      <HintPath>..\PosLibs.ECRLibrary\bin\Debug\net6.0\PosLibs.ECRLibrary.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <ItemGroup>
@@ -57,6 +104,32 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="bin\Debug\net6.0-windows\cs-CZ\" />
+    <Folder Include="bin\Debug\net6.0-windows\cs\" />
+    <Folder Include="bin\Debug\net6.0-windows\de\" />
+    <Folder Include="bin\Debug\net6.0-windows\es\" />
+    <Folder Include="bin\Debug\net6.0-windows\fr\" />
+    <Folder Include="bin\Debug\net6.0-windows\hu\" />
+    <Folder Include="bin\Debug\net6.0-windows\it\" />
+    <Folder Include="bin\Debug\net6.0-windows\ja-JP\" />
+    <Folder Include="bin\Debug\net6.0-windows\ja\" />
+    <Folder Include="bin\Debug\net6.0-windows\ko\" />
+    <Folder Include="bin\Debug\net6.0-windows\pl\" />
+    <Folder Include="bin\Debug\net6.0-windows\pt-BR\" />
+    <Folder Include="bin\Debug\net6.0-windows\ro\" />
+    <Folder Include="bin\Debug\net6.0-windows\ru\" />
+    <Folder Include="bin\Debug\net6.0-windows\sv\" />
+    <Folder Include="bin\Debug\net6.0-windows\tr\" />
+    <Folder Include="bin\Debug\net6.0-windows\zh-Hans\" />
+    <Folder Include="bin\Debug\net6.0-windows\zh-Hant\" />
+    <Folder Include="bin\Release\net6.0-windows\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PosLibs.ECRLibrary\PosLibs.ECRLibrary.csproj" />
   </ItemGroup>
 
 </Project>

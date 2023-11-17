@@ -13,10 +13,13 @@ namespace PosLibs.ECRLibrary.Model
             cashierId = string.Empty;
             msgType = string.Empty;
             pType = string.Empty;
+            slNo = string.Empty;
         }
         public string cashierId { get; set; }
         public string msgType { get; set; }
         public string pType { get; set; }
+
+        public string slNo { get; set; }
 
         public bool isPayAppActive { get; set; }
     }

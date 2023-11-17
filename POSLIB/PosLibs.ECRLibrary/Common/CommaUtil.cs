@@ -35,7 +35,7 @@ namespace PosLibs.ECRLibrary.Common
             }
             catch
             {
-                return "\"No Response: 2205\"";
+                return "\"received failed: 2204\"";
             }
         }
         //Convert string to Csv format
@@ -143,6 +143,7 @@ namespace PosLibs.ECRLibrary.Common
         {
             try
             {
+                Log.Information("Received Response body:" + inputJson);
                 dynamic parsedJson = JsonConvert.DeserializeObject(inputJson);
                 string responseBody = parsedJson.responseBody ?? string.Empty;
                 string hexValue = Regex.Replace(responseBody, "[^0-9a-fA-F]", "");
@@ -151,7 +152,7 @@ namespace PosLibs.ECRLibrary.Common
             }
             catch
             {
-                return "\"No Response: 2205\""; 
+                return "\"received failed: 2204\""; 
             }
         }
         /// <summary>

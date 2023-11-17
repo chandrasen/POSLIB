@@ -13,11 +13,12 @@ namespace PosLibs.ECRLibrary.Common
     public class CheckPaymentHealthCheckRequest
     {
        readonly ConnectionService _connectionService = new ConnectionService();
+        
 
         public string CheckTcpIpHealthRequest()
         {
-            
-            ConfigData? config = _connectionService.GetConfigData();
+            ConfigData config;
+            _connectionService.getConfiguration(out config);
             if (config == null)
             {
                 return " ";
@@ -35,7 +36,8 @@ namespace PosLibs.ECRLibrary.Common
         }
         public string CheckCompHealthRequest()
         {
-            ConfigData? config = _connectionService.GetConfigData();
+            ConfigData config;
+            _connectionService.getConfiguration(out config);
             if (config == null)
             {
                 return " ";

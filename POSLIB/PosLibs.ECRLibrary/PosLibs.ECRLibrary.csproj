@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <SonarQubeExclude>True</SonarQubeExclude>
   </PropertyGroup>
 
 	

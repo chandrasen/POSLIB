@@ -52,7 +52,7 @@ namespace POSLIB
         int status = 0;
         string cashRegister = string.Empty;
         string transaction = string.Empty;
-
+        string previousDatetime = string.Empty;
         string prvsRCRNumber;
         static string textFocus = string.Empty;
         static string hostIp = string.Empty;
@@ -85,6 +85,10 @@ namespace POSLIB
         string savetcpserialno = string.Empty;
         string savecomserialno = string.Empty;
         string savecomport = string.Empty;
+        string filetoDelete = string.Empty;
+        string expirationDate = string.Empty;
+        string currentDay = string.Empty;
+        string expiryValue = string.Empty;
         static string transTypeSelected;
         static string transTypeSelectedPos;
         static string AMOUNT;
@@ -116,9 +120,8 @@ namespace POSLIB
         public string tcpdeviceID = string.Empty;
         public string comdeviceID = string.Empty;
 
-
-
         static string deviceName = string.Empty;
+        int doTransFlag = 0;
 
         BackgroundWorker worker;
         BackgroundWorker workerSend;
@@ -142,49 +145,97 @@ namespace POSLIB
         public MainWindow()
         {
             InitializeComponent();
-            InitiateTimer();
             DataContext = this;
             GetCOMPort();
             TerminalConnectionCheckerW();
             loadUserSettings();
+            InitializeRetentionData();
+            InitiateTimer();
             createLogFile();
             showData();
             Log.Information("-:Application Start:-");
+        }
+
+        private void InitializeRetentionData()
+        {
+            Properties.Settings.Default.filetoDelete = Properties.Settings.Default.filetoDelete = "poslib_" + DateTime.Now.Date.ToString("yyyy-MM-dd") + ".log";
+            Properties.Settings.Default.retentionDate = DateTime.Now.AddDays(double.Parse(NoDay.Text) - 1).ToString();
+            Properties.Settings.Default.Save();
         }
 
         private void InitiateTimer()
         {
             System.Timers.Timer newTimer = new System.Timers.Timer();
             newTimer.Elapsed += new ElapsedEventHandler(deleteFileifNeeded);
-            newTimer.Interval = 5000;
+            newTimer.Interval = 6000;
             newTimer.Start();
         }
-        
+
         private void deleteFileifNeeded(object source, ElapsedEventArgs e)
         {
 
             Application.Current.Dispatcher.Invoke(() =>
             {
                 filepath = Filepath.Text;
-            });
+                filetoDelete = Properties.Settings.Default.filetoDelete;
+                expirationDate = Properties.Settings.Default.retentionDate;
 
-            string expirationDate = Properties.Settings.Default.retentionDate;
-
-            if (string.IsNullOrEmpty(expirationDate))
-            {
-                expirationDate = DateTime.Now.AddDays(double.Parse(NoDay.Text) - 1).ToString();
-                Properties.Settings.Default.retentionDate = expirationDate;
-            }
-
-            if (LogFile.deleteFileifNeeded(filepath, expirationDate))
-            {
-                Application.Current.Dispatcher.Invoke(() =>
+                if (string.IsNullOrEmpty(filetoDelete))
                 {
-                    Properties.Settings.Default.retentionDate = DateTime.Now.AddDays(double.Parse(NoDay.Text) - 1).ToString();
+                    Properties.Settings.Default.filetoDelete = "poslib_" + DateTime.Now.Date.ToString("yyyy-MM-dd") + ".log";
+                }
+
+                if (string.IsNullOrEmpty(expirationDate))
+                {
+                    expirationDate = DateTime.Now.AddDays(double.Parse(NoDay.Text) - 1).ToString();
+                    Properties.Settings.Default.retentionDate = expirationDate;
+                }
+
+                if (!string.IsNullOrEmpty(filetoDelete) && LogFile.deleteFileifNeeded(filepath, filetoDelete, expirationDate))
+                {
+
+                    if (Properties.Settings.Default.RetainDays == "1")
+                    {
+                        Properties.Settings.Default.filetoDelete = "poslib_" + (DateTime.Parse(expirationDate).AddDays(1)).ToString("yyyy-MM-dd") + ".log";
+                    }
+                    else if (!string.IsNullOrEmpty(expiryValue) && (DateTime.Parse(expiryValue.ToString()) == DateTime.Parse(expirationDate.ToString())))
+                    {
+                        Properties.Settings.Default.filetoDelete = "poslib_" + DateTime.Parse(expirationDate).ToString("yyyy-MM-dd") + ".log";
+                    }
+                    else
+                    {
+                        expiryValue = expirationDate;
+                        Properties.Settings.Default.filetoDelete = "poslib_" + DateTime.Parse(expirationDate).AddDays(-1).ToString("yyyy-MM-dd") + ".log";
+                    }
+
+                    Properties.Settings.Default.retentionDate = DateTime.Parse(expirationDate).AddDays(1).ToString();
+                    Properties.Settings.Default.Save();
+
+                    if (!File.Exists(filepath + @"\" + Properties.Settings.Default.filetoDelete))
+                    {
+                        Properties.Settings.Default.filetoDelete = "poslib_" + DateTime.Parse(expirationDate).ToString("yyyy-MM-dd") + ".log";
+                    }
+
                     createLogFile();
-                });
-            }
-            Properties.Settings.Default.Save();
+                }
+
+                if (Properties.Settings.Default.RetainDays == "1")
+                {
+                    if (!File.Exists(filepath + @"\" + Properties.Settings.Default.filetoDelete))
+                    {
+                        Properties.Settings.Default.filetoDelete = "poslib_" + DateTime.Parse(expirationDate).AddDays(1).ToString("yyyy-MM-dd") + ".log";
+                    }
+                }
+
+                if ((!string.IsNullOrEmpty(previousDatetime)) && (DateTime.Parse(previousDatetime)) < DateTime.Now.Date)
+                {
+                    createLogFile();
+                }
+
+                previousDatetime = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
+                currentDay = DateTime.Now.Date.ToString();
+                Properties.Settings.Default.Save();
+            });
         }
 
         private void loadUserSettings()
@@ -262,7 +313,8 @@ namespace POSLIB
         public void createLogFile()
         {
             string loglevelval = Properties.Settings.Default.LogLevel;
-            int noOfDayValue = int.Parse(NoDay.Text);
+            int noOfDayValue = 0;
+
             switch (loglevelval.ToLower()) // Convert input to lowercase for case-insensitivity
             {
                 case "error":
@@ -279,7 +331,11 @@ namespace POSLIB
                     break;
             }
 
-            filepath = Filepath.Text;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                noOfDayValue = int.Parse(NoDay.Text);
+                filepath = Filepath.Text;
+            });
 
             if (!Directory.Exists(filepath))
             {
@@ -457,8 +513,11 @@ namespace POSLIB
 
         public void TerminalConnectionCheckerW()
         {
+            if(doTransFlag == 0)
+            {
                 connectionCheckTimer = new Timer(ConnectionCheckTimer_Tick, null, TimeSpan.FromSeconds(0),
                 TimeSpan.FromSeconds(30));
+            }
         }
         private void ConnectionCheckTimer_Tick(object state)
         {
@@ -805,6 +864,7 @@ namespace POSLIB
             ConnectionService obj = new ConnectionService();
 
             (sender as BackgroundWorker).ReportProgress(0);
+            
             try
             {
 
@@ -838,7 +898,6 @@ namespace POSLIB
                         TcpIpList.Visibility = Visibility.Hidden;
                         ComList.Visibility = Visibility.Hidden;
                     });
-
                 }
                 else
                 {
@@ -856,7 +915,11 @@ namespace POSLIB
                             DeviceList value = new DeviceList();
                             value = serialdevicelist[i];
 
-                            if (comdata.Any(c => c.deviceIp == value.deviceIp) == false)
+                            if(string.IsNullOrEmpty(value.deviceIp) && (comdata.Any(c => c.SerialNo == value.SerialNo) == false))
+                            {
+                                comdata.Add(value);
+                            }
+                            else if(comdata.Any(c => c.deviceIp == value.deviceIp) == false)
                             {
                                 comdata.Add(value);
                             }
@@ -1087,6 +1150,7 @@ namespace POSLIB
 
                     if (Amount != "")
                     {
+                        doTransFlag = 1;
                         requestbody = Amount;
                         string afterreplace = requestbody.Replace("10000", Amount);
                         trxobj.doTransaction(afterreplace, int.Parse(transactionType), transactionDrive);
@@ -1142,6 +1206,10 @@ namespace POSLIB
                 (sender as BackgroundWorker).ReportProgress(2);
                 MessageBox.Show("An error occurred: " + ex.Message);
             }
+            finally
+            {
+                doTransFlag = 0;
+            }
            
         }
         public string RemoveNewlines(string input)
@@ -1162,7 +1230,6 @@ namespace POSLIB
                 ScanLisnter deviceslisnter = new ScanLisnter();
 
                 obj.scanSerialDevice(deviceslisnter);
-
 
                 if (serialdevice.Count <= 0)
                 {
@@ -8826,10 +8893,8 @@ namespace POSLIB
 
         private void saveUsersettings()
         {
-            float result;
             try
             {
-
                 Properties.Settings.Default.ConnectionFallback = connectivityFallbackCheckBox.IsChecked.ToString();
                 Properties.Settings.Default.LogOption = isEnabledlog.IsChecked.ToString();
                 Properties.Settings.Default.Path = Filepath.Text;
@@ -8842,8 +8907,11 @@ namespace POSLIB
                     (!string.IsNullOrEmpty(Properties.Settings.Default.RetainDays) && 
                     (float.Parse(Properties.Settings.Default.RetainDays) != float.Parse(NoDay.Text.ToString()))))
                 {
-                    Properties.Settings.Default.retentionDate = DateTime.Now.AddDays(float.Parse(NoDay.Text) - 1).ToString();
+                    Properties.Settings.Default.retentionDate = DateTime.Parse(expirationDate).AddDays(
+                        (double.Parse(NoDay.Text.ToString()) - (double.Parse(Properties.Settings.Default.RetainDays.ToString())))).ToString();
                 }
+
+                //11723
 
                 Properties.Settings.Default.RetainDays = NoDay.Text;
                 Properties.Settings.Default.Save();

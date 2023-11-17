@@ -27,6 +27,7 @@ namespace PosLibs.ECRLibrary.Common
             comDeviceId = string.Empty;
             LogPath = string.Empty;
             loglevel = string.Empty;
+            deviceHealthCheckSerialNumber = string.Empty;
         }
         public int commPortNumber { get; set; }
         public string tcpIp { get; set; }
@@ -50,6 +51,8 @@ namespace PosLibs.ECRLibrary.Common
         public bool isAppidle { get; set; }
         public string retainDay { get; set; }
         public string logtype { get; set; }
+        public string deviceHealthCheckSerialNumber { get; set; }
+        public bool isDeviceNumberMatch { get; set; }
 
     }
 }

@@ -117,20 +117,17 @@ namespace PosLibs.ECRLibrary.Logger
             return @event.Level == LogEventLevel.Error;
         }
 
-        public static bool deleteFileifNeeded(string logPath, string expirationDate)
+        public static bool deleteFileifNeeded(string logPath, string filetoDelete, string expirationDate)
         {
             bool isDeleted = false;
             try
             {
 
-                string fileName = $"poslib.log";
-                string filePath = Path.Combine(logPath, fileName);
-
                 DirectoryInfo logDirectory = new DirectoryInfo(logPath);
 
-                foreach (FileInfo file in logDirectory.GetFiles("poslib*.log"))
+                if (DateTime.Now.Date > DateTime.Parse(expirationDate))
                 {
-                    if (DateTime.Now.Date > DateTime.Parse(expirationDate))
+                    foreach (FileInfo file in logDirectory.GetFiles(filetoDelete))
                     {
                         Log.CloseAndFlush();
                         file.Delete();
