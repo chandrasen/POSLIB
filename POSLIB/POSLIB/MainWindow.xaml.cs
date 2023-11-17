@@ -145,6 +145,7 @@ namespace POSLIB
         public MainWindow()
         {
             InitializeComponent();
+            InitiateTimer();
             DataContext = this;
             GetCOMPort();
             TerminalConnectionCheckerW();
@@ -1141,6 +1142,9 @@ namespace POSLIB
                     MessageBox.Show("Please select Txn type");
                 }
                 TransactionDrive transactionDrive = new TransactionDrive();
+                obj.getConfiguration(out fetchData);
+                fetchData.isAppidle = false;
+                obj.setConfiguration(fetchData);
                 if (transactionType != "")
                 {
                     Application.Current.Dispatcher.Invoke(() =>

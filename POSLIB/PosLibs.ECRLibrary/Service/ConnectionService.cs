@@ -1,5 +1,4 @@
-﻿
-using System.IO.Ports;
+﻿using System.IO.Ports;
 using System.Management;
 using System.Net;
 using System.Net.Sockets;
@@ -273,7 +272,7 @@ namespace PosLibs.ECRLibrary.Service
                     Console.WriteLine("socket error: " + ex);
                     Log.Information("Exiting CheckCOMHeartBeat() method");
                     serial.Close();
-                    serial = null;
+                    serial = null!;
                     Thread.Sleep(3000);
                     return false;
                 }
@@ -486,7 +485,7 @@ namespace PosLibs.ECRLibrary.Service
             if (serial != null)
             {
                 serial.Close();
-                serial = null;
+                serial = null!;
             }
             if (disconnect == 0)
             {
@@ -540,7 +539,7 @@ namespace PosLibs.ECRLibrary.Service
             {
                 
                 byte[] responseData = new byte[6000];
-                serial.ReadTimeout = PosLibConstant.REVTIMEOUT;
+                serial.ReadTimeout = int.Parse(configdata.connectionTimeOut)*1000;
                 int bytesReceived = serial.Read(responseData, 0, responseData.Length);
                 if (bytesReceived > 0)
                 {
@@ -557,6 +556,14 @@ namespace PosLibs.ECRLibrary.Service
             catch (InvalidOperationException ex)
             {
                 Console.WriteLine(ex.ToString());
+                serial.Close();
+                serial = null!;
+                Thread.Sleep(25000);
+                ComTransactionProcess(configdata.commPortNumber);
+            }
+            catch(IOException e)
+            {
+                Console.WriteLine(e.ToString());
                 serial.Close();
                 serial = null!;
                 Thread.Sleep(25000);
@@ -660,16 +667,23 @@ namespace PosLibs.ECRLibrary.Service
                     ecrPort = CommonConst.ecrPort,
                     RFU1 = ""
                 };
+               
                 string json = JsonConvert.SerializeObject(posData);
                 Log.Information("Request packet data sent: " + json);
                 var message = Encoding.ASCII.GetBytes(json);
-                
-                client.Send(message, message.Length, broadcastEndpoint);
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                while (stopwatch.Elapsed.TotalSeconds < 30) // Run for a maximum of 30 seconds
+                {
+                    client.Send(message, message.Length, broadcastEndpoint);
+                    // Sleep for 1 second
 
-                //if (client.Client.Connected)
-                //{
-                //    client.Close();
-                //}
+                }
+                
+                if (client.Client.Connected)
+                {
+                    client.Close();
+                }
                 TcpListen();
             }
             catch (IOException e)
