@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:POSLIB"
         mc:Ignorable="d"
-    Title="PineLabs POSLIB v1.1"  Height="742" Width="1400" Background="#F5F5F5">
+    Title="My App"  Height="742" Width="1400" Background="#F5F5F5">
     <Grid x:Name="fullScreen" Margin="10,58,0,-6" IsEnabled="True">
         <Grid.ColumnDefinitions >
             <ColumnDefinition Width="auto"/>
@@ -319,7 +319,9 @@
         <ComboBox x:Name="SELECTTRANSTYPE" Grid.Column="1" SelectedIndex="0" HorizontalAlignment="Left" Margin="48,494,0,0" VerticalAlignment="Top" Width="358" Height="26" RenderTransformOrigin="0.092,0.521" Grid.Row="1">
             <ComboBoxItem  IsSelected="True" Content="------------- Transaction type ---------"></ComboBoxItem>
             <ComboBoxItem Content="Purchase"></ComboBoxItem>
-            <ComboBoxItem Content="BHARAT QR Sale request"></ComboBoxItem>
+            <ComboBoxItem Content="Void Transaction"></ComboBoxItem>
+            <ComboBoxItem Content="UPI Sale Request"></ComboBoxItem>
+            <!--<ComboBoxItem Content="BHARAT QR Sale request"></ComboBoxItem>
             <ComboBoxItem Content="UPI Sale Request"></ComboBoxItem>
             <ComboBoxItem Content="Refund"></ComboBoxItem>
             <ComboBoxItem Content="Tip Adjust"></ComboBoxItem>
@@ -353,7 +355,7 @@
             <ComboBoxItem Content="Magic PIN Void"></ComboBoxItem>
             <ComboBoxItem Content="Zest MoNAy - Invoice Sale"></ComboBoxItem>
             <ComboBoxItem Content="Zest MoNAy – Product Sale"></ComboBoxItem>
-            <ComboBoxItem Content="Zest MoNAy – Void"></ComboBoxItem>
+            <ComboBoxItem Content="Zest MoNAy – Void"></ComboBoxItem>-->
         </ComboBox>
         <Button Grid.Column="1" x:Name="Btnprocess" Content="Process" HorizontalAlignment="Left" Margin="411,494,0,0" Grid.Row="1" VerticalAlignment="Top" Height="26" Width="179" FontSize="14" FontFamily="Segoe UI Black" Click="ProcessBtn"/>
         <TextBox x:Name="ResponseReceive" Grid.Column="1" HorizontalAlignment="Left" Margin="46,310,0,0" Grid.Row="1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="544" Height="143"/>
@@ -384,7 +386,7 @@
         <TextBox  IsEnabled="False"  Grid.Column="1" x:Name="comfullname" HorizontalAlignment="Left" Margin="794,406,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="203" Height="28" FontSize="11"/>
         <Button x:Name="COMConnetBtn" Grid.Column="1" Content="Test" HorizontalAlignment="Left" Margin="934,448,0,0" Grid.Row="1" VerticalAlignment="Top" Height="24" Width="86" FontFamily="Bahnschrift SemiBold" FontSize="14" RenderTransformOrigin="0.366,1.298" Click="Button_Click_2" Background="#FF117109" Foreground="White"/>
         <Label Grid.Column="1" Content="Available Devices" HorizontalAlignment="Left" Margin="1070,149,0,0" Grid.Row="1" VerticalAlignment="Top" Width="212" FontSize="14" FontFamily="Arial Black" RenderTransformOrigin="0.52,1.716"/>
-        <Label Content="POS CONTROLLER" HorizontalAlignment="Left" Margin="215,0,0,0" VerticalAlignment="Center" Grid.ColumnSpan="2" Height="30" Width="178" FontSize="16" FontFamily="Arial Black"/>
+        <!--<Label Content="POS CONTROLLER" HorizontalAlignment="Left" Margin="215,0,0,0" VerticalAlignment="Center" Grid.ColumnSpan="2" Height="30" Width="178" FontSize="16" FontFamily="Arial Black"/>-->
         <Label Grid.Column="1" Content="Cashier ID" HorizontalAlignment="Left" Margin="52,4,0,0" Grid.Row="1" VerticalAlignment="Top" Height="25" Width="102" FontFamily="Bahnschrift SemiBold" FontSize="16"/>
         <Label Grid.Column="1" Content="Cashier Name" HorizontalAlignment="Left" Margin="52,31,0,0" Grid.Row="1" VerticalAlignment="Top" Height="24" Width="120" FontSize="16" FontFamily="Bahnschrift SemiBold"/>
         <TextBox Grid.Column="1" IsEnabled="False" PreviewTextInput="CashierID_PreviewTextInput" x:Name="CashierID" HorizontalAlignment="Left" Margin="174,10,0,0" Grid.Row="1" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Height="20" FontFamily="Arial Black" FontSize="14"/>
