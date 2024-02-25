@@ -141,10 +141,11 @@ namespace POSLIB
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
+        SerialPort serialPort;
         public MainWindow()
         {
             InitializeComponent();
+            InitiateSerialPort();
             InitiateTimer();
             DataContext = this;
             GetCOMPort();
@@ -156,7 +157,89 @@ namespace POSLIB
             showData();
             Log.Information("-:Application Start:-");
         }
+        private void InitiateSerialPort()
+        {
+            serialPort = new SerialPort();
 
+            // Set serial port properties
+            serialPort.PortName = "COM2"; // Specify your COM port name
+            serialPort.BaudRate = 9600; // Specify your baud rate
+            serialPort.DataBits = 8; // Specify your data bits
+            serialPort.Parity = Parity.None; // Specify your parity
+            serialPort.StopBits = StopBits.One; // Specify your stop bits
+            // Subscribe to event handlers
+            serialPort.DataReceived += SerialPort_DataReceived;
+
+            try
+            {
+                serialPort.Open(); // Open the serial port
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error opening serial port: " + ex.Message);
+            }
+        }
+
+        private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            // This event handler will be called whenever data is received on the serial port
+
+            try
+            {
+
+                int length = serialPort.BytesToRead;
+                byte[] buf = new byte[length];
+
+                serialPort.Read(buf, 0, length);
+
+                Dispatcher.Invoke(new Action(() =>
+                {
+                    var identifier = CommonUtility.GetByteSliceToHexaString(buf, 8, 9);
+                    //check status
+                    if (identifier == "3230")
+                    {
+
+                        // STX = 02, Num = 02, etx + crc = "030DB1"
+                        //in 3530323930323030 .. last 30 is status of device, 30 == 0 i.e. idle
+                        //Todo: get actual status based on app status, 1 = waiting ofr card inserion,2 = waiting for pin,3=waiting for bank tran, 4=printing
+                        var responseHexa = "0202" + "3530323930323030" + "030DB1";
+                        var resByte = CommaUtil.HexToBytes(responseHexa);
+                        serialPort.Write(resByte, 0, resByte.Length);
+                    }
+                    // PaymentResponse with Amount (Read card for payment)
+                    if (identifier == "3130")
+                    {
+                        var responseHexa = "06DC030DB1";
+                        var resByte = CommaUtil.HexToBytes(responseHexa);
+                        serialPort.Write(resByte, 0, resByte.Length);
+                        //ToDO: now open window form to select form type and sent back to billing application
+
+                        //0253 31 1C03C78F - here 31 is payment type
+                        //todo: Get list of payment type mapper table, what is selected 
+                        var responseHexaPaymentTypeSected = " 0253311C03C78F";
+                        var resPaymentTypByte = CommaUtil.HexToBytes(responseHexaPaymentTypeSected);
+                        serialPort.Write(resPaymentTypByte, 0, resPaymentTypByte.Length);
+                    }
+
+                }));
+
+                // If you want to write data back to the serial port, you can do it like this:
+                // serialPort.Write("Response to received data");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error reading data from serial port: " + ex.Message);
+            }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            if (serialPort != null && serialPort.IsOpen)
+            {
+                serialPort.Close(); // Close the serial port when the application is closed
+            }
+        }
         private void InitializeRetentionData()
         {
             Properties.Settings.Default.filetoDelete = Properties.Settings.Default.filetoDelete = "poslib_" + DateTime.Now.Date.ToString("yyyy-MM-dd") + ".log";
@@ -514,7 +597,7 @@ namespace POSLIB
 
         public void TerminalConnectionCheckerW()
         {
-            if(doTransFlag == 0)
+            if (doTransFlag == 0)
             {
                 connectionCheckTimer = new Timer(ConnectionCheckTimer_Tick, null, TimeSpan.FromSeconds(0),
                 TimeSpan.FromSeconds(30));
@@ -528,13 +611,13 @@ namespace POSLIB
         public void isAppIdle()
         {
             ConfigData value = new ConfigData();
-            int  result = obj.getConfiguration(out value);
+            int result = obj.getConfiguration(out value);
             if (value != null)
             {
                 if (value.isAppidle)
-                { 
-                     checkComHeatBeat();
-                     checkTcpIpHeatBeat(); 
+                {
+                    checkComHeatBeat();
+                    checkTcpIpHeatBeat();
                 }
             }
         }
@@ -615,7 +698,7 @@ namespace POSLIB
         {
             TransactionDriveHeart tcplistner = new TransactionDriveHeart();
             obj.checkTcpComStatus(tcplistner);
-            
+
             switch (statusCode)
             {
                 case 1001:
@@ -865,7 +948,7 @@ namespace POSLIB
             ConnectionService obj = new ConnectionService();
 
             (sender as BackgroundWorker).ReportProgress(0);
-            
+
             try
             {
 
@@ -880,7 +963,7 @@ namespace POSLIB
                 obj.getConfiguration(out fetchData);
                 fetchData.isAppidle = false;
                 obj.setConfiguration(fetchData);
-                
+
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
@@ -916,11 +999,11 @@ namespace POSLIB
                             DeviceList value = new DeviceList();
                             value = serialdevicelist[i];
 
-                            if(string.IsNullOrEmpty(value.deviceIp) && (comdata.Any(c => c.SerialNo == value.SerialNo) == false))
+                            if (string.IsNullOrEmpty(value.deviceIp) && (comdata.Any(c => c.SerialNo == value.SerialNo) == false))
                             {
                                 comdata.Add(value);
                             }
-                            else if(comdata.Any(c => c.deviceIp == value.deviceIp) == false)
+                            else if (comdata.Any(c => c.deviceIp == value.deviceIp) == false)
                             {
                                 comdata.Add(value);
                             }
@@ -970,6 +1053,7 @@ namespace POSLIB
         static string Amount = "";
         static string requestbody = "";
         void work_onlineTrans_scan(object sender, DoWorkEventArgs e)
+
         {
 
             bool checkNullValidation = true;
@@ -1169,7 +1253,7 @@ namespace POSLIB
                             }
                             //Requestsend.Text = RemoveNewlines(trxobj._transactionRequestBody);
                             Btnprocess.IsEnabled = true;
-                          
+
 
                         });
                         Thread.Sleep(10000);
@@ -1214,7 +1298,7 @@ namespace POSLIB
             {
                 doTransFlag = 0;
             }
-           
+
         }
         public string RemoveNewlines(string input)
         {
@@ -8629,7 +8713,7 @@ namespace POSLIB
             var selectedItem = ((Button)sender).DataContext;
             ComboBoxItem selectedComboBoxItem = comboBox.SelectedItem as ComboBoxItem;
             ConfigData data = new ConfigData();
-             obj.getConfiguration(out data);
+            obj.getConfiguration(out data);
             if (selectedItem is DeviceList items)
             {
                 if (items.connectionMode == "TCP/IP")
@@ -8654,7 +8738,7 @@ namespace POSLIB
                     obj.setConfiguration(data);
 
                 }
-               
+
             }
         }
 
@@ -8740,7 +8824,7 @@ namespace POSLIB
 
                 if (!result || int.Parse(NoDay.Text.ToString()) < 1)
                 {
-                    NoDay.Text ="1";
+                    NoDay.Text = "1";
                     //MessageBox.Show("Please enter a valid Retain day value");
                     NoDay.Focus();
                     //return;
@@ -8807,7 +8891,7 @@ namespace POSLIB
                 }
                 string[] connectionPriorityMode = new string[] { firstPriority, secondPriority };
                 ConfigData fetchData = new ConfigData();
-                int configData =  obj.getConfiguration(out fetchData);
+                int configData = obj.getConfiguration(out fetchData);
                 if (configData == 0)
                 {
                     fetchData.isAppidle = true;
@@ -8821,7 +8905,7 @@ namespace POSLIB
                     }
                     fetchData.comfullName = comfullname.Text;
                     fetchData.comserialNumber = comserialNo.Text;
-                    
+
                     fetchData.comDeviceId = fetchData.comDeviceId;
                     if (fetchData.comDeviceId == "")
                     {
@@ -8830,9 +8914,9 @@ namespace POSLIB
                     fetchData.tcpIpaddress = tcpip.Text;
                     fetchData.tcpIpPort = tcpport.Text;
                     fetchData.tcpIpSerialNumber = serialNo.Text;
-                    
+
                     fetchData.tcpIpDeviceId = fetchData.tcpIpDeviceId;
-                    if(fetchData.tcpIpDeviceId=="")
+                    if (fetchData.tcpIpDeviceId == "")
                     {
                         fetchData.tcpIpDeviceId = tcpdeviceID;
                     }
@@ -8907,8 +8991,8 @@ namespace POSLIB
                 Properties.Settings.Default.ConnectionTimeOut = ConnectionTimeOut.Text;
                 Properties.Settings.Default.RetryTime = retrivalCount.Text;
 
-                if ((string.IsNullOrEmpty(Properties.Settings.Default.RetainDays)) || 
-                    (!string.IsNullOrEmpty(Properties.Settings.Default.RetainDays) && 
+                if ((string.IsNullOrEmpty(Properties.Settings.Default.RetainDays)) ||
+                    (!string.IsNullOrEmpty(Properties.Settings.Default.RetainDays) &&
                     (float.Parse(Properties.Settings.Default.RetainDays) != float.Parse(NoDay.Text.ToString()))))
                 {
                     Properties.Settings.Default.retentionDate = DateTime.Parse(expirationDate).AddDays(
@@ -9016,13 +9100,13 @@ namespace POSLIB
                 AMOUNTT.IsEnabled = true;
                 ConnectL.Content = "Connected";
                 Log.Information("Connected COM Port: " + "COM" + intvalue);
-                Log.Information("COM connected Successfully","2000");
-                MessageBox.Show("COM connected Successfully","2000");
+                Log.Information("COM connected Successfully", "2000");
+                MessageBox.Show("COM connected Successfully", "2000");
             }
             else
             {
                 MessageBox.Show("COM connected failed", "2001");
-                Log.Information("COM connection failed","2001");
+                Log.Information("COM connection failed", "2001");
                 Btnprocess.IsEnabled = true;
             }
         }
@@ -9056,17 +9140,17 @@ namespace POSLIB
                 Log.Information(PosLibConstant.TCPIPCONNECTION_SUCCESS, "1000");
                 Log.Information("Connected ip:" + tcpip.Text);
                 Log.Information("Connected port:" + tcpport.Text);
-                MessageBox.Show("TCP IP Connection Successful","1000");
+                MessageBox.Show("TCP IP Connection Successful", "1000");
             }
             else
             {
-                MessageBox.Show("tcp/ip connection fail","1001");
+                MessageBox.Show("tcp/ip connection fail", "1001");
                 Log.Information("tcp/ip connection fail", "1001");
                 Log.Information("is tcp/ip connected:" + "False");
             }
 
         }
-        
+
         private void Button_Click_5(object sender, RoutedEventArgs e)
         {
             var dialog = new CommonOpenFileDialog
@@ -9093,7 +9177,7 @@ namespace POSLIB
             savebtn.Visibility = Visibility.Hidden;
             CashierID.IsEnabled = false;
             CashireName.IsEnabled = false;
-           
+
             if (CashierID.Text != "")
             {
                 EditBtn.Visibility = Visibility.Visible;
@@ -9107,7 +9191,7 @@ namespace POSLIB
                 CashierID.IsEnabled = true;
                 CashireName.IsEnabled = true;
                 savebtn.Visibility = Visibility.Visible;
-            }  
+            }
         }
 
         private void CashierID_PreviewTextInput(object sender, TextCompositionEventArgs e)

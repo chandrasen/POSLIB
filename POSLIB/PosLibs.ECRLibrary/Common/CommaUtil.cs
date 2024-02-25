@@ -101,7 +101,7 @@ namespace PosLibs.ECRLibrary.Common
         }
 
         //Convert Byte To Hex String
-        static string BytesToHex(byte[] bytes)
+        public static string BytesToHex(byte[] bytes)
         {
             StringBuilder hexBuilder = new StringBuilder(bytes.Length * 2);
             foreach (byte b in bytes)
@@ -160,7 +160,7 @@ namespace PosLibs.ECRLibrary.Common
         /// </summary>
         /// <param name="hex"></param>
         /// <returns></returns>
-        static byte[] HexToBytes(string hex)
+        public static byte[] HexToBytes(string hex)
         {
             hex = hex.Replace(" ", ""); // Remove spaces if any
             int length = hex.Length;
