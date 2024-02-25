@@ -209,7 +209,7 @@ namespace POSLIB
                     // PaymentResponse with Amount (Read card for payment)
                     if (identifier == "3130")
                     {
-                        var responseHexa = "06DC030DB1";
+                        var responseHexa = "06DC";
                         var resByte = CommaUtil.HexToBytes(responseHexa);
                         serialPort.Write(resByte, 0, resByte.Length);
                         //ToDO: now open window form to select form type and sent back to billing application
