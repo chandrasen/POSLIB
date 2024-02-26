@@ -157,8 +157,11 @@ namespace POSLIB
             showData();
             Log.Information("-:Application Start:-");
         }
+
+        private string selectedPaymentMethod;
         private void InitiateSerialPort()
         {
+            selectedPaymentMethod = "";
             serialPort = new SerialPort();
 
             // Set serial port properties
@@ -212,13 +215,16 @@ namespace POSLIB
                         var responseHexa = "06DC";
                         var resByte = CommaUtil.HexToBytes(responseHexa);
                         serialPort.Write(resByte, 0, resByte.Length);
-                        //ToDO: now open window form to select form type and sent back to billing application
-
-                        //0253 31 1C03C78F - here 31 is payment type
-                        //todo: Get list of payment type mapper table, what is selected 
-                        var responseHexaPaymentTypeSected = " 0253311C03C78F";
-                        var resPaymentTypByte = CommaUtil.HexToBytes(responseHexaPaymentTypeSected);
-                        serialPort.Write(resPaymentTypByte, 0, resPaymentTypByte.Length);
+                        //ToDo: now open window form to select form type and sent back to billing application
+                       
+                    }
+                    //Sale transction 13 = 3133, however in example it is something else,
+                    //todo: ask with mani and nagendra
+                    if (identifier == "3133")
+                    {
+                        var hexaAmount = CommonUtility.GetByteSliceToHexaString(buf, 45, 55);
+                        var amount = CommaUtil.HexToString(hexaAmount);
+                        //todo: can doTransaction() and wait for response
                     }
 
                 }));
@@ -232,6 +238,20 @@ namespace POSLIB
             }
         }
 
+        private void btnProceed_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(selectedPaymentMethod))
+            {
+                MessageBox.Show("Please selected valid payment method");
+                return;
+            }
+
+            //0253 31 1C03C78F - here 31 is payment type
+            //todo: Get list of payment type mapper table, what is selected 
+            var responseHexaPaymentTypeSected = "0253311C03C78F";
+            var resPaymentTypByte = CommaUtil.HexToBytes(responseHexaPaymentTypeSected);
+            serialPort.Write(resPaymentTypByte, 0, resPaymentTypByte.Length);
+        }
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
@@ -9067,7 +9087,6 @@ namespace POSLIB
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
         {
-
             if (string.IsNullOrEmpty(comfullname.Text))
             {
                 MessageBox.Show("COM is In Empty.", "Confirmation", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -9224,5 +9243,22 @@ namespace POSLIB
             LogLevel.IsEnabled = false;
             Filepath.IsEnabled = false;
         }
+
+        private void CreditDebitCard_Checked(object sender, RoutedEventArgs e)
+        {
+            selectedPaymentMethod = "CCorDC";
+        }
+
+        private void UPI_Checked(object sender, RoutedEventArgs e)
+        {
+            selectedPaymentMethod = "UPI";
+        }
+
+        private void FastTag_Checked(object sender, RoutedEventArgs e)
+        {
+            selectedPaymentMethod = "";
+        }
+
+        
     }
 }
