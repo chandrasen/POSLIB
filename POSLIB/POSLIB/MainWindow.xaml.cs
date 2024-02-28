@@ -144,6 +144,7 @@ namespace POSLIB
         SerialPort serialPort;
         public MainWindow()
         {
+            
             InitializeComponent();
             InitiateSerialPort();
             InitiateTimer();
@@ -156,6 +157,9 @@ namespace POSLIB
             createLogFile();
             showData();
             Log.Information("-:Application Start:-");
+            Topmost = true;
+            WindowState = WindowState.Minimized;
+            //fullScreen.Visibility = Visibility.Hidden;
         }
 
         private string selectedPaymentMethod;
@@ -208,6 +212,7 @@ namespace POSLIB
                         var responseHexa = "0202" + "3530323930323030" + "030DB1";
                         var resByte = CommaUtil.HexToBytes(responseHexa);
                         serialPort.Write(resByte, 0, resByte.Length);
+                        
                     }
                     // PaymentResponse with Amount (Read card for payment)
                     if (identifier == "3130")
@@ -216,7 +221,7 @@ namespace POSLIB
                         var resByte = CommaUtil.HexToBytes(responseHexa);
                         serialPort.Write(resByte, 0, resByte.Length);
                         //ToDo: now open window form to select form type and sent back to billing application
-                       
+                        WindowState = WindowState.Maximized;
                     }
                     //Sale transction 13 = 3133, however in example it is something else,
                     //todo: ask with mani and nagendra
@@ -231,7 +236,7 @@ namespace POSLIB
 
                 // If you want to write data back to the serial port, you can do it like this:
                 // serialPort.Write("Response to received data");
-            }
+           }
             catch (Exception ex)
             {
                 MessageBox.Show("Error reading data from serial port: " + ex.Message);
