@@ -159,7 +159,9 @@ namespace POSLIB
             Log.Information("-:Application Start:-");
             Topmost = true;
             WindowState = WindowState.Minimized;
-            //fullScreen.Visibility = Visibility.Hidden;
+            
+            //Hide Pos configuraion grid
+            fullScreen.Visibility = Visibility.Hidden;
         }
 
         private string selectedPaymentMethod;
@@ -212,7 +214,8 @@ namespace POSLIB
                         var responseHexa = "0202" + "3530323930323030" + "030DB1";
                         var resByte = CommaUtil.HexToBytes(responseHexa);
                         serialPort.Write(resByte, 0, resByte.Length);
-                        
+                        WindowState = WindowState.Maximized;
+
                     }
                     // PaymentResponse with Amount (Read card for payment)
                     if (identifier == "3130")

@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:POSLIB"
         mc:Ignorable="d"
     Title="My App"  Height="742" Width="1400" Background="#F5F5F5">
-    <Grid x:Name="fullScreen" Margin="10,58,0,-6" IsEnabled="True">
+    <Grid>
+        <Grid x:Name="fullScreen" Margin="10,58,0,-6" IsEnabled="True">
         <Grid.ColumnDefinitions >
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="auto"/>
@@ -481,14 +482,16 @@
             </Label.RenderTransform>
         </Label>
         <TextBox Grid.Column="1" IsEnabled="True" x:Name="retrivalCount" HorizontalAlignment="Left" Margin="1043,25,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="77" Height="21" FontFamily="Arial Black"/>
-        <Grid Grid.ColumnSpan="2" Margin="41,16,731,532" Grid.RowSpan="2">
-            <RadioButton Content="CC/DC" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" GroupName="PaymentTypes" Checked="CreditDebitCard_Checked"/>
-            <RadioButton Content="UPI" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" GroupName="PaymentTypes" Checked="UPI_Checked"/>
-            <RadioButton Content="FastTag" HorizontalAlignment="Left" Margin="10,50,0,0" VerticalAlignment="Top" GroupName="PaymentTypes" Checked="FastTag_Checked"/>
-            <Button Content="Proceed" HorizontalAlignment="Left" Margin="19,70,0,0" VerticalAlignment="Top" Click="btnProceed_Click"/>
-        </Grid>
 
 
 
+
+    </Grid>
+    <Grid Grid.ColumnSpan="2" Margin="41,16,731,532" Grid.RowSpan="2" IsEnabled="True">
+        <RadioButton Content="CC/DC" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" GroupName="PaymentTypes" Checked="CreditDebitCard_Checked"/>
+        <RadioButton Content="UPI" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" GroupName="PaymentTypes" Checked="UPI_Checked"/>
+        <RadioButton Content="FastTag" HorizontalAlignment="Left" Margin="10,50,0,0" VerticalAlignment="Top" GroupName="PaymentTypes" Checked="FastTag_Checked"/>
+        <Button Content="Proceed" HorizontalAlignment="Left" Margin="19,70,0,0" VerticalAlignment="Top" Click="btnProceed_Click"/>
+    </Grid>
     </Grid>
 </Window>
