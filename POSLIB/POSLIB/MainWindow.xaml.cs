@@ -143,9 +143,11 @@ namespace POSLIB
         }
         SerialPort serialPort;
         SystemStatus CurrentSystemStatus;
+        Commands CurrentCommand;
+        Commands NextCommand;
         public MainWindow()
         {
-            
+
             InitializeComponent();
             InitiateSerialPort();
             InitiateTimer();
@@ -163,7 +165,7 @@ namespace POSLIB
             MessageText.Text = "Waiting for Command";
             Topmost = true;
             WindowState = WindowState.Minimized;
-            
+
             //Hide Pos configuraion grid
             fullScreen.Visibility = Visibility.Hidden;
             PaymentTypeGrid.Visibility = Visibility.Hidden;
@@ -194,14 +196,15 @@ namespace POSLIB
             }
 
         }
-       
+
+        int retrycount = 0;
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             // This event handler will be called whenever data is received on the serial port
 
             try
             {
-
+                var nakByte = CommaUtil.HexToBytes("15"); //NAK
                 int length = serialPort.BytesToRead;
                 byte[] buf = new byte[length];
 
@@ -209,6 +212,13 @@ namespace POSLIB
 
                 Dispatcher.Invoke(new Action(() =>
                 {
+                    //NACK
+                    var res = CommonUtility.ByteArrayToHexaString(buf);
+                    if (res == "15" && CurrentCommand == Commands.ReadCard)
+                    {
+                        CurrentSystemStatus = SystemStatus.Idle;
+                    }
+
                     var identifier = CommonUtility.GetByteSliceToHexaString(buf, 8, 9);
                     //check status
                     if (identifier == "3230")
@@ -222,39 +232,70 @@ namespace POSLIB
                         var resByte = CommaUtil.HexToBytes(responseHexa);
                         serialPort.Write(resByte, 0, resByte.Length);
 
-                        WindowState = WindowState.Maximized;
-                        PaymentTypeGrid.Visibility = Visibility.Hidden;
-
                     }
-                    //NACK
-                    if (identifier == "15")
-                    {
-                        CurrentSystemStatus = SystemStatus.Idle;
-                    }
+                   
                     // PaymentResponse with Amount (Read card for payment)
                     if (identifier == "3130")
                     {
-                        CurrentSystemStatus = SystemStatus.Processing;
-                        //Acknoledge read command
-                        var responseHexa = "06DC";
-                        var resByte = CommaUtil.HexToBytes(responseHexa);
-                        serialPort.Write(resByte, 0, resByte.Length);
+                        if (CurrentSystemStatus != SystemStatus.Idle)
+                        {
+                            serialPort.Write(nakByte, 0, nakByte.Length);
+                        }
+                        else
+                        {
+                            CurrentSystemStatus = SystemStatus.Processing;
+                            //Acknoledge read command
+                            var responseHexa = "06DC";
+                            var resByte = CommaUtil.HexToBytes(responseHexa);
+                            serialPort.Write(resByte, 0, resByte.Length);
+                            //Open window for payment type
+                            WindowState = WindowState.Maximized;
+                            PaymentTypeGrid.Visibility = Visibility.Visible;
+                            CurrentCommand = Commands.ReadCard;
+                        }
                         
-                        //Open window for payment type
-                        WindowState = WindowState.Maximized;
-                        PaymentTypeGrid.Visibility = Visibility.Hidden;
                     }
                     //Sale transction 13 = 3133, however in example it is something else,
-                    //todo: ask with mani and nagendra
                     if (identifier == "3133")
                     {
-                        TransactionDrive transactionDrive = new TransactionDrive();
-                        var hexaAmount = CommonUtility.GetByteSliceToHexaString(buf, 45, 55);
-                        var amount = CommaUtil.HexToString(hexaAmount);
+                        if (CurrentSystemStatus != SystemStatus.Processing || CurrentCommand != Commands.ReadCard)
+                        {
+                            serialPort.Write(nakByte, 0, nakByte.Length);
+                        }
+                        else
+                        {
+                            TransactionDrive transactionDrive = new TransactionDrive();
+                            var hexaAmount = CommonUtility.GetByteSliceToHexaString(buf, 45, 55);
+                            var amount = CommaUtil.HexToString(hexaAmount);
 
-                        var transType = CommonUtility.GetTransactioType("Purchase");
-                        string afterreplace = requestbody.Replace("10000", amount);
-                        trxobj.doTransaction(afterreplace, int.Parse(transactionType), transactionDrive);
+                            var transType = CommonUtility.GetTransactioType("Purchase");
+                            string afterreplace = requestbody.Replace("10000", amount);
+
+                            //TODO: ctual response is coming in transactionDrive, use that to identify payment status 
+                            var response = trxobj.doTransaction(afterreplace, int.Parse(transactionType), transactionDrive, true);
+                            // get payment status from response
+                            var paymentStatus = "Success"; // Failed
+                            string amt = "122";
+                            if (paymentStatus == "Success")
+                            {
+                                MessageText.Text = $"Payment received of {amt}";
+                                CurrentSystemStatus = SystemStatus.Idle;
+                            }
+                            if (paymentStatus == "Failed")
+                            {
+                                while (retrycount == 2)
+                                {
+                                    //doTransaction();
+                                    //if successs then return success message otherwise failed
+                                    CurrentSystemStatus = SystemStatus.Idle;
+                                }
+                                MessageText.Text = "Payment failed.";
+
+                            }
+                            var resByte = CommaUtil.HexToBytes(response);
+                            serialPort.Write(resByte, 0, resByte.Length);
+                            CurrentCommand = Commands.SaleTransaction;
+                        }
                     }
 
                 }));
@@ -9302,6 +9343,6 @@ namespace POSLIB
             selectedPaymentMethod = "";
         }
 
-        
+
     }
 }
