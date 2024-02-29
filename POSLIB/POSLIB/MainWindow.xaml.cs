@@ -142,6 +142,7 @@ namespace POSLIB
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         SerialPort serialPort;
+        SystemStatus CurrentSystemStatus;
         public MainWindow()
         {
             
@@ -157,11 +158,15 @@ namespace POSLIB
             createLogFile();
             showData();
             Log.Information("-:Application Start:-");
+
+            CurrentSystemStatus = SystemStatus.Idle;
+            MessageText.Text = "Waiting for Command";
             Topmost = true;
             WindowState = WindowState.Minimized;
             
             //Hide Pos configuraion grid
             fullScreen.Visibility = Visibility.Hidden;
+            PaymentTypeGrid.Visibility = Visibility.Hidden;
         }
 
         private string selectedPaymentMethod;
@@ -187,8 +192,9 @@ namespace POSLIB
             {
                 MessageBox.Show("Error opening serial port: " + ex.Message);
             }
-        }
 
+        }
+       
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             // This event handler will be called whenever data is received on the serial port
@@ -207,39 +213,68 @@ namespace POSLIB
                     //check status
                     if (identifier == "3230")
                     {
-
                         // STX = 02, Num = 02, etx + crc = "030DB1"
                         //in 3530323930323030 .. last 30 is status of device, 30 == 0 i.e. idle
                         //Todo: get actual status based on app status, 1 = waiting ofr card inserion,2 = waiting for pin,3=waiting for bank tran, 4=printing
-                        var responseHexa = "0202" + "3530323930323030" + "030DB1";
+                        var statusString = ((int)CurrentSystemStatus).ToString();
+                        var statusinHexa = CommonUtility.ConvertAsciiToHexaString(statusString);
+                        var responseHexa = $"020235303239303230{statusinHexa}030DB1";
                         var resByte = CommaUtil.HexToBytes(responseHexa);
                         serialPort.Write(resByte, 0, resByte.Length);
-                        WindowState = WindowState.Maximized;
 
+                        WindowState = WindowState.Maximized;
+                        PaymentTypeGrid.Visibility = Visibility.Hidden;
+
+                    }
+                    //NACK
+                    if (identifier == "15")
+                    {
+                        CurrentSystemStatus = SystemStatus.Idle;
                     }
                     // PaymentResponse with Amount (Read card for payment)
                     if (identifier == "3130")
                     {
+                        CurrentSystemStatus = SystemStatus.Processing;
+                        //Acknoledge read command
                         var responseHexa = "06DC";
                         var resByte = CommaUtil.HexToBytes(responseHexa);
                         serialPort.Write(resByte, 0, resByte.Length);
-                        //ToDo: now open window form to select form type and sent back to billing application
+                        
+                        //Open window for payment type
                         WindowState = WindowState.Maximized;
+                        PaymentTypeGrid.Visibility = Visibility.Hidden;
                     }
                     //Sale transction 13 = 3133, however in example it is something else,
                     //todo: ask with mani and nagendra
                     if (identifier == "3133")
                     {
+                        TransactionDrive transactionDrive = new TransactionDrive();
                         var hexaAmount = CommonUtility.GetByteSliceToHexaString(buf, 45, 55);
                         var amount = CommaUtil.HexToString(hexaAmount);
-                        //todo: can doTransaction() and wait for response
+
+                        var transType = CommonUtility.GetTransactioType("Purchase");
+                        string afterreplace = requestbody.Replace("10000", amount);
+                        trxobj.doTransaction(afterreplace, int.Parse(transactionType), transactionDrive);
                     }
 
                 }));
 
-                // If you want to write data back to the serial port, you can do it like this:
-                // serialPort.Write("Response to received data");
-           }
+                switch (CurrentSystemStatus)
+                {
+                    case SystemStatus.Idle:
+                        MessageText.Text = "Waiting for Command";
+                        break;
+                    case SystemStatus.Processing:
+                        MessageText.Text = "Processing Command";
+                        break;
+                    case SystemStatus.WaitingForPayment:
+                        MessageText.Text = "Waiting for payment";
+                        break;
+                    default:
+                        break;
+                }
+
+            }
             catch (Exception ex)
             {
                 MessageBox.Show("Error reading data from serial port: " + ex.Message);
