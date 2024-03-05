@@ -163,11 +163,11 @@ namespace POSLIB
 
             CurrentSystemStatus = SystemStatus.Idle;
             MessageText.Text = "Waiting for Command";
-            Topmost = true;
+            //Topmost = true;
             WindowState = WindowState.Minimized;
 
             //Hide Pos configuraion grid
-            fullScreen.Visibility = Visibility.Hidden;
+           // fullScreen.Visibility = Visibility.Hidden;
             PaymentTypeGrid.Visibility = Visibility.Hidden;
         }
 
@@ -233,6 +233,13 @@ namespace POSLIB
                         serialPort.Write(resByte, 0, resByte.Length);
 
                     }
+                    //Disable card
+                    if (identifier == "3030")
+                    {
+                        var responseHexa = $"06FF";
+                        var resByte = CommaUtil.HexToBytes(responseHexa);
+                        serialPort.Write(resByte, 0, resByte.Length);
+                    }
                    
                     // PaymentResponse with Amount (Read card for payment)
                     if (identifier == "3130")
@@ -249,7 +256,7 @@ namespace POSLIB
                             var resByte = CommaUtil.HexToBytes(responseHexa);
                             serialPort.Write(resByte, 0, resByte.Length);
                             //Open window for payment type
-                            WindowState = WindowState.Maximized;
+                            //WindowState = WindowState.Maximized;
                             PaymentTypeGrid.Visibility = Visibility.Visible;
                             CurrentCommand = Commands.ReadCard;
                         }
@@ -271,6 +278,7 @@ namespace POSLIB
                             var transType = CommonUtility.GetTransactioType("Purchase");
                             string afterreplace = requestbody.Replace("10000", amount);
 
+                            transactionType = CommonUtility.GetTransactioType("Purchase");
                             //TODO: ctual response is coming in transactionDrive, use that to identify payment status 
                             var response = trxobj.doTransaction(afterreplace, int.Parse(transactionType), transactionDrive, true);
                             // get payment status from response
@@ -298,22 +306,23 @@ namespace POSLIB
                         }
                     }
 
+                    switch (CurrentSystemStatus)
+                    {
+                        case SystemStatus.Idle:
+                            MessageText.Text = "Waiting for Command";
+                            break;
+                        case SystemStatus.Processing:
+                            MessageText.Text = "Processing Command";
+                            break;
+                        case SystemStatus.WaitingForPayment:
+                            MessageText.Text = "Waiting for payment";
+                            break;
+                        default:
+                            break;
+                    }
                 }));
 
-                switch (CurrentSystemStatus)
-                {
-                    case SystemStatus.Idle:
-                        MessageText.Text = "Waiting for Command";
-                        break;
-                    case SystemStatus.Processing:
-                        MessageText.Text = "Processing Command";
-                        break;
-                    case SystemStatus.WaitingForPayment:
-                        MessageText.Text = "Waiting for payment";
-                        break;
-                    default:
-                        break;
-                }
+               
 
             }
             catch (Exception ex)
@@ -335,6 +344,7 @@ namespace POSLIB
             var responseHexaPaymentTypeSected = "0253311C03C78F";
             var resPaymentTypByte = CommaUtil.HexToBytes(responseHexaPaymentTypeSected);
             serialPort.Write(resPaymentTypByte, 0, resPaymentTypByte.Length);
+            PaymentTypeGrid.Visibility = Visibility.Hidden;
         }
         protected override void OnClosed(EventArgs e)
         {
@@ -361,7 +371,7 @@ namespace POSLIB
 
         private void deleteFileifNeeded(object source, ElapsedEventArgs e)
         {
-
+            return;
             Application.Current.Dispatcher.Invoke(() =>
             {
                 filepath = Filepath.Text;
