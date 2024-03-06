@@ -162,7 +162,7 @@ namespace POSLIB
             Log.Information("-:Application Start:-");
 
             CurrentSystemStatus = SystemStatus.Idle;
-            MessageText.Text = "Waiting for Command";
+           // MessageText.Text = "Waiting for Command";
             //Topmost = true;
             WindowState = WindowState.Minimized;
 
@@ -218,6 +218,7 @@ namespace POSLIB
                     {
                         CurrentSystemStatus = SystemStatus.Idle;
                     }
+                    MessageText.Text +="Rec: " +  res +"\n";
 
                     var identifier = CommonUtility.GetByteSliceToHexaString(buf, 8, 9);
                     //check status
@@ -226,19 +227,19 @@ namespace POSLIB
                         // STX = 02, Num = 02, etx + crc = "030DB1"
                         //in 3530323930323030 .. last 30 is status of device, 30 == 0 i.e. idle
                         //Todo: get actual status based on app status, 1 = waiting ofr card inserion,2 = waiting for pin,3=waiting for bank tran, 4=printing
+                        //ack
+                        WriteToPort("0602");
                         var statusString = ((int)CurrentSystemStatus).ToString();
                         var statusinHexa = CommonUtility.ConvertAsciiToHexaString(statusString);
                         var responseHexa = $"020235303239303230{statusinHexa}030DB1";
-                        var resByte = CommaUtil.HexToBytes(responseHexa);
-                        serialPort.Write(resByte, 0, resByte.Length);
+                        WriteToPort(responseHexa);
 
                     }
                     //Disable card
                     if (identifier == "3030")
                     {
                         var responseHexa = $"06FF";
-                        var resByte = CommaUtil.HexToBytes(responseHexa);
-                        serialPort.Write(resByte, 0, resByte.Length);
+                        WriteToPort(responseHexa);
                     }
                    
                     // PaymentResponse with Amount (Read card for payment)
@@ -252,9 +253,7 @@ namespace POSLIB
                         {
                             CurrentSystemStatus = SystemStatus.Processing;
                             //Acknoledge read command
-                            var responseHexa = "06DC";
-                            var resByte = CommaUtil.HexToBytes(responseHexa);
-                            serialPort.Write(resByte, 0, resByte.Length);
+                            WriteToPort("06DC");
                             //Open window for payment type
                             //WindowState = WindowState.Maximized;
                             PaymentTypeGrid.Visibility = Visibility.Visible;
@@ -300,26 +299,25 @@ namespace POSLIB
                                 MessageText.Text = "Payment failed.";
 
                             }
-                            var resByte = CommaUtil.HexToBytes(response);
-                            serialPort.Write(resByte, 0, resByte.Length);
+                            WriteToPort(response);
                             CurrentCommand = Commands.SaleTransaction;
                         }
                     }
 
-                    switch (CurrentSystemStatus)
-                    {
-                        case SystemStatus.Idle:
-                            MessageText.Text = "Waiting for Command";
-                            break;
-                        case SystemStatus.Processing:
-                            MessageText.Text = "Processing Command";
-                            break;
-                        case SystemStatus.WaitingForPayment:
-                            MessageText.Text = "Waiting for payment";
-                            break;
-                        default:
-                            break;
-                    }
+                    //switch (CurrentSystemStatus)
+                    //{
+                    //    case SystemStatus.Idle:
+                    //        MessageText.Text = "Waiting for Command";
+                    //        break;
+                    //    case SystemStatus.Processing:
+                    //        MessageText.Text = "Processing Command";
+                    //        break;
+                    //    case SystemStatus.WaitingForPayment:
+                    //        MessageText.Text = "Waiting for payment";
+                    //        break;
+                    //    default:
+                    //        break;
+                    //}
                 }));
 
                
@@ -330,7 +328,12 @@ namespace POSLIB
                 MessageBox.Show("Error reading data from serial port: " + ex.Message);
             }
         }
-
+        private void WriteToPort(string hexaString)
+        {
+            var resByte = CommaUtil.HexToBytes(hexaString);
+            serialPort.Write(resByte, 0, resByte.Length);
+            MessageText.Text += "Resp: " + hexaString + "\n";
+        }
         private void btnProceed_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrEmpty(selectedPaymentMethod))
@@ -511,7 +514,7 @@ namespace POSLIB
         public void createLogFile()
         {
             string loglevelval = Properties.Settings.Default.LogLevel;
-            int noOfDayValue = 0;
+            int noOfDayValue = 10;
 
             switch (loglevelval.ToLower()) // Convert input to lowercase for case-insensitivity
             {
@@ -531,7 +534,7 @@ namespace POSLIB
 
             Application.Current.Dispatcher.Invoke(() =>
             {
-                noOfDayValue = int.Parse(NoDay.Text);
+                //noOfDayValue = int.Parse(NoDay.Text);
                 filepath = Filepath.Text;
             });
 
@@ -8898,7 +8901,7 @@ namespace POSLIB
         }
 
         string loglevel = string.Empty;
-        bool islogAllowed;
+        bool islogAllowed = true;
         int noOfDayValue = 0;
         string filepath = string.Empty;
         String priority1;
@@ -8928,7 +8931,7 @@ namespace POSLIB
             }
             Dispatcher.Invoke(() =>
             {
-                islogAllowed = isEnabledlog.IsChecked == true;
+               // islogAllowed = isEnabledlog.IsChecked == true;
 
             });
 
