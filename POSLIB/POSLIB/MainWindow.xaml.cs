@@ -198,6 +198,7 @@ namespace POSLIB
         }
 
         int retrycount = 0;
+        string endByteString = "03";
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             // This event handler will be called whenever data is received on the serial port
@@ -207,6 +208,7 @@ namespace POSLIB
                 var nakByte = CommaUtil.HexToBytes("15"); //NAK
                 int length = serialPort.BytesToRead;
                 byte[] buf = new byte[length];
+                
 
                 serialPort.Read(buf, 0, length);
 
@@ -245,7 +247,7 @@ namespace POSLIB
                     if (identifier == "3030")
                     {
                         string numByte = CommonUtility.GetByteSliceToHexaString(buf, 2, 2);
-                        WriteToPort("06" + numByte + "03");
+                        WriteToPort("06" + numByte);
 
                         WriteToPort("3530313930303030303030");
                     }
@@ -262,11 +264,11 @@ namespace POSLIB
                         else
                         {
                             string numByte = CommonUtility.GetByteSliceToHexaString(buf, 2, 2);
-                            WriteToPort("06" + numByte);
+                           
 
                             CurrentSystemStatus = SystemStatus.Processing;
                             //Acknoledge read command
-                            WriteToPort("06DC");
+                            WriteToPort("06" + numByte);
                             //Open window for payment type
                             //WindowState = WindowState.Maximized;
                             PaymentTypeGrid.Visibility = Visibility.Visible;
@@ -348,6 +350,7 @@ namespace POSLIB
         }
         private void WriteToPort(string hexaString)
         {
+            hexaString +=  endByteString + CommonUtility.AddCrc(hexaString);
             var resByte = CommaUtil.HexToBytes(hexaString);
             serialPort.Write(resByte, 0, resByte.Length);
             MessageText.Text += "Resp: " + hexaString + "\n";

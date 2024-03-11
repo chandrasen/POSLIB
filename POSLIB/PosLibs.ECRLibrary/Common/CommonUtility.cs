@@ -35,6 +35,46 @@ namespace PosLibs.ECRLibrary.Common
             return result;
         }
 
+        /// <summary>
+        /// Add crc only and expecting start byte till end byte in input
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static string AddCrc(string input)
+        {
+            // Convert input string to byte array
+            byte[] inputBytes = CommaUtil.HexToBytes(input); 
+
+            // Calculate CRC16 checksum for input bytes
+            ushort crc = CalculateCRC(inputBytes);
+
+            // Convert CRC16 checksum to hexadecimal representation
+            string crcHexString = crc.ToString("X4");
+
+            // Concatenate input bytes, CRC1, and CRC2 with start and end bytes
+            //string output = input.Substring(2) + crcHexString;
+            string output =  crcHexString;
+
+            return output;
+        }
+
+        static ushort CalculateCRC(byte[] buf)
+        {
+            ushort crc = 0xFFFF;
+            for (int pos = 0; pos < buf.Length; pos++)
+            {
+                crc ^= (ushort)(buf[pos] << 8);
+                for (int i = 0; i < 8; i++)
+                {
+                    if ((crc & 0x8000) != 0)
+                        crc = (ushort)((crc << 1) ^ 0x8005);
+                    else
+                        crc <<= 1;
+                }
+            }
+            return crc;
+        }
+
         public static string ByteArrayToHexaString(byte[] input)
         {
             return CommaUtil.BytesToHex(input);
