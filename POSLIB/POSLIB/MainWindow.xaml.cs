@@ -220,15 +220,21 @@ namespace POSLIB
                     }
                     MessageText.Text +="Rec: " +  res +"\n";
 
-                    var identifier = CommonUtility.GetByteSliceToHexaString(buf, 8, 9);
+                    var identifier = string.Empty;
+                    try
+                    {
+                        identifier = CommonUtility.GetByteSliceToHexaString(buf, 8, 9);
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                    
                     //check status
                     if (identifier == "3230")
                     {
-                        // STX = 02, Num = 02, etx + crc = "030DB1"
-                        //in 3530323930323030 .. last 30 is status of device, 30 == 0 i.e. idle
-                        //Todo: get actual status based on app status, 1 = waiting ofr card inserion,2 = waiting for pin,3=waiting for bank tran, 4=printing
-                        //ack
-                        WriteToPort("0602");
+                        string numByte = CommonUtility.GetByteSliceToHexaString(buf, 2, 2);
+                        WriteToPort("06" + numByte);
                         var statusString = ((int)CurrentSystemStatus).ToString();
                         var statusinHexa = CommonUtility.ConvertAsciiToHexaString(statusString);
                         var responseHexa = $"020235303239303230{statusinHexa}030DB1";
@@ -238,19 +244,26 @@ namespace POSLIB
                     //Disable card
                     if (identifier == "3030")
                     {
-                        var responseHexa = $"06FF";
-                        WriteToPort(responseHexa);
+                        string numByte = CommonUtility.GetByteSliceToHexaString(buf, 2, 2);
+                        WriteToPort("06" + numByte + "03");
+
+                        WriteToPort("3530313930303030303030");
                     }
                    
                     // PaymentResponse with Amount (Read card for payment)
                     if (identifier == "3130")
                     {
+                        
+
                         if (CurrentSystemStatus != SystemStatus.Idle)
                         {
                             serialPort.Write(nakByte, 0, nakByte.Length);
                         }
                         else
                         {
+                            string numByte = CommonUtility.GetByteSliceToHexaString(buf, 2, 2);
+                            WriteToPort("06" + numByte);
+
                             CurrentSystemStatus = SystemStatus.Processing;
                             //Acknoledge read command
                             WriteToPort("06DC");
@@ -270,6 +283,11 @@ namespace POSLIB
                         }
                         else
                         {
+                            string numByte = CommonUtility.GetByteSliceToHexaString(buf, 2, 2);
+                            WriteToPort("06" + numByte);
+
+
+
                             TransactionDrive transactionDrive = new TransactionDrive();
                             var hexaAmount = CommonUtility.GetByteSliceToHexaString(buf, 45, 55);
                             var amount = CommaUtil.HexToString(hexaAmount);
